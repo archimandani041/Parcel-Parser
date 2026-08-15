@@ -1,10 +1,10 @@
 import { getGeminiClient, getGeminiModelName, FALLBACK_MODELS } from './geminiClient.js';
-import { extractionResponseSchema } from './geminiSchema.js';
 import { PARCEL_PARSER_SYSTEM_INSTRUCTION, PARCEL_PARSER_USER_PROMPT } from './geminiPrompt.js';
 
 /**
  * Sends uploaded document (image or PDF) to Gemini API using multimodal document understanding.
- * Returns structured JSON conforming to the extraction schema.
+ * Uses FREE-FORM JSON mode (no rigid responseSchema) so Gemini can return ALL extracted data
+ * from any label format without being constrained to a predefined field list.
  *
  * @param {Buffer} fileBuffer - Raw buffer of uploaded file
  * @param {string} mimeType - File MIME type (e.g. image/jpeg, image/png, application/pdf)
@@ -54,8 +54,11 @@ export async function parseDocumentWithGemini(fileBuffer, mimeType, fileName = '
         ],
         config: {
           systemInstruction: PARCEL_PARSER_SYSTEM_INSTRUCTION,
+          // NOTE: We intentionally do NOT use responseSchema here.
+          // Strict schema enforcement prevents Gemini from returning fields not in the schema,
+          // causing data loss. We use responseMimeType: 'application/json' with a detailed
+          // text prompt instead, giving Gemini freedom to return all extracted data.
           responseMimeType: 'application/json',
-          responseSchema: extractionResponseSchema,
           temperature: 0.1 // Low temperature for high extraction fidelity
         }
       });
@@ -66,16 +69,28 @@ export async function parseDocumentWithGemini(fileBuffer, mimeType, fileName = '
       let rawResponseText = response.text || '';
       let structuredJson = {};
 
+      // Strip any markdown code fences if model added them despite instructions
+      let cleanedText = rawResponseText.trim();
+      if (cleanedText.startsWith('```json')) {
+        cleanedText = cleanedText.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
+      } else if (cleanedText.startsWith('```')) {
+        cleanedText = cleanedText.replace(/^```\s*/, '').replace(/```\s*$/, '').trim();
+      }
+
       try {
-        structuredJson = JSON.parse(rawResponseText);
+        structuredJson = JSON.parse(cleanedText);
       } catch (parseErr) {
         console.error('[Gemini Parser] Failed to parse JSON text from response:', parseErr);
-        // Attempt clean substring extraction if model added code blocks
-        const jsonMatch = rawResponseText.match(/\{[\s\S]*\}/);
+        // Attempt clean substring extraction — find first { to last }
+        const jsonMatch = cleanedText.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
-          structuredJson = JSON.parse(jsonMatch[0]);
+          try {
+            structuredJson = JSON.parse(jsonMatch[0]);
+          } catch (innerErr) {
+            throw new Error('Gemini response could not be parsed as valid JSON: ' + innerErr.message);
+          }
         } else {
-          throw new Error('Gemini response could not be parsed as valid JSON');
+          throw new Error('Gemini response contained no JSON object');
         }
       }
 
@@ -100,25 +115,31 @@ export async function parseDocumentWithGemini(fileBuffer, mimeType, fileName = '
     }
   }
 
-  // If all live API attempts failed, log error and throw or provide diagnostic fallback
+  // If all live API attempts failed, log error and throw
   console.error('[Gemini Parser] All Gemini model attempts failed:', lastError);
   throw new Error(`Gemini API document extraction failed: ${lastError?.message || 'Unknown error'}`);
 }
 
 /**
- * Sanitizes JSON output ensuring nulls instead of missing or empty string placeholders
+ * Sanitizes JSON output ensuring nulls instead of missing or empty string placeholders.
+ * Also normalizes common empty-value indicators to null.
  */
 function sanitizeExtractedJson(json) {
   if (!json || typeof json !== 'object') return {};
+
+  const EMPTY_VALUES = new Set(['', 'null', 'n/a', 'na', 'none', 'not available', 'not found', 'unknown', '-', '--', '–']);
 
   const cleanObj = (obj) => {
     if (obj === null || obj === undefined) return null;
     if (typeof obj === 'string') {
       const trimmed = obj.trim();
-      return (trimmed === '' || trimmed.toLowerCase() === 'null' || trimmed.toLowerCase() === 'n/a') ? null : trimmed;
+      return EMPTY_VALUES.has(trimmed.toLowerCase()) ? null : trimmed;
     }
+    if (typeof obj === 'number') return isNaN(obj) ? null : obj;
+    if (typeof obj === 'boolean') return obj;
     if (Array.isArray(obj)) {
-      return obj.map(cleanObj);
+      // Filter out null/empty elements from arrays, but keep structured objects
+      return obj.map(cleanObj).filter(item => item !== null && item !== undefined);
     }
     if (typeof obj === 'object') {
       const cleaned = {};
@@ -134,11 +155,12 @@ function sanitizeExtractedJson(json) {
 }
 
 /**
- * Fallback generator for local offline demonstration if API key is not supplied
+ * Fallback generator for local offline demonstration if API key is not supplied.
+ * Returns realistic mock data that exercises the full new schema.
  */
 function generateFallbackExtraction(fileBuffer, fileName, startTime) {
   const processingTime = Date.now() - startTime + 420;
-  
+
   const mockData = {
     document_type: "shipping_label",
     order: {
@@ -146,58 +168,89 @@ function generateFallbackExtraction(fileBuffer, fileName, startTime) {
       order_number: "ORD-2026-89412",
       order_date: "2026-08-14",
       payment_status: "PREPAID",
-      platform: "Flipkart"
+      platform: "Flipkart",
+      return_policy: "10 Day Return Policy"
     },
     shipping: {
       carrier: "E-Kart Logistics",
       awb: "SF3317828943F",
       tracking_number: "TRK-99081245",
-      shipment_id: "SHP-88273"
+      shipment_id: "SHP-88273",
+      service_type: "Standard Delivery",
+      route_code: "PLK-04",
+      sort_code: "SRT-KL-09",
+      zone: "Zone C",
+      bag_number: "BAG-1/3",
+      expected_delivery: "2026-08-17"
     },
     customer: {
       name: "Dr Jayakumar Sharma",
       address: "Shaktheya mantrika peedom, Naattukal po valara, Palakkad, Kozhinjapaara, Palakkad District - 678554, IN-KL",
+      building: null,
+      street: "Naattukal po valara",
+      locality: "Kozhinjapaara",
+      landmark: "Shaktheya mantrika peedom",
       city: "Palakkad",
-      state: "Kerala",
       district: "Palakkad",
+      state: "Kerala",
       pincode: "678554",
       country: "India",
       phone: "+91 98471 23456",
-      email: "jayakumar.sharma@example.com"
+      alternate_phone: null,
+      email: null
     },
     items: [
       {
         sku_id: "D01",
         product_name: "White Sadi",
         description: "Outzy Printed, Floral Print, Paisley, Digital Print",
+        category: "Clothing",
         quantity: 1,
         unit: "Pcs",
         price: 899.00,
-        confidence: 0.98
+        total: 899.00,
+        hsn_code: "5208",
+        confidence: 0.97
       }
     ],
     seller: {
       name: "YPD Enterprise",
       address: "101, FIRST FLOOR, Rajdeep Complex, Rajdeep Society, SURAT - 395004",
+      city: "Surat",
+      state: "Gujarat",
+      pincode: "395004",
       phone: "+91 98250 11223",
       email: "support@ypdenterprise.com",
-      gstin: "24EVWPM4891Q1Z8"
+      gstin: "24EVWPM4891Q1Z8",
+      pan: null,
+      fssai: null
     },
-    other: {
-      hbd: "PLK/HUB-04",
-      cpd: "CPD-99",
+    financial: {
       invoice_number: "INV-2026-00412",
-      reference_number: "REF-55412",
-      package_number: "PKG-1/1",
+      invoice_date: "2026-08-14",
+      subtotal: 899.00,
+      discount: null,
+      tax: null,
+      shipping_charge: 0,
+      cod_amount: 0,
+      total_amount: 899.00,
+      currency: "INR"
+    },
+    package: {
       weight: "0.45 kg",
       dimensions: "25 x 18 x 5 cm",
-      cod_amount: 0,
-      shipping_charge: 0,
-      total_amount: 899.00
+      package_number: "1/1",
+      hbd: "PLK/HUB-04",
+      cpd: "CPD-99",
+      reference_number: "REF-55412",
+      barcode_values: ["SF3317828943F", "OD337952754675247100"],
+      special_instructions: null,
+      fragile: false,
+      return_hub: "Surat Central Sorting Hub"
     },
     additional_fields: [
-      { field_name: "Return Hub", value: "Surat Central Sorting Hub", confidence: 0.95 },
-      { field_name: "Handling Instruction", value: "Fragile - Handle with Care", confidence: 0.92 }
+      { field_name: "Handling Instruction", value: "Fragile - Handle with Care", confidence: 0.92 },
+      { field_name: "Delivery Attempt", value: "First Attempt", confidence: 0.88 }
     ],
     overall_confidence: 0.96
   };
