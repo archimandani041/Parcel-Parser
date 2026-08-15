@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Environment variables — NEVER commit these
+.env
+backend/.env
+frontend/.env
+frontend/.env.local
+
+# Build output
+dist/
+build/
+
+# Local database fallback files
+backend/uploads/
+backend/uploads_db.json
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Vite cache
+.vite/
+**/.vite-temp/
