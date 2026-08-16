@@ -1,6 +1,7 @@
 import { dbService } from '../services/storage/supabaseService.js';
 import { parseDocumentWithGemini } from '../services/gemini/geminiParser.js';
 import { validateExtractionResult } from '../services/validation/validationService.js';
+import { orderRecordService } from '../services/storage/orderRecordService.js';
 
 /**
  * Controller for handling single or multi-file label uploads & AI extraction workflow.
@@ -60,6 +61,14 @@ export async function processUploads(req, res, next) {
           geminiResult.processing_time,
           validation.warnings.length > 0 ? validation.warnings.join('; ') : null
         );
+
+        // 7. Create order records from extraction
+        try {
+          await orderRecordService.createFromExtraction(validation.validatedJson, docRecord.id);
+          console.log(`[Upload Controller] Order records created for ${fileName}`);
+        } catch (orderErr) {
+          console.warn(`[Upload Controller] Order record creation failed:`, orderErr.message);
+        }
 
         processedResults.push({
           id: docRecord.id,

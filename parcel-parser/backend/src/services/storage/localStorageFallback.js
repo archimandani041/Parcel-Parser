@@ -41,6 +41,10 @@ export const localStorageService = {
     return `/uploads/${safeFileName}`;
   },
 
+  async uploadFileLocally(fileBuffer, fileName) {
+    return this.saveUploadedFile(fileBuffer, fileName);
+  },
+
   async insertDocumentRecord(docData) {
     const db = loadLocalDb();
     const now = new Date().toISOString();

@@ -9,13 +9,15 @@ import {
   Database,
   Cpu,
   Activity,
-  ChevronRight
+  ChevronRight,
+  Package
 } from 'lucide-react';
 
 export default function Sidebar({ healthInfo }) {
   const navItems = [
     { path: '/', label: 'Dashboard', icon: LayoutDashboard, badge: null },
     { path: '/upload', label: 'Upload Label', icon: UploadCloud, badge: 'AI' },
+    { path: '/orders', label: 'Orders', icon: Package, badge: null },
     { path: '/documents', label: 'All Documents', icon: FileText, badge: null },
   ];
 

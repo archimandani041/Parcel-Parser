@@ -1,73 +1,86 @@
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
+import path from 'path';
 import { localStorageService } from './localStorageFallback.js';
+import { sanitizeExtractedJson } from '../gemini/geminiParser.js';
 
+dotenv.config({ path: path.resolve(process.cwd(), 'backend/.env') });
 dotenv.config();
 
 const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
 
 let supabase = null;
 let isSupabaseConfigured = false;
 
-if (
-  supabaseUrl &&
-  supabaseUrl.trim() !== '' &&
-  !supabaseUrl.includes('your-supabase') &&
-  supabaseKey &&
-  supabaseKey.trim() !== '' &&
-  !supabaseKey.includes('your-supabase')
-) {
+if (supabaseUrl && supabaseUrl.trim() && !supabaseUrl.includes('your-supabase') &&
+    supabaseKey && supabaseKey.trim() && !supabaseKey.includes('your-supabase')) {
   try {
     supabase = createClient(supabaseUrl, supabaseKey);
     isSupabaseConfigured = true;
     console.log('[Supabase Service] Connected to Supabase PostgreSQL & Storage');
   } catch (err) {
-    console.warn('[Supabase Service] Failed to initialize Supabase client:', err.message);
+    console.error('[Supabase Service] Failed to initialize Supabase client:', err.message);
   }
 } else {
-  console.log('[Supabase Service] Supabase credentials not set or using placeholders. Defaulting to persistent local storage engine.');
+  console.log('[Supabase Service] Supabase credentials not provided. Operating in Local Fallback mode.');
 }
 
 export const dbService = {
+
   isConfigured() {
     return isSupabaseConfigured;
   },
 
-  async uploadFile(fileBuffer, fileName, mimeType) {
+  async uploadFile(fileBuffer, originalFileName, mimeType) {
+    const res = await this.uploadLabelFile(fileBuffer, originalFileName, mimeType);
+    return typeof res === 'string' ? res : (res?.file_url || `/uploads/${originalFileName}`);
+  },
+
+  async createDocument(docData) {
+    return this.createDocumentRecord(docData);
+  },
+
+  async uploadLabelFile(fileBuffer, originalFileName, mimeType) {
     if (!isSupabaseConfigured) {
-      return localStorageService.saveUploadedFile(fileBuffer, fileName);
+      return localStorageService.uploadFileLocally(fileBuffer, originalFileName, mimeType);
     }
 
     try {
       const timestamp = Date.now();
-      const safeName = `${timestamp}_${fileName.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
-      const filePath = `labels/${safeName}`;
+      const sanitizedName = originalFileName.replace(/[^a-zA-Z0-9.-]/g, '_');
+      const storagePath = `labels/${timestamp}_${sanitizedName}`;
 
       const { data, error } = await supabase.storage
         .from('parcel-labels')
-        .upload(filePath, fileBuffer, {
+        .upload(storagePath, fileBuffer, {
           contentType: mimeType,
           upsert: true
         });
 
       if (error) {
-        console.error('[Supabase Storage] Upload error:', error.message);
-        return localStorageService.saveUploadedFile(fileBuffer, fileName);
+        console.error('[Supabase Storage] Error uploading file:', error.message);
+        return localStorageService.uploadFileLocally(fileBuffer, originalFileName, mimeType);
       }
 
       const { data: publicUrlData } = supabase.storage
         .from('parcel-labels')
-        .getPublicUrl(filePath);
+        .getPublicUrl(storagePath);
 
-      return publicUrlData.publicUrl;
+      return {
+        file_name: originalFileName,
+        file_url: publicUrlData.publicUrl,
+        file_path: storagePath,
+        file_type: mimeType,
+        file_size: fileBuffer.length
+      };
     } catch (err) {
-      console.error('[Supabase Storage] Exception:', err.message);
-      return localStorageService.saveUploadedFile(fileBuffer, fileName);
+      console.error('[Supabase Storage] Exception in uploadLabelFile:', err.message);
+      return localStorageService.uploadFileLocally(fileBuffer, originalFileName, mimeType);
     }
   },
 
-  async createDocument(docData) {
+  async createDocumentRecord(docData) {
     if (!isSupabaseConfigured) {
       return localStorageService.insertDocumentRecord(docData);
     }
@@ -80,18 +93,20 @@ export const dbService = {
           file_url: docData.file_url,
           file_type: docData.file_type,
           file_size: docData.file_size,
-          status: docData.status || 'UPLOADING',
+          status: docData.status || 'ANALYZING',
           processing_time: docData.processing_time || 0,
-          overall_confidence: docData.overall_confidence || 0,
+          overall_confidence: docData.overall_confidence || 0.0,
           error_message: docData.error_message || null
         })
         .select()
         .single();
 
       if (error) {
-        console.error('[Supabase DB] Error creating document:', error.message);
+        console.error('[Supabase DB] Error creating document record:', error.message);
         return localStorageService.insertDocumentRecord(docData);
       }
+
+      localStorageService.insertDocumentRecord({ id: data.id, ...docData });
 
       return data;
     } catch (err) {
@@ -101,6 +116,8 @@ export const dbService = {
   },
 
   async saveExtraction(documentId, rawResponse, structuredJson) {
+    localStorageService.saveExtractionResults(documentId, rawResponse, structuredJson);
+
     if (!isSupabaseConfigured) {
       return localStorageService.saveExtractionResults(documentId, rawResponse, structuredJson);
     }
@@ -169,6 +186,8 @@ export const dbService = {
   },
 
   async updateDocumentStatus(documentId, status, confidence, processingTime, errorMessage = null) {
+    localStorageService.updateDocumentStatus(documentId, status, confidence, processingTime, errorMessage);
+
     if (!isSupabaseConfigured) {
       return localStorageService.updateDocumentStatus(documentId, status, confidence, processingTime, errorMessage);
     }
@@ -188,10 +207,12 @@ export const dbService = {
         .single();
 
       if (error) {
-        return localStorageService.updateDocumentStatus(documentId, status, confidence, processingTime, errorMessage);
+        console.error('[Supabase DB] Error updating status:', error.message);
       }
+
       return data;
     } catch (err) {
+      console.error('[Supabase DB] Exception in updateDocumentStatus:', err.message);
       return localStorageService.updateDocumentStatus(documentId, status, confidence, processingTime, errorMessage);
     }
   },
@@ -207,9 +228,10 @@ export const dbService = {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error || !data) {
+      if (error || !data || data.length === 0) {
         return localStorageService.getAllDocuments();
       }
+
       return data;
     } catch (err) {
       return localStorageService.getAllDocuments();
@@ -217,8 +239,10 @@ export const dbService = {
   },
 
   async getDocumentDetail(id) {
+    const localFallbackDoc = localStorageService.getDocumentById(id) || null;
+
     if (!isSupabaseConfigured) {
-      return localStorageService.getDocumentById(id);
+      return localFallbackDoc;
     }
 
     try {
@@ -229,7 +253,7 @@ export const dbService = {
         .single();
 
       if (docErr || !doc) {
-        return localStorageService.getDocumentById(id);
+        return localFallbackDoc;
       }
 
       const { data: extraction } = await supabase
@@ -254,20 +278,49 @@ export const dbService = {
         .eq('document_id', id)
         .order('created_at', { ascending: false });
 
+      let structuredJson = extraction?.structured_json || localFallbackDoc?.structured_json || null;
+
+      // Reconstruct structured_json from extracted fields/items if structured_json is missing
+      if (!structuredJson && ((fields && fields.length > 0) || (items && items.length > 0))) {
+        const constructedObj = {
+          document_type: 'shipping_label',
+          order: {},
+          customer: {},
+          shipping: {},
+          seller: {},
+          financial: {},
+          package: {},
+          items: items || [],
+          overall_confidence: doc.overall_confidence || 0.95
+        };
+        (fields || []).forEach(f => {
+          const cat = f.field_category || 'order';
+          if (!constructedObj[cat]) constructedObj[cat] = {};
+          constructedObj[cat][f.field_name] = f.field_value;
+        });
+        structuredJson = constructedObj;
+      }
+
+      if (structuredJson) {
+        structuredJson = sanitizeExtractedJson(structuredJson);
+      }
+
       return {
         ...doc,
-        raw_response: extraction?.raw_response || null,
-        structured_json: extraction?.structured_json || null,
-        items: items || [],
-        fields: fields || [],
-        corrections: corrections || []
+        raw_response: extraction?.raw_response || localFallbackDoc?.raw_response || null,
+        structured_json: structuredJson,
+        items: (items && items.length > 0) ? items : (localFallbackDoc?.items || []),
+        fields: (fields && fields.length > 0) ? fields : (localFallbackDoc?.fields || []),
+        corrections: (corrections && corrections.length > 0) ? corrections : (localFallbackDoc?.corrections || [])
       };
     } catch (err) {
-      return localStorageService.getDocumentById(id);
+      return localFallbackDoc;
     }
   },
 
   async saveCorrection(documentId, fieldName, originalValue, correctedValue) {
+    localStorageService.addCorrection(documentId, fieldName, originalValue, correctedValue);
+
     if (!isSupabaseConfigured) {
       return localStorageService.addCorrection(documentId, fieldName, originalValue, correctedValue);
     }
@@ -284,7 +337,6 @@ export const dbService = {
         .select()
         .single();
 
-      // Update extracted fields table
       await supabase
         .from('extracted_fields')
         .update({ field_value: correctedValue })
@@ -304,6 +356,8 @@ export const dbService = {
 
     try {
       await supabase.from('documents').delete().eq('id', id);
+      await supabase.from('order_records').delete().or(`id.eq.${id},document_id.eq.${id}`);
+      localStorageService.deleteDocument(id);
       return true;
     } catch (err) {
       return localStorageService.deleteDocument(id);

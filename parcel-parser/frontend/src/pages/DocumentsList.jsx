@@ -25,6 +25,7 @@ export default function DocumentsList() {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [selectedIds, setSelectedIds] = useState([]);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
 
   const loadDocs = () => {
     setLoading(true);
@@ -52,9 +53,25 @@ export default function DocumentsList() {
     );
   };
 
+  const handleSingleDelete = async (id, fileName) => {
+    if (!window.confirm(`Are you sure you want to delete "${fileName || 'this document'}"?`)) {
+      return;
+    }
+    setDeletingId(id);
+    try {
+      await deleteDocument(id);
+      setSelectedIds(prev => prev.filter(item => item !== id));
+      loadDocs();
+    } catch (err) {
+      alert('Failed to delete document: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   const handleBulkDelete = async () => {
     if (selectedIds.length === 0) return;
-    if (window.confirm(`Are you sure you want to delete ${selectedIds.length} document(s)?`)) {
+    if (window.confirm(`Are you sure you want to delete ${selectedIds.length} selected document(s)?`)) {
       for (const id of selectedIds) {
         await deleteDocument(id);
       }
@@ -231,12 +248,22 @@ export default function DocumentsList() {
                           {formatDate(doc.created_at)}
                         </td>
                         <td className="py-4 px-4 text-right">
-                          <Link
-                            to={`/document/${doc.id}`}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-600/10 hover:bg-indigo-600/25 text-indigo-300 hover:text-white border border-indigo-500/20 hover:border-indigo-500/40 rounded-xl text-xs font-semibold transition-all shadow-sm"
-                          >
-                            Inspect <ExternalLink className="w-3.5 h-3.5" />
-                          </Link>
+                          <div className="flex items-center justify-end gap-2">
+                            <Link
+                              to={`/document/${doc.id}`}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-600/10 hover:bg-indigo-600/25 text-indigo-300 hover:text-white border border-indigo-500/20 hover:border-indigo-500/40 rounded-xl text-xs font-semibold transition-all shadow-sm"
+                            >
+                              Inspect <ExternalLink className="w-3.5 h-3.5" />
+                            </Link>
+                            <button
+                              onClick={() => handleSingleDelete(doc.id, doc.file_name)}
+                              disabled={deletingId === doc.id}
+                              title="Delete document"
+                              className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-all border border-transparent hover:border-rose-500/30 disabled:opacity-50"
+                            >
+                              <Trash2 className={`w-4 h-4 ${deletingId === doc.id ? 'animate-spin' : ''}`} />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -257,4 +284,3 @@ export default function DocumentsList() {
     </Layout>
   );
 }
-

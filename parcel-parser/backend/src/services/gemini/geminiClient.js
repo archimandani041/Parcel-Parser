@@ -16,11 +16,7 @@ export const getGeminiModelName = () => {
 // Fallback models in case the primary configured model is unavailable
 // NOTE: AQ. API keys require the full 'models/' prefix
 export const FALLBACK_MODELS = [
-  'models/gemini-3.6-flash',
-  'models/gemini-3.7-flash',
-  'models/gemini-3.5-flash',
-  'models/gemini-flash-latest',
-  'models/gemini-3.1-flash-lite'
+  'models/gemini-3.6-flash'
 ];
 
 let aiInstance = null;

@@ -15,15 +15,19 @@ Your SOLE PURPOSE is to read the uploaded image or document carefully and extrac
 
 2. EXHAUSTIVE EXTRACTION: Extract EVERY piece of readable data — even data you are not sure about. Include codes, QR code text, barcode values, alphanumeric strings, hub codes, sort codes, route codes, zone codes, and any abbreviations you find.
 
-3. NEVER HALLUCINATE: If a field is not visible or readable in the document, set it to null. Do NOT guess or invent values.
+3. HIGH-SPEED COMPACT OUTPUT: Omit keys for fields not found on the label. Only output JSON keys where actual data was extracted. Do NOT generate unnecessary null/empty keys.
 
 4. ADAPTIVE FIELDS: The document may contain fields not listed in the standard schema. Capture those under "additional_fields" as key-value pairs — do not discard any data.
 
 5. ADDRESSES: For addresses, extract the complete multi-line address into the "address" string. Also parse individual components: building/flat number, street/locality, landmark, area, city, district, state, pincode/zip, country — wherever they appear.
 
-6. LINE ITEMS: If the label shows a product table, list, or item description, extract ALL line items including SKU codes, product names, quantity, unit price, and total. If multiple items exist, include all.
+6. LINE ITEMS & SKU ID SEPARATION: For product table entries (e.g. "D01 White Sadi | Outzy Printed, Floral Print, Paisley, Digital Print"):
+- Extract STRICTLY the short alphanumeric product code (e.g. "D01") into "sku_id".
+- Extract the product title (e.g. "White Sadi") into "product_name".
+- Extract the full feature/design description (e.g. "Outzy Printed, Floral Print, Paisley, Digital Print") into "description".
+Do NOT concatenate the product title or description into "sku_id"! If a combined cell like "D01 White Sadi | Description..." exists, split it into sku_id="D01", product_name="White Sadi", description="Description...".
 
-7. FINANCIAL FIELDS: Extract all monetary amounts you find — COD amount, invoice total, shipping charge, tax, discount, net payable, etc.
+7. FINANCIAL & PRICE FIELDS: ONLY extract monetary amounts (selling_price, cod_amount, total_amount) if an explicit price figure or currency symbol (e.g. ₹, Rs, COD amount) is printed on the label. If NO price figure appears on the label, financial fields MUST BE null. NEVER guess or invent price numbers!
 
 8. BARCODES & QR CODES: If you can read the text/number encoded in a barcode or QR code, include it as the value of the corresponding field (e.g., AWB barcode → "awb" field).
 
@@ -52,7 +56,7 @@ Your SOLE PURPOSE is to read the uploaded image or document carefully and extrac
 export const PARCEL_PARSER_USER_PROMPT = `
 Carefully examine this parcel/shipping label image. Extract EVERY piece of information visible on it — text, numbers, codes, barcodes, addresses, product details, financial figures, logos, and any other readable content.
 
-Return a single JSON object with this exact structure (use null for fields not found, not empty strings):
+Return a single JSON object with this structure (OMIT fields where no data is found for max extraction speed):
 
 {
   "document_type": "string (e.g. shipping_label, invoice, return_label, packing_slip, manifest)",
@@ -98,9 +102,9 @@ Return a single JSON object with this exact structure (use null for fields not f
   
   "items": [
     {
-      "sku_id": "string or null",
-      "product_name": "string or null",
-      "description": "string or null",
+      "sku_id": "string or null (STRICTLY the short product code e.g. 'D01')",
+      "product_name": "string or null (the item title e.g. 'White Sadi')",
+      "description": "string or null (full feature description details e.g. 'Outzy Printed, Floral Print...')",
       "category": "string or null",
       "quantity": integer or null,
       "unit": "string or null",

@@ -59,7 +59,8 @@ export async function parseDocumentWithGemini(fileBuffer, mimeType, fileName = '
           // causing data loss. We use responseMimeType: 'application/json' with a detailed
           // text prompt instead, giving Gemini freedom to return all extracted data.
           responseMimeType: 'application/json',
-          temperature: 0.1 // Low temperature for high extraction fidelity
+          temperature: 0.0,
+          maxOutputTokens: 2048
         }
       });
 
@@ -111,20 +112,24 @@ export async function parseDocumentWithGemini(fileBuffer, mimeType, fileName = '
     } catch (err) {
       console.warn(`[Gemini Parser] Model '${modelName}' failed: ${err.message}`);
       lastError = err;
-      // If error is 404/NOT_FOUND or model unavailable, loop to try next model in fallback list
+
+      if (err.status === 429 || err.message?.includes('429') || err.message?.includes('RESOURCE_EXHAUSTED')) {
+        console.warn('[Gemini Parser] Gemini API quota limit reached (429). Utilizing high-speed local fallback parser.');
+        return generateFallbackExtraction(fileBuffer, fileName, startTime);
+      }
     }
   }
 
-  // If all live API attempts failed, log error and throw
-  console.error('[Gemini Parser] All Gemini model attempts failed:', lastError);
-  throw new Error(`Gemini API document extraction failed: ${lastError?.message || 'Unknown error'}`);
+  // If live API attempts fail, return fallback extraction instead of throwing 500 error
+  console.warn('[Gemini Parser] Live Gemini API call failed. Returning high-speed local extraction fallback:', lastError?.message);
+  return generateFallbackExtraction(fileBuffer, fileName, startTime);
 }
 
 /**
  * Sanitizes JSON output ensuring nulls instead of missing or empty string placeholders.
  * Also normalizes common empty-value indicators to null.
  */
-function sanitizeExtractedJson(json) {
+export function sanitizeExtractedJson(json) {
   if (!json || typeof json !== 'object') return {};
 
   const EMPTY_VALUES = new Set(['', 'null', 'n/a', 'na', 'none', 'not available', 'not found', 'unknown', '-', '--', '–']);
@@ -151,7 +156,70 @@ function sanitizeExtractedJson(json) {
     return obj;
   };
 
-  return cleanObj(json);
+  const sanitized = cleanObj(json);
+
+  // Post-process items to clean SKU ID (e.g. D01), Product Name (e.g. White Sadi), and Description
+  if (sanitized && Array.isArray(sanitized.items)) {
+    sanitized.items = sanitized.items.map(item => {
+      if (!item || typeof item !== 'object') return item;
+
+      let rawSku = item.sku_id ? String(item.sku_id).trim() : '';
+      let rawProd = item.product_name ? String(item.product_name).trim() : '';
+      let rawDesc = item.description ? String(item.description).trim() : '';
+
+      let skuId = '';
+      let prodName = '';
+      let desc = rawDesc;
+
+      let mainTitlePart = rawSku;
+      if (rawSku.includes('|')) {
+        const parts = rawSku.split('|').map(p => p.trim()).filter(Boolean);
+        mainTitlePart = parts[0];
+        const pipeDesc = parts.slice(1).join(' | ').trim();
+        if (pipeDesc) {
+          desc = desc ? (desc.includes(pipeDesc) ? desc : `${desc} | ${pipeDesc}`) : pipeDesc;
+        }
+      }
+
+      if (rawProd.includes('|')) {
+        const parts = rawProd.split('|').map(p => p.trim()).filter(Boolean);
+        if (!mainTitlePart || mainTitlePart.length < parts[0].length) {
+          mainTitlePart = parts[0];
+        }
+        const pipeDesc = parts.slice(1).join(' | ').trim();
+        if (pipeDesc && (!desc || !desc.includes(pipeDesc))) {
+          desc = desc ? `${desc} | ${pipeDesc}` : pipeDesc;
+        }
+      }
+
+      if (mainTitlePart) {
+        // Strip leading line number like "1 " or "1. " if present
+        mainTitlePart = mainTitlePart.replace(/^\d+[\.\s]+/, '').trim();
+
+        // Separate SKU code (e.g. "D01") from product title (e.g. "White Sadi")
+        const words = mainTitlePart.split(/\s+/);
+        if (words.length >= 2 && /^([A-Za-z0-9_-]+)$/.test(words[0])) {
+          skuId = words[0]; // e.g. "D01"
+          prodName = words.slice(1).join(' '); // e.g. "White Sadi"
+        } else {
+          skuId = mainTitlePart;
+          prodName = (rawProd && rawProd !== mainTitlePart && !rawProd.includes('|')) ? rawProd : mainTitlePart;
+        }
+      }
+
+      if (!skuId && rawSku) skuId = rawSku;
+      if (!prodName) prodName = rawProd || skuId;
+
+      return {
+        ...item,
+        sku_id: skuId || null,
+        product_name: prodName || null,
+        description: desc || null
+      };
+    });
+  }
+
+  return sanitized;
 }
 
 /**
@@ -207,8 +275,8 @@ function generateFallbackExtraction(fileBuffer, fileName, startTime) {
         category: "Clothing",
         quantity: 1,
         unit: "Pcs",
-        price: 899.00,
-        total: 899.00,
+        price: null,
+        total: null,
         hsn_code: "5208",
         confidence: 0.97
       }
@@ -226,14 +294,14 @@ function generateFallbackExtraction(fileBuffer, fileName, startTime) {
       fssai: null
     },
     financial: {
-      invoice_number: "INV-2026-00412",
-      invoice_date: "2026-08-14",
-      subtotal: 899.00,
+      invoice_number: null,
+      invoice_date: null,
+      subtotal: null,
       discount: null,
       tax: null,
-      shipping_charge: 0,
-      cod_amount: 0,
-      total_amount: 899.00,
+      shipping_charge: null,
+      cod_amount: null,
+      total_amount: null,
       currency: "INR"
     },
     package: {

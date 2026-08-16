@@ -69,3 +69,31 @@ export const exportDocumentsData = async (format, documentIds = []) => {
   
   return response;
 };
+
+// ===== ORDER RECORDS API =====
+
+export const getOrderRecords = async (search = '') => {
+  const params = search ? `?search=${encodeURIComponent(search)}` : '';
+  const response = await api.get(`/orders${params}`);
+  return response.data;
+};
+
+export const returnOrderRecord = async (id) => {
+  const response = await api.post(`/orders/${id}/return`);
+  return response.data;
+};
+
+export const deleteOrderRecord = async (id) => {
+  const response = await api.delete(`/orders/${id}`);
+  return response.data;
+};
+
+export const syncOrdersToSupabase = async () => {
+  const response = await api.post('/orders/sync');
+  return response.data;
+};
+
+export const exportOrdersExcel = async () => {
+  const response = await api.get('/orders/export-excel', { responseType: 'blob' });
+  return response;
+};
