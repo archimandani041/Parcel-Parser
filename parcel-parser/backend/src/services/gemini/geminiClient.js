@@ -10,16 +10,17 @@ dotenv.config();
 
 // Model specified in environment variable, configurable through .env
 export const getGeminiModelName = () => {
-  return process.env.GEMINI_MODEL || 'gemini-3.6-flash';
+  return process.env.GEMINI_MODEL || 'models/gemini-3.6-flash';
 };
 
 // Fallback models in case the primary configured model is unavailable
+// NOTE: AQ. API keys require the full 'models/' prefix
 export const FALLBACK_MODELS = [
-  'gemini-3.6-flash',
-  'gemini-3.7-flash',
-  'gemini-3.5-flash',
-  'gemini-flash-latest',
-  'gemini-3.1-flash-lite'
+  'models/gemini-3.6-flash',
+  'models/gemini-3.7-flash',
+  'models/gemini-3.5-flash',
+  'models/gemini-flash-latest',
+  'models/gemini-3.1-flash-lite'
 ];
 
 let aiInstance = null;
