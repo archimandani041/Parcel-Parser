@@ -63,9 +63,9 @@ export default function DocumentDetail() {
   if (loading) {
     return (
       <Layout title="Document Details">
-        <div className="py-24 text-center text-slate-400 space-y-4">
-          <RefreshCw className="w-8 h-8 animate-spin mx-auto text-indigo-400" />
-          <p className="font-mono text-xs text-slate-400">Loading document extraction workspace...</p>
+        <div className="py-24 text-center text-slate-500 space-y-4">
+          <RefreshCw className="w-8 h-8 animate-spin mx-auto text-sky-600" />
+          <p className="font-mono text-xs text-slate-500 font-medium">Loading document extraction workspace...</p>
         </div>
       </Layout>
     );
@@ -75,8 +75,8 @@ export default function DocumentDetail() {
     return (
       <Layout title="Document Not Found">
         <div className="py-20 text-center space-y-4">
-          <p className="text-slate-400">Document record not found or deleted.</p>
-          <Link to="/documents" className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold">
+          <p className="text-slate-500 font-medium">Document record not found or deleted.</p>
+          <Link to="/documents" className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-full text-xs font-bold shadow-md">
             <ArrowLeft className="w-4 h-4" /> Back to Documents
           </Link>
         </div>
@@ -91,31 +91,33 @@ export default function DocumentDetail() {
       <div className="space-y-6 pb-12">
         
         {/* Detail Page Header */}
-        <div className="bg-slate-900/90 border border-slate-800/90 rounded-3xl p-6 shadow-2xl space-y-5">
+        <div className="ui-card p-6 shadow-xl space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             
             <div className="flex items-center gap-4">
               <button
                 onClick={() => navigate('/documents')}
-                className="p-2.5 text-slate-400 hover:text-white bg-slate-950 border border-slate-800 hover:border-slate-700 rounded-2xl transition-colors shadow-sm"
+                className="p-2.5 text-slate-500 hover:text-slate-900 bg-white border border-slate-200 hover:bg-slate-50 rounded-full transition-colors shadow-sm"
                 title="Back to All Documents"
               >
                 <ArrowLeft className="w-4 h-4" />
               </button>
               <div>
                 <div className="flex items-center gap-2.5">
-                  <h1 className="text-lg font-extrabold text-white tracking-tight truncate max-w-sm">{documentData.file_name}</h1>
-                  <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${badge.bgClass}`}>
+                  <h1 className="text-xl font-extrabold text-slate-900 tracking-tight truncate max-w-sm">
+                    {documentData.file_name}
+                  </h1>
+                  <span className={`inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-bold border ${badge.bgClass}`}>
                     <span className={`w-1.5 h-1.5 rounded-full ${badge.dotClass}`} />
                     {badge.label}
                   </span>
                 </div>
-                <p className="text-xs text-slate-400 flex items-center gap-3 mt-1 font-mono">
+                <p className="text-xs text-slate-500 flex items-center gap-3 mt-1 font-mono font-medium">
                   <span>Created: {formatDate(documentData.created_at)}</span>
                   <span>•</span>
-                  <span className="flex items-center gap-1 text-sky-400"><Clock className="w-3.5 h-3.5" /> {documentData.processing_time || 0}ms</span>
+                  <span className="flex items-center gap-1 text-purple-700 font-bold"><Clock className="w-3.5 h-3.5" /> {documentData.processing_time || 0}ms</span>
                   <span>•</span>
-                  <span className="flex items-center gap-1 text-emerald-400"><Zap className="w-3.5 h-3.5" /> {formatConfidence(documentData.overall_confidence)}</span>
+                  <span className="flex items-center gap-1 text-emerald-700 font-bold"><Zap className="w-3.5 h-3.5" /> {formatConfidence(documentData.overall_confidence)}</span>
                 </p>
               </div>
             </div>
@@ -123,13 +125,13 @@ export default function DocumentDetail() {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setIsExportModalOpen(true)}
-                className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white text-xs font-extrabold rounded-xl transition-all shadow-lg shadow-indigo-600/30 border border-indigo-400/30"
+                className="pill-button-dark flex items-center gap-2 px-6 py-2.5 text-xs font-extrabold shadow-md"
               >
-                <Download className="w-3.5 h-3.5" /> Export Data
+                <Download className="w-3.5 h-3.5 text-purple-300" /> Export Data
               </button>
               <button
                 onClick={handleDelete}
-                className="p-2.5 text-slate-400 hover:text-rose-400 bg-slate-950 hover:bg-rose-500/10 border border-slate-800 hover:border-rose-500/30 rounded-xl transition-colors"
+                className="p-2.5 text-slate-400 hover:text-rose-600 bg-white hover:bg-rose-50 border border-slate-200 hover:border-rose-200 rounded-full transition-colors shadow-sm"
                 title="Delete Document"
               >
                 <Trash2 className="w-4 h-4" />
@@ -143,7 +145,7 @@ export default function DocumentDetail() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           
           {/* Left Screen: Original Document Preview */}
-          <div className="lg:col-span-5 h-[720px] sticky top-20 bg-slate-900/90 border border-slate-800/90 rounded-3xl p-4 shadow-2xl">
+          <div className="lg:col-span-5 h-[720px] sticky top-24 ui-card p-4 shadow-xl border border-slate-200/80 rounded-3xl">
             <DocumentViewer
               fileUrl={documentData.file_url}
               fileName={documentData.file_name}
@@ -153,54 +155,54 @@ export default function DocumentDetail() {
           </div>
 
           {/* Right Screen: Extraction Tabs & Details */}
-          <div className="lg:col-span-7 bg-slate-900/90 border border-slate-800/90 rounded-3xl p-6 shadow-2xl space-y-5">
+          <div className="lg:col-span-7 ui-card p-6 shadow-xl border border-slate-200/80 rounded-3xl space-y-6">
             
-            {/* View Tabs */}
-            <div className="flex items-center justify-between border-b border-slate-800/80 pb-3 overflow-x-auto">
-              <div className="flex items-center gap-2">
+            {/* View Tabs Capsule */}
+            <div className="flex items-center justify-between border-b border-purple-100 pb-4 overflow-x-auto">
+              <div className="flex items-center gap-1.5 bg-purple-100/60 p-1 border border-purple-200/80 rounded-full">
                 <button
                   onClick={() => setActiveTab('extracted')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all ${
+                  className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-extrabold transition-all cursor-pointer ${
                     activeTab === 'extracted'
-                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                      ? 'bg-purple-200/90 text-purple-950 border border-purple-300 shadow-xs'
+                      : 'text-purple-800/80 hover:text-purple-950 hover:bg-white/60'
                   }`}
                 >
-                  <FileText className="w-4 h-4" /> Extracted Information
+                  <FileText className="w-4 h-4 text-purple-700" /> Extracted Info
                 </button>
 
                 <button
                   onClick={() => setActiveTab('json')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all ${
+                  className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-extrabold transition-all cursor-pointer ${
                     activeTab === 'json'
-                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                      ? 'bg-purple-200/90 text-purple-950 border border-purple-300 shadow-xs'
+                      : 'text-purple-800/80 hover:text-purple-950 hover:bg-white/60'
                   }`}
                 >
-                  <Code className="w-4 h-4" /> JSON View
+                  <Code className="w-4 h-4 text-purple-700" /> JSON View
                 </button>
 
                 <button
                   onClick={() => setActiveTab('debug')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all ${
+                  className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-extrabold transition-all cursor-pointer ${
                     activeTab === 'debug'
-                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                      ? 'bg-purple-200/90 text-purple-950 border border-purple-300 shadow-xs'
+                      : 'text-purple-800/80 hover:text-purple-950 hover:bg-white/60'
                   }`}
                 >
-                  <Terminal className="w-4 h-4 text-amber-400" /> Developer / Gemini Debug
+                  <Terminal className="w-4 h-4 text-amber-700" /> Developer Debug
                 </button>
 
                 {documentData.corrections && documentData.corrections.length > 0 && (
                   <button
                     onClick={() => setActiveTab('corrections')}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all ${
+                    className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-extrabold transition-all cursor-pointer ${
                       activeTab === 'corrections'
-                        ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                        ? 'bg-purple-200/90 text-purple-950 border border-purple-300 shadow-xs'
+                        : 'text-purple-800/80 hover:text-purple-950 hover:bg-white/60'
                     }`}
                   >
-                    <History className="w-4 h-4 text-emerald-400" /> Corrections ({documentData.corrections.length})
+                    <History className="w-4 h-4 text-emerald-700" /> Corrections ({documentData.corrections.length})
                   </button>
                 )}
               </div>
@@ -236,24 +238,24 @@ export default function DocumentDetail() {
 
               {activeTab === 'corrections' && (
                 <div className="space-y-3">
-                  <h4 className="text-xs font-extrabold text-slate-400 uppercase tracking-wider mb-2">
+                  <h4 className="text-xs font-extrabold text-slate-500 uppercase tracking-wider mb-2">
                     Manual Field Correction Log ({documentData.corrections.length})
                   </h4>
                   <div className="space-y-2">
                     {documentData.corrections.map((corr) => (
-                      <div key={corr.id} className="bg-slate-950 p-4 rounded-2xl border border-slate-800 text-xs font-mono">
-                        <div className="flex items-center justify-between text-indigo-400 font-bold mb-1.5">
+                      <div key={corr.id} className="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs font-mono">
+                        <div className="flex items-center justify-between text-sky-700 font-bold mb-1.5">
                           <span>Field: {corr.field_name}</span>
-                          <span className="text-[10px] text-slate-500 font-sans">{formatDate(corr.created_at)}</span>
+                          <span className="text-[10px] text-slate-400 font-sans">{formatDate(corr.created_at)}</span>
                         </div>
-                        <div className="grid grid-cols-2 gap-2 text-slate-300">
+                        <div className="grid grid-cols-2 gap-2 text-slate-700">
                           <div>
-                            <span className="text-[10px] text-rose-400 block uppercase font-bold">Original</span>
-                            <span className="line-through text-slate-500">{corr.original_value || 'null'}</span>
+                            <span className="text-[10px] text-rose-600 block uppercase font-bold">Original</span>
+                            <span className="line-through text-slate-400">{corr.original_value || 'null'}</span>
                           </div>
                           <div>
-                            <span className="text-[10px] text-emerald-400 block uppercase font-bold">Corrected</span>
-                            <span className="text-emerald-300 font-semibold">{corr.corrected_value}</span>
+                            <span className="text-[10px] text-emerald-600 block uppercase font-bold">Corrected</span>
+                            <span className="text-emerald-700 font-bold">{corr.corrected_value}</span>
                           </div>
                         </div>
                       </div>
@@ -288,3 +290,4 @@ export default function DocumentDetail() {
     </Layout>
   );
 }
+

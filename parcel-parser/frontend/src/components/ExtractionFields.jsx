@@ -63,11 +63,11 @@ export default function ExtractionFields({
     return (
       <div
         key={fieldName}
-        className="flex items-center justify-between py-2.5 px-3 rounded-xl border border-transparent hover:border-slate-800/80 hover:bg-slate-950/40 text-xs group transition-all"
+        className="flex items-center justify-between py-2.5 px-3.5 rounded-xl border border-purple-100/60 hover:border-purple-300 hover:bg-purple-50/50 text-xs group transition-all"
       >
         <div className="flex flex-col pr-2 min-w-0 flex-1">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{label}</span>
-          <span className={`font-mono text-xs break-words mt-0.5 ${isNull ? 'text-slate-600 italic' : 'text-slate-100 font-semibold'}`}>
+          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{label}</span>
+          <span className={`font-mono text-xs break-words mt-0.5 ${isNull ? 'text-slate-400 italic' : 'text-slate-800 font-semibold'}`}>
             {isNull ? 'null' : String(value)}
           </span>
         </div>
@@ -75,7 +75,7 @@ export default function ExtractionFields({
           <button
             onClick={() => onEditField(fieldName, isNull ? '' : String(value))}
             title={`Edit ${label}`}
-            className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-indigo-300 hover:bg-slate-800 rounded-lg transition-all shrink-0"
+            className="opacity-0 group-hover:opacity-100 p-1.5 text-purple-600 hover:text-purple-900 hover:bg-purple-100/80 rounded-lg transition-all shrink-0"
           >
             <Edit3 className="w-3.5 h-3.5" />
           </button>
@@ -85,10 +85,10 @@ export default function ExtractionFields({
   };
 
   const Section = ({ icon, title, color, children, wide = false }) => (
-    <div className={`bg-slate-900/90 border border-slate-800/90 rounded-2xl p-5 shadow-lg space-y-3 ${wide ? 'md:col-span-2' : ''}`}>
-      <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
-        <div className="flex items-center gap-2 font-extrabold text-slate-100 text-xs uppercase tracking-wider">
-          <span className={`p-1.5 rounded-lg bg-slate-950 border border-slate-800 ${color}`}>{icon}</span>
+    <div className={`ui-card border border-purple-100 rounded-3xl p-5 shadow-lg space-y-3 ${wide ? 'md:col-span-2' : ''}`}>
+      <div className="flex items-center justify-between border-b border-purple-100/80 pb-3">
+        <div className="flex items-center gap-2 font-extrabold text-slate-900 text-xs uppercase tracking-wider">
+          <span className={`p-1.5 rounded-xl bg-purple-50 border border-purple-100 ${color}`}>{icon}</span>
           {title}
         </div>
       </div>
@@ -102,14 +102,14 @@ export default function ExtractionFields({
   const pkgData = (pkg && Object.keys(pkg).length > 0) ? pkg : other;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-sans">
 
       {/* Validation Warnings Alert */}
       {warnings && warnings.length > 0 && (
-        <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 text-xs text-amber-300 flex items-start gap-3 shadow-lg">
-          <AlertCircle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs text-amber-900 flex items-start gap-3 shadow-sm">
+          <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
           <div>
-            <h4 className="font-bold text-amber-200 text-sm mb-1">Validation Audit Warnings ({warnings.length})</h4>
+            <h4 className="font-bold text-amber-950 text-sm mb-1">Validation Audit Warnings ({warnings.length})</h4>
             <ul className="list-disc list-inside space-y-0.5 font-mono text-[11px] opacity-90">
               {warnings.map((w, idx) => (
                 <li key={idx}>{w}</li>
@@ -121,14 +121,14 @@ export default function ExtractionFields({
 
       {/* Multi-Label Batch Selector Bar */}
       {hasMultipleLabels && (
-        <div className="bg-slate-950 border border-slate-800/90 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
-          <div className="flex items-center gap-3 text-xs font-extrabold text-slate-100">
-            <span className="p-2 rounded-xl bg-indigo-950/90 border border-indigo-800/60 text-indigo-400">
+        <div className="ui-card border border-purple-100 rounded-3xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
+          <div className="flex items-center gap-3 text-xs font-extrabold text-slate-900">
+            <span className="p-2 rounded-xl bg-purple-100 border border-purple-200 text-purple-700">
               <Layers className="w-4 h-4" />
             </span>
             <div>
-              <span className="text-white font-extrabold text-sm block">Multi-Label Document Batch ({structuredJson.labels.length} Extracted)</span>
-              <span className="text-[11px] text-slate-400 font-mono">Select a label below to view recipient, SKU, courier & financial details</span>
+              <span className="text-slate-900 font-extrabold text-sm block">Multi-Label Document Batch ({structuredJson.labels.length} Extracted)</span>
+              <span className="text-[11px] text-slate-500 font-mono">Select a label below to view recipient, SKU, courier & financial details</span>
             </div>
           </div>
 
@@ -140,15 +140,15 @@ export default function ExtractionFields({
                 <button
                   key={idx}
                   onClick={() => handleTabClick(idx)}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-bold font-mono transition-all shrink-0 flex items-center gap-2 ${
+                  className={`px-3.5 py-2 rounded-2xl text-xs font-bold font-mono transition-all shrink-0 flex items-center gap-2 cursor-pointer ${
                     isSelected
-                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 border border-indigo-400/40'
-                      : 'bg-slate-900 text-slate-400 hover:text-slate-100 hover:bg-slate-800 border border-slate-800'
+                      ? 'bg-purple-600 text-white shadow-md border border-purple-500'
+                      : 'bg-purple-50 text-slate-600 hover:text-purple-900 hover:bg-purple-100 border border-purple-200/80'
                   }`}
                 >
-                  <span className={`w-2 h-2 rounded-full ${isSelected ? 'bg-emerald-400 animate-pulse' : 'bg-slate-600'}`} />
+                  <span className={`w-2 h-2 rounded-full ${isSelected ? 'bg-emerald-400 animate-pulse' : 'bg-slate-400'}`} />
                   <span>Label #{idx + 1}</span>
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-md ${isSelected ? 'bg-indigo-700/80 text-white' : 'bg-slate-950 text-slate-400'}`}>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-md ${isSelected ? 'bg-purple-700 text-white' : 'bg-white text-purple-700 border border-purple-200'}`}>
                     {labelId.length > 14 ? `${labelId.slice(0, 12)}...` : labelId}
                   </span>
                 </button>
@@ -162,7 +162,7 @@ export default function ExtractionFields({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
         {/* ── Order Information ── */}
-        <Section icon={<ShoppingBag className="w-4 h-4" />} title="Order Specifications" color="text-indigo-400">
+        <Section icon={<ShoppingBag className="w-4 h-4" />} title="Order Specifications" color="text-purple-600">
           {renderField('order_id', order.order_id, 'Order ID')}
           {renderField('order_number', order.order_number, 'Order Number')}
           {renderField('order_date', order.order_date, 'Order Date')}
@@ -172,7 +172,7 @@ export default function ExtractionFields({
         </Section>
 
         {/* ── Shipping & Logistics ── */}
-        <Section icon={<Truck className="w-4 h-4" />} title="Shipping & Logistics" color="text-sky-400">
+        <Section icon={<Truck className="w-4 h-4" />} title="Shipping & Logistics" color="text-blue-600">
           {renderField('carrier', shipping.carrier, 'Courier / Carrier')}
           {renderField('awb', shipping.awb, 'AWB Number')}
           {renderField('tracking_number', shipping.tracking_number, 'Tracking Number')}
@@ -186,7 +186,7 @@ export default function ExtractionFields({
         </Section>
 
         {/* ── Customer / Recipient (full width) ── */}
-        <Section icon={<UserCheck className="w-4 h-4" />} title="Recipient / Customer Destination" color="text-emerald-400" wide>
+        <Section icon={<UserCheck className="w-4 h-4" />} title="Recipient / Customer Destination" color="text-emerald-600" wide>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div>
               {renderField('customer_name', customer.name, 'Recipient Name')}
@@ -215,10 +215,10 @@ export default function ExtractionFields({
         </Section>
 
         {/* ── Line Items Manifest Table (full width) ── */}
-        <div className="bg-slate-900/90 border border-slate-800/90 rounded-2xl p-5 shadow-lg md:col-span-2 space-y-3">
-          <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
-            <div className="flex items-center gap-2 font-extrabold text-slate-100 text-xs uppercase tracking-wider">
-              <span className="p-1.5 rounded-lg bg-slate-950 border border-slate-800 text-purple-400">
+        <div className="ui-card border border-purple-100 rounded-3xl p-5 shadow-lg md:col-span-2 space-y-3">
+          <div className="flex items-center justify-between border-b border-purple-100/80 pb-3">
+            <div className="flex items-center gap-2 font-extrabold text-slate-900 text-xs uppercase tracking-wider">
+              <span className="p-1.5 rounded-xl bg-purple-50 border border-purple-100 text-purple-600">
                 <PackageCheck className="w-4 h-4" />
               </span>
               Product Line Items Manifest ({items.length})
@@ -226,12 +226,12 @@ export default function ExtractionFields({
           </div>
 
           {items.length === 0 ? (
-            <p className="text-xs text-slate-500 font-mono italic py-4 text-center">No product line items extracted.</p>
+            <p className="text-xs text-slate-400 font-mono italic py-4 text-center">No product line items extracted.</p>
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/60">
+            <div className="overflow-x-auto rounded-2xl border border-purple-100 bg-white">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-800 text-slate-400 uppercase tracking-wider font-extrabold text-[10px]">
+                  <tr className="bg-purple-50/50 border-b border-purple-100 text-slate-500 uppercase tracking-wider font-extrabold text-[10px]">
                     <th className="py-2.5 px-3">SKU ID</th>
                     <th className="py-2.5 px-3">Product Name</th>
                     <th className="py-2.5 px-3">Description</th>
@@ -240,15 +240,15 @@ export default function ExtractionFields({
                     <th className="py-2.5 px-3 text-right">Total Price</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60 font-mono">
+                <tbody className="divide-y divide-slate-100 font-mono">
                   {items.map((item, idx) => (
-                    <tr key={idx} className="hover:bg-slate-800/40 transition-colors">
-                      <td className="py-3 px-3 font-bold text-indigo-300">{item.sku_id || 'N/A'}</td>
-                      <td className="py-3 px-3 text-slate-100 font-semibold">{item.product_name || 'N/A'}</td>
-                      <td className="py-3 px-3 text-slate-400 max-w-xs truncate">{item.description || '-'}</td>
-                      <td className="py-3 px-3 text-center font-bold text-emerald-400">{item.quantity !== null ? item.quantity : 1}</td>
-                      <td className="py-3 px-3 text-right text-slate-200">{item.price !== null && item.price !== undefined ? `₹${item.price}` : '-'}</td>
-                      <td className="py-3 px-3 text-right text-slate-100 font-bold">{item.total !== null && item.total !== undefined ? `₹${item.total}` : '-'}</td>
+                    <tr key={idx} className="hover:bg-purple-50/30 transition-colors">
+                      <td className="py-3 px-3 font-bold text-purple-700">{item.sku_id || 'N/A'}</td>
+                      <td className="py-3 px-3 text-slate-800 font-semibold">{item.product_name || 'N/A'}</td>
+                      <td className="py-3 px-3 text-slate-500 max-w-xs truncate">{item.description || '-'}</td>
+                      <td className="py-3 px-3 text-center font-bold text-emerald-700">{item.quantity !== null ? item.quantity : 1}</td>
+                      <td className="py-3 px-3 text-right text-slate-700">{item.price !== null && item.price !== undefined ? `₹${item.price}` : '-'}</td>
+                      <td className="py-3 px-3 text-right text-slate-900 font-bold">{item.total !== null && item.total !== undefined ? `₹${item.total}` : '-'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -258,7 +258,7 @@ export default function ExtractionFields({
         </div>
 
         {/* ── Seller / Merchant ── */}
-        <Section icon={<Store className="w-4 h-4" />} title="Merchant & Supplier Details" color="text-amber-400">
+        <Section icon={<Store className="w-4 h-4" />} title="Merchant & Supplier Details" color="text-amber-600">
           {renderField('seller_name', seller.name, 'Merchant Name')}
           {renderField('gstin', seller.gstin, 'GSTIN Number')}
           {seller.pan && renderField('seller_pan', seller.pan, 'PAN Number')}
@@ -275,7 +275,7 @@ export default function ExtractionFields({
         </Section>
 
         {/* ── Financial & Amounts ── */}
-        <Section icon={<DollarSign className="w-4 h-4" />} title="Financial Breakdown" color="text-rose-400">
+        <Section icon={<DollarSign className="w-4 h-4" />} title="Financial Breakdown" color="text-rose-600">
           {renderField('invoice_number', fin.invoice_number, 'Invoice Number')}
           {fin.invoice_date && renderField('invoice_date', fin.invoice_date, 'Invoice Date')}
           {fin.subtotal !== null && fin.subtotal !== undefined && renderField('subtotal', `₹${fin.subtotal}`, 'Subtotal')}
@@ -288,7 +288,7 @@ export default function ExtractionFields({
         </Section>
 
         {/* ── Package Info ── */}
-        <Section icon={<Package className="w-4 h-4" />} title="Package Physical Attributes" color="text-teal-400">
+        <Section icon={<Package className="w-4 h-4" />} title="Package Physical Attributes" color="text-violet-600">
           {renderField('weight', pkgData.weight, 'Package Weight')}
           {renderField('dimensions', pkgData.dimensions, 'Dimensions')}
           {renderField('package_number', pkgData.package_number, 'Package Number')}
@@ -300,13 +300,13 @@ export default function ExtractionFields({
           {pkgData.fragile !== null && pkgData.fragile !== undefined && renderField('fragile', pkgData.fragile ? 'Yes' : 'No', 'Fragile Flag')}
           
           {Array.isArray(pkgData.barcode_values) && pkgData.barcode_values.length > 0 && (
-            <div className="mt-3 pt-3 border-t border-slate-800/80">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">
-                <Barcode className="w-3.5 h-3.5 inline mr-1 text-teal-400" /> Barcode & Scanned Identifiers
+            <div className="mt-3 pt-3 border-t border-purple-100">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-2">
+                <Barcode className="w-3.5 h-3.5 inline mr-1 text-violet-600" /> Barcode & Scanned Identifiers
               </span>
               <div className="flex flex-wrap gap-1.5">
                 {pkgData.barcode_values.map((val, idx) => (
-                  <span key={idx} className="font-mono text-xs bg-slate-950 border border-slate-800 px-2.5 py-1 rounded-lg text-indigo-300 font-semibold">
+                  <span key={idx} className="font-mono text-xs bg-purple-50 border border-purple-200 px-2.5 py-1 rounded-lg text-purple-700 font-semibold">
                     {val}
                   </span>
                 ))}
@@ -317,12 +317,12 @@ export default function ExtractionFields({
 
         {/* ── Additional Fields ── */}
         {additional_fields && additional_fields.length > 0 && (
-          <Section icon={<Layers className="w-4 h-4" />} title={`Additional Custom Metadata (${additional_fields.length})`} color="text-teal-400" wide>
+          <Section icon={<Layers className="w-4 h-4" />} title={`Additional Custom Metadata (${additional_fields.length})`} color="text-teal-600" wide>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {additional_fields.map((field, idx) => (
-                <div key={idx} className="bg-slate-950 p-3.5 rounded-xl border border-slate-800">
-                  <span className="text-xs font-bold text-teal-400 block uppercase">{field.field_name}</span>
-                  <span className="font-mono text-xs text-slate-200 mt-1 block">{field.value}</span>
+                <div key={idx} className="bg-purple-50/50 p-3.5 rounded-2xl border border-purple-100">
+                  <span className="text-xs font-bold text-purple-700 block uppercase">{field.field_name}</span>
+                  <span className="font-mono text-xs text-slate-800 mt-1 block">{field.value}</span>
                 </div>
               ))}
             </div>

@@ -1,12 +1,20 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600;1,700&family=Playfair+Display:ital,wght@0,600;1,400;1,600;1,700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 @import "tailwindcss";
 
 @layer base {
   body {
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background-color: #080c14;
-    color: #f1f5f9;
+    /* Soft multi-pastel background gradient (lavender, sage, peach & soft ice blue blend) */
+    background: linear-gradient(135deg, #f3f0fd 0%, #f7f3fb 35%, #f0f7f4 70%, #f6f2f9 100%);
+    background-attachment: fixed;
+    color: #1e1b4b;
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
+  }
+
+  .font-serif-italic {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-style: italic;
   }
 
   code, pre, .font-mono {
@@ -14,82 +22,130 @@
   }
 }
 
-/* Custom scrollbars */
+/* Custom smooth scrollbars with light pastel touch */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(243, 240, 253, 0.8);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(51, 65, 85, 0.7);
+  background: rgba(216, 207, 244, 0.8);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(99, 102, 241, 0.8);
+  background: rgba(197, 185, 238, 0.95);
 }
 
-/* Glassmorphism & Card utilities */
-.glass-panel {
-  background: rgba(15, 23, 42, 0.75);
+/* Floating Glassmorphic Light Pastel Navbar */
+.floating-navbar {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(226, 218, 248, 0.9);
+  box-shadow: 0 10px 25px -5px rgba(168, 145, 225, 0.1), 0 4px 10px -2px rgba(147, 112, 219, 0.04);
+}
+
+/* Executive Professional Light Pastel Card Utilities */
+.ui-card {
+  background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(230, 222, 250, 0.9);
+  box-shadow: 0 10px 30px -8px rgba(147, 112, 219, 0.07), 0 4px 12px -2px rgba(120, 100, 200, 0.03);
+  border-radius: 1.5rem;
 }
 
-.glass-card {
-  background: rgba(30, 41, 59, 0.45);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-}
-
-.glass-card-hover {
+.ui-card-hover {
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.glass-card-hover:hover {
-  background: rgba(30, 41, 59, 0.7);
-  border-color: rgba(99, 102, 241, 0.3);
+.ui-card-hover:hover {
+  border-color: rgba(200, 185, 245, 0.95);
+  background: rgba(255, 255, 255, 0.95);
   transform: translateY(-2px);
-  box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.5), 0 0 20px -5px rgba(99, 102, 241, 0.15);
+  box-shadow: 0 16px 36px -10px rgba(147, 112, 219, 0.12);
+}
+
+/* Soft Executive Hero Banner Gradient (Light Pastel Container) */
+.pastel-light-hero {
+  background: linear-gradient(135deg, #f5effe 0%, #faf6ff 50%, #f0f4fe 100%);
+  border: 1px solid rgba(225, 215, 250, 0.9);
+}
+
+/* Page Ambient Light Pastel Wrapper */
+.page-pastel-bg {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(230, 222, 250, 0.8);
+  border-radius: 2rem;
+  box-shadow: 0 20px 40px -15px rgba(147, 112, 219, 0.08);
+}
+
+/* Light Pastel Button Utilities - Strict 100% Light Pastel Color System */
+.pill-button-dark {
+  background: linear-gradient(135deg, #f2e9fe 0%, #e9ddff 100%);
+  color: #4c1d95;
+  border: 1px solid #ddd0fc;
+  border-radius: 9999px;
+  font-weight: 700;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px -2px rgba(139, 92, 246, 0.15);
+}
+
+.pill-button-dark:hover {
+  background: linear-gradient(135deg, #e9ddff 0%, #dfcefd 100%);
+  color: #3b0764;
+  border-color: #cebbfb;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px -4px rgba(139, 92, 246, 0.25);
+}
+
+.pill-button-pastel {
+  background: linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%);
+  color: #3730a3;
+  border: 1px solid #c7d2fe;
+  border-radius: 9999px;
+  font-weight: 700;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px -2px rgba(99, 102, 241, 0.15);
+}
+
+.pill-button-pastel:hover {
+  background: linear-gradient(135deg, #c7d2fe 0%, #c4b5fd 100%);
+  color: #312e81;
+  border-color: #a5b4fc;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px -4px rgba(99, 102, 241, 0.25);
+}
+
+.pill-button-light-pastel {
+  background: #f5f0fe;
+  color: #5b21b6;
+  border: 1px solid #e4d8fd;
+  border-radius: 9999px;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.pill-button-light-pastel:hover {
+  background: #ebe0fc;
+  color: #4c1d95;
+  border-color: #d8c5fc;
+  transform: translateY(-1px);
 }
 
 /* Glowing accent effects */
-.glow-indigo {
-  box-shadow: 0 0 25px -5px rgba(99, 102, 241, 0.35);
+.glow-pastel {
+  box-shadow: 0 0 25px -5px rgba(168, 145, 225, 0.25);
 }
 
-.glow-emerald {
-  box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.35);
-}
 
-/* Custom keyframes */
-@keyframes pulseGlow {
-  0%, 100% {
-    box-shadow: 0 0 15px rgba(99, 102, 241, 0.25);
-  }
-  50% {
-    box-shadow: 0 0 35px rgba(99, 102, 241, 0.55);
-  }
-}
 
-.animate-glow {
-  animation: pulseGlow 3s infinite ease-in-out;
-}
 
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-
-.animate-shimmer {
-  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0) 100%);
-  background-size: 200% 100%;
-  animation: shimmer 2.5s infinite;
-}
 

@@ -39,38 +39,39 @@ export function getStatusBadgeConfig(status) {
     case 'COMPLETED':
       return {
         label: 'Completed',
-        bgClass: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
-        dotClass: 'bg-emerald-400'
+        bgClass: 'bg-emerald-100/90 text-emerald-800 border-emerald-200 shadow-sm',
+        dotClass: 'bg-emerald-500'
       };
     case 'NEEDS_REVIEW':
       return {
         label: 'Needs Review',
-        bgClass: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
-        dotClass: 'bg-amber-400'
+        bgClass: 'bg-amber-100/90 text-amber-800 border-amber-200 shadow-sm',
+        dotClass: 'bg-amber-500'
       };
     case 'FAILED':
       return {
         label: 'Failed',
-        bgClass: 'bg-rose-500/10 text-rose-400 border-rose-500/30',
-        dotClass: 'bg-rose-400'
+        bgClass: 'bg-rose-100/90 text-rose-800 border-rose-200 shadow-sm',
+        dotClass: 'bg-rose-500'
       };
     case 'ANALYZING':
       return {
         label: 'Analyzing...',
-        bgClass: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30 animate-pulse',
-        dotClass: 'bg-indigo-400 animate-ping'
+        bgClass: 'bg-purple-100/90 text-purple-800 border-purple-200 shadow-sm animate-pulse',
+        dotClass: 'bg-purple-500 animate-ping'
       };
     case 'UPLOADING':
       return {
         label: 'Uploading...',
-        bgClass: 'bg-sky-500/10 text-sky-400 border-sky-500/30',
-        dotClass: 'bg-sky-400'
+        bgClass: 'bg-sky-100/90 text-sky-800 border-sky-200 shadow-sm',
+        dotClass: 'bg-sky-500'
       };
     default:
       return {
         label: status || 'Unknown',
-        bgClass: 'bg-slate-700/30 text-slate-400 border-slate-700',
+        bgClass: 'bg-slate-100 text-slate-700 border-slate-200',
         dotClass: 'bg-slate-400'
       };
   }
 }
+

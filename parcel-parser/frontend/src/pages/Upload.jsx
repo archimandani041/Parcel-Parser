@@ -117,14 +117,14 @@ export default function Upload() {
     const currentIndex = order.indexOf(currentStep);
     const stepIndex = order.indexOf(stepId);
 
-    if (currentStep === 'FAILED') return 'text-slate-600 border-slate-800 bg-slate-950/40';
+    if (currentStep === 'FAILED') return 'text-slate-400 border-slate-200 bg-slate-100';
     if (currentIndex > stepIndex || currentStep === 'COMPLETED') {
-      return 'text-emerald-400 border-emerald-500/40 bg-emerald-500/10 font-bold';
+      return 'text-emerald-800 border-emerald-300 bg-emerald-100/90 font-bold';
     }
     if (currentIndex === stepIndex) {
-      return 'text-indigo-300 border-indigo-500 bg-indigo-500/20 font-bold ring-1 ring-indigo-500/40 animate-pulse';
+      return 'text-purple-900 border-purple-300 bg-purple-100 font-bold ring-2 ring-purple-300/60 animate-pulse';
     }
-    return 'text-slate-500 border-slate-800/80 bg-slate-950/60';
+    return 'text-slate-400 border-purple-100 bg-purple-50/30';
   };
 
   return (
@@ -133,23 +133,25 @@ export default function Upload() {
         
         {/* Header Intro */}
         <div className="text-center space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-500/15 border border-indigo-500/30 rounded-full text-xs font-semibold text-indigo-300 shadow-sm">
-            <Sparkles className="w-3.5 h-3.5 text-indigo-400 fill-indigo-400" /> Automated Multimodal AI Parser
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 bg-purple-100 border border-purple-200 rounded-full text-xs font-bold text-purple-800 shadow-xs">
+            <Sparkles className="w-3.5 h-3.5 text-purple-600 fill-purple-600" /> Automated Multimodal AI Parser
           </div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">Upload Parcel Label Document</h1>
-          <p className="text-slate-400 text-sm max-w-xl mx-auto leading-relaxed">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+            Upload parcel label <span className="font-serif-italic font-normal text-purple-600">document</span>
+          </h1>
+          <p className="text-slate-500 text-xs sm:text-sm max-w-xl mx-auto leading-relaxed font-medium">
             Drop shipping waybills, courier bills, or invoices in image or multi-page PDF format. Our Gemini vision engine parses courier data without fixed templates.
           </p>
         </div>
 
         {/* Error Alert */}
         {errorMessage && (
-          <div className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4 text-xs text-rose-300 flex items-center justify-between shadow-lg">
+          <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 text-xs text-rose-800 flex items-center justify-between shadow-md">
             <div className="flex items-center gap-3">
-              <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
-              <span className="font-medium">{errorMessage}</span>
+              <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
+              <span className="font-semibold">{errorMessage}</span>
             </div>
-            <button onClick={() => setErrorMessage(null)} className="text-rose-400 hover:text-white p-1 rounded-lg">
+            <button onClick={() => setErrorMessage(null)} className="text-rose-500 hover:text-rose-800 p-1 rounded-lg">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -160,9 +162,9 @@ export default function Upload() {
           onDragOver={(e) => e.preventDefault()}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
-          className="border-2 border-dashed border-indigo-500/30 hover:border-indigo-500/70 bg-slate-900/60 hover:bg-slate-900/90 rounded-3xl p-12 text-center cursor-pointer transition-all duration-300 shadow-2xl group relative overflow-hidden"
+          className="ui-card border-2 border-dashed border-purple-200 hover:border-purple-400 bg-white hover:bg-purple-50/40 rounded-3xl p-10 sm:p-14 text-center cursor-pointer transition-all duration-300 shadow-xl shadow-purple-900/5 group relative overflow-hidden"
         >
-          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none group-hover:bg-indigo-500/20 transition-all" />
+          <div className="absolute top-0 right-0 w-64 h-64 bg-purple-200/30 rounded-full blur-3xl pointer-events-none group-hover:bg-purple-300/40 transition-all" />
 
           <input
             type="file"
@@ -173,39 +175,39 @@ export default function Upload() {
             className="hidden"
           />
 
-          <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-indigo-500/20 to-violet-600/20 border border-indigo-500/30 flex items-center justify-center mx-auto mb-5 text-indigo-400 group-hover:scale-110 transition-transform shadow-xl shadow-indigo-500/10">
+          <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-purple-400 via-violet-500 to-indigo-500 flex items-center justify-center mx-auto mb-5 text-white group-hover:scale-110 transition-transform shadow-lg shadow-purple-300/40">
             <UploadCloud className="w-10 h-10" />
           </div>
 
-          <h3 className="text-lg font-bold text-white mb-1.5">
+          <h3 className="text-xl font-extrabold text-slate-900 mb-2">
             Drop your parcel label or click to browse
           </h3>
-          <p className="text-xs text-slate-400 mb-5 max-w-sm mx-auto">
+          <p className="text-xs text-slate-500 mb-6 max-w-md mx-auto font-medium">
             Supports shipping labels, invoices, air waybills, delivery receipts & multi-page PDF documents
           </p>
 
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-950/90 border border-slate-800 rounded-full text-xs text-slate-400 font-mono shadow-inner">
-            <FileCheck2 className="w-3.5 h-3.5 text-indigo-400" />
-            JPG • PNG • WEBP • TIFF • <span className="text-rose-400 font-bold">PDF</span>
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-50 border border-purple-200/80 rounded-full text-xs text-purple-700 font-mono shadow-inner font-semibold">
+            <FileCheck2 className="w-3.5 h-3.5 text-purple-600" />
+            JPG • PNG • WEBP • TIFF • <span className="text-rose-600 font-bold">PDF</span>
           </div>
         </div>
 
         {/* Selected Files Preview List */}
         {selectedFiles.length > 0 && (
-          <div className="bg-slate-900/90 border border-slate-800/90 rounded-3xl p-6 shadow-2xl space-y-5">
+          <div className="ui-card p-6 sm:p-8 space-y-6 shadow-xl">
             
-            <div className="flex items-center justify-between border-b border-slate-800/80 pb-4">
+            <div className="flex items-center justify-between border-b border-purple-100 pb-4">
               <div>
-                <h4 className="text-sm font-extrabold text-white flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-indigo-400" /> Selected Documents ({selectedFiles.length})
+                <h4 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-purple-600" /> Selected Documents ({selectedFiles.length})
                 </h4>
-                <p className="text-xs text-slate-400">Ready for AI multimodal extraction</p>
+                <p className="text-xs text-slate-500 font-medium">Ready for AI multimodal extraction</p>
               </div>
 
               {processingState === 'IDLE' && (
                 <button
                   onClick={() => setSelectedFiles([])}
-                  className="text-xs text-slate-400 hover:text-rose-400 flex items-center gap-1 transition-colors px-2.5 py-1 rounded-lg hover:bg-slate-800/60"
+                  className="text-xs font-bold text-slate-500 hover:text-rose-600 flex items-center gap-1 transition-colors px-3 py-1.5 rounded-full hover:bg-rose-50 border border-transparent hover:border-rose-200"
                 >
                   <Trash2 className="w-3.5 h-3.5" /> Clear All
                 </button>
@@ -218,22 +220,22 @@ export default function Upload() {
                 const ext = file.name.split('.').pop()?.toUpperCase() || 'FILE';
                 const isPdf = file._isPdf || file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
                 return (
-                  <div key={idx} className="flex items-center justify-between bg-slate-950/80 border border-slate-800/90 p-4 rounded-2xl shadow-inner hover:border-slate-700 transition-all">
+                  <div key={idx} className="flex items-center justify-between bg-purple-50/40 border border-purple-200/80 p-4 rounded-2xl hover:bg-purple-100/50 transition-all">
                     <div className="flex items-center gap-3.5 truncate pr-4">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-extrabold text-xs uppercase shrink-0 font-mono border ${
+                      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-extrabold text-xs uppercase shrink-0 font-mono border ${
                         isPdf
-                          ? 'bg-rose-500/15 border-rose-500/30 text-rose-400'
-                          : 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400'
+                          ? 'bg-rose-100 border-rose-200 text-rose-700'
+                          : 'bg-purple-100 border-purple-200 text-purple-700'
                       }`}>
                         {ext}
                       </div>
                       <div className="truncate">
-                        <p className="text-xs font-bold text-slate-200 truncate">{file.name}</p>
+                        <p className="text-xs font-extrabold text-slate-800 truncate">{file.name}</p>
                         <div className="flex items-center gap-2 mt-0.5">
-                          <p className="text-[10px] text-slate-500 font-mono">{formatBytes(file.size)}</p>
+                          <p className="text-[10px] text-slate-500 font-mono font-medium">{formatBytes(file.size)}</p>
                           {isPdf && (
-                            <span className="text-[9px] font-bold text-rose-400 bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded-full uppercase tracking-wider">
-                              PDF · AI Text+Vision Extraction
+                            <span className="text-[9px] font-bold text-rose-700 bg-rose-100 border border-rose-200 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                              PDF · Text+Vision Extraction
                             </span>
                           )}
                         </div>
@@ -246,7 +248,7 @@ export default function Upload() {
                           e.stopPropagation();
                           removeFile(idx);
                         }}
-                        className="text-slate-500 hover:text-rose-400 p-2 rounded-xl hover:bg-slate-800 transition-colors"
+                        className="text-slate-400 hover:text-rose-600 p-2 rounded-full hover:bg-purple-100 transition-colors"
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -258,22 +260,22 @@ export default function Upload() {
 
             {/* Processing Progress Stepper */}
             {processingState !== 'IDLE' && (
-              <div className="pt-5 border-t border-slate-800/80 space-y-4">
-                <div className="flex items-center justify-between text-xs font-bold">
-                  <span className="text-indigo-300 flex items-center gap-2">
+              <div className="pt-5 border-t border-purple-100 space-y-4">
+                <div className="flex items-center justify-between text-xs font-extrabold">
+                  <span className="text-purple-800 flex items-center gap-2">
                     {processingState === 'COMPLETED' ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                     ) : (
-                      <Loader2 className="w-4 h-4 animate-spin text-indigo-400" />
+                      <Loader2 className="w-4 h-4 animate-spin text-purple-600" />
                     )}
-                    Pipeline State: <span className="text-white uppercase font-mono">{processingState}</span>
+                    Pipeline State: <span className="text-slate-900 uppercase font-mono">{processingState}</span>
                   </span>
-                  <span className="text-slate-400 font-mono">{uploadProgress}%</span>
+                  <span className="text-purple-700 font-mono font-extrabold">{uploadProgress}%</span>
                 </div>
 
-                <div className="w-full h-2.5 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+                <div className="w-full h-2.5 bg-purple-100 rounded-full overflow-hidden border border-purple-200">
                   <div
-                    className="h-full bg-gradient-to-r from-indigo-500 via-indigo-600 to-violet-500 transition-all duration-300 shadow-md shadow-indigo-500/50"
+                    className="h-full bg-gradient-to-r from-purple-400 via-violet-500 to-indigo-500 transition-all duration-300 shadow-md"
                     style={{ width: `${uploadProgress}%` }}
                   />
                 </div>
@@ -302,16 +304,16 @@ export default function Upload() {
                       setProcessingState('IDLE');
                       setUploadProgress(0);
                     }}
-                    className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition-colors border border-slate-700"
+                    className="px-5 py-2.5 bg-purple-50 hover:bg-purple-100 text-purple-800 text-xs font-bold rounded-full transition-colors border border-purple-200"
                   >
                     Upload More Labels
                   </button>
                   {uploadedResults.length > 0 && (
                     <button
                       onClick={() => navigate(`/document/${uploadedResults[0].id}`)}
-                      className="flex items-center gap-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold rounded-xl transition-all shadow-lg shadow-emerald-600/30"
+                      className="flex items-center gap-2 px-6 py-2.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-950 text-xs font-extrabold rounded-full transition-all border border-emerald-300 shadow-xs cursor-pointer"
                     >
-                      Inspect Extracted Label <ArrowRight className="w-4 h-4" />
+                      Inspect Extracted Label <ArrowRight className="w-4 h-4 text-emerald-700" />
                     </button>
                   )}
                 </div>
@@ -320,9 +322,9 @@ export default function Upload() {
               {processingState === 'IDLE' && (
                 <button
                   onClick={handleStartUpload}
-                  className="flex items-center gap-2.5 px-7 py-3 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-extrabold text-xs rounded-xl shadow-xl shadow-indigo-600/30 transition-all duration-200 hover:scale-[1.02] border border-indigo-400/30"
+                  className="pill-button-pastel flex items-center gap-2.5 px-8 py-3.5 font-extrabold text-xs shadow-xl hover:scale-105"
                 >
-                  <Cpu className="w-4 h-4" />
+                  <Cpu className="w-4 h-4 text-purple-100" />
                   Run AI Extraction
                 </button>
               )}
