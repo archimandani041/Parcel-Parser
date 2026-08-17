@@ -18,6 +18,7 @@ export default function Sidebar({ healthInfo }) {
     { path: '/', label: 'Dashboard', icon: LayoutDashboard, badge: null },
     { path: '/upload', label: 'Upload Label', icon: UploadCloud, badge: 'AI' },
     { path: '/orders', label: 'Orders', icon: Package, badge: null },
+    { path: '/stock', label: 'Stock', icon: Boxes, badge: null },
     { path: '/documents', label: 'All Documents', icon: FileText, badge: null },
   ];
 

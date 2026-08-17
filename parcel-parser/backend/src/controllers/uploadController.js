@@ -24,8 +24,9 @@ export async function processUploads(req, res, next) {
       const fileName = file.originalname;
       const fileType = file.mimetype;
       const fileSize = file.size;
+      const isPdf = fileType === 'application/pdf' || fileName.toLowerCase().endsWith('.pdf');
 
-      console.log(`[Upload Controller] Processing uploaded file: ${fileName} (${fileType}, ${fileSize} bytes)`);
+      console.log(`[Upload Controller] Processing: ${fileName} (${fileType}, ${fileSize} bytes, PDF: ${isPdf})`);
 
       // 1. Upload file to Supabase Storage (or local storage fallback)
       const fileUrl = await dbService.uploadFile(file.buffer, fileName, fileType);

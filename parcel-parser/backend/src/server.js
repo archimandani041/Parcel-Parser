@@ -10,6 +10,7 @@ import uploadRoutes from './routes/uploadRoutes.js';
 import documentRoutes from './routes/documentRoutes.js';
 import exportRoutes from './routes/exportRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
+import stockRoutes from './routes/stockRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { dbService } from './services/storage/supabaseService.js';
 import { getGeminiModelName } from './services/gemini/geminiClient.js';
@@ -41,6 +42,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/export', exportRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/stock', stockRoutes);
 
 app.use(errorHandler);
 

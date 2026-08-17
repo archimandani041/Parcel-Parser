@@ -34,6 +34,7 @@ export default function DocumentDetail() {
   const [activeTab, setActiveTab] = useState('extracted'); // 'extracted' | 'json' | 'debug' | 'corrections'
   const [editingField, setEditingField] = useState(null);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [selectedLabelIdx, setSelectedLabelIdx] = useState(0);
 
   const fetchDetail = () => {
     setLoading(true);
@@ -147,6 +148,7 @@ export default function DocumentDetail() {
               fileUrl={documentData.file_url}
               fileName={documentData.file_name}
               fileType={documentData.file_type}
+              activePage={selectedLabelIdx + 1}
             />
           </div>
 
@@ -211,6 +213,8 @@ export default function DocumentDetail() {
                   structuredJson={documentData.structured_json}
                   warnings={documentData.error_message ? documentData.error_message.split('; ') : []}
                   onEditField={(name, val) => setEditingField({ name, val })}
+                  selectedLabelIdx={selectedLabelIdx}
+                  onSelectLabel={setSelectedLabelIdx}
                 />
               )}
 

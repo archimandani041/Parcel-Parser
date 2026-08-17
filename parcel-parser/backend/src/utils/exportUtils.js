@@ -5,41 +5,57 @@ import * as XLSX from 'xlsx';
  */
 
 export function formatDocumentsForExport(docsDetailList) {
-  return docsDetailList.map(doc => {
-    const sj = doc.structured_json || {};
-    const itemsStr = (sj.items || [])
-      .map(i => `${i.product_name || ''} (SKU: ${i.sku_id || 'N/A'}, Qty: ${i.quantity || 1})`)
-      .join('; ');
+  const rows = [];
 
-    return {
-      'Document ID': doc.id,
-      'File Name': doc.file_name,
-      'Status': doc.status,
-      'Overall Confidence': doc.overall_confidence ? `${(doc.overall_confidence * 100).toFixed(1)}%` : 'N/A',
-      'Processing Time (ms)': doc.processing_time || 0,
-      'Carrier': sj.shipping?.carrier || '',
-      'AWB Number': sj.shipping?.awb || '',
-      'Tracking Number': sj.shipping?.tracking_number || '',
-      'Order ID': sj.order?.order_id || '',
-      'Order Date': sj.order?.order_date || '',
-      'Payment Status': sj.order?.payment_status || '',
-      'Platform': sj.order?.platform || '',
-      'Customer Name': sj.customer?.name || '',
-      'Customer Address': sj.customer?.address || '',
-      'City': sj.customer?.city || '',
-      'State': sj.customer?.state || '',
-      'District': sj.customer?.district || '',
-      'Pincode': sj.customer?.pincode || '',
-      'Country': sj.customer?.country || '',
-      'Customer Phone': sj.customer?.phone || '',
-      'Items': itemsStr,
-      'Seller Name': sj.seller?.name || '',
-      'Seller Address': sj.seller?.address || '',
-      'Seller GSTIN': sj.seller?.gstin || '',
-      'Total Amount': sj.other?.total_amount !== undefined ? sj.other.total_amount : '',
-      'Created At': doc.created_at
-    };
+  docsDetailList.forEach(doc => {
+    const sj = doc.structured_json || {};
+    const labels = Array.isArray(sj.labels) && sj.labels.length > 0 ? sj.labels : [sj];
+
+    labels.forEach((lbl, idx) => {
+      const items = Array.isArray(lbl.items) ? lbl.items : (Array.isArray(sj.items) ? sj.items : []);
+      const itemsStr = items
+        .map(i => `${i.product_name || ''} (SKU: ${i.sku_id || 'N/A'}, Qty: ${i.quantity || 1})`)
+        .join('; ');
+
+      const order = lbl.order || sj.order || {};
+      const shipping = lbl.shipping || sj.shipping || {};
+      const customer = lbl.customer || sj.customer || {};
+      const seller = lbl.seller || sj.seller || {};
+      const financial = lbl.financial || sj.financial || sj.other || {};
+
+      rows.push({
+        'Document ID': doc.id,
+        'File Name': doc.file_name,
+        'Label Index': labels.length > 1 ? idx + 1 : 1,
+        'Status': doc.status,
+        'Overall Confidence': doc.overall_confidence ? `${(doc.overall_confidence * 100).toFixed(1)}%` : 'N/A',
+        'Processing Time (ms)': doc.processing_time || 0,
+        'Carrier': shipping.carrier || '',
+        'AWB Number': shipping.awb || '',
+        'Tracking Number': shipping.tracking_number || '',
+        'Order ID': order.order_id || '',
+        'Order Date': order.order_date || '',
+        'Payment Status': order.payment_status || '',
+        'Platform': order.platform || '',
+        'Customer Name': customer.name || '',
+        'Customer Address': customer.address || '',
+        'City': customer.city || '',
+        'State': customer.state || '',
+        'District': customer.district || '',
+        'Pincode': customer.pincode || '',
+        'Country': customer.country || '',
+        'Customer Phone': customer.phone || '',
+        'Items': itemsStr,
+        'Seller Name': seller.name || '',
+        'Seller Address': seller.address || '',
+        'Seller GSTIN': seller.gstin || '',
+        'Total Amount': financial.total_amount !== undefined ? financial.total_amount : '',
+        'Created At': doc.created_at
+      });
+    });
   });
+
+  return rows;
 }
 
 export function generateCsvBuffer(flattenedData) {

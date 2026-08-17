@@ -196,8 +196,6 @@ export default function Orders() {
                     <th className="py-3 px-4 text-[11px] font-extrabold text-slate-300 uppercase tracking-wider whitespace-nowrap border-r border-slate-800/60">Customer Name</th>
                     <th className="py-3 px-4 text-[11px] font-extrabold text-slate-300 uppercase tracking-wider whitespace-nowrap border-r border-slate-800/60">SKU ID</th>
                     <th className="py-3 px-4 text-[11px] font-extrabold text-slate-300 uppercase tracking-wider whitespace-nowrap border-r border-slate-800/60">Product Name</th>
-                    <th className="py-3 px-4 text-[11px] font-extrabold text-slate-300 uppercase tracking-wider whitespace-nowrap border-r border-slate-800/60 text-right">Purchase Price</th>
-                    <th className="py-3 px-4 text-[11px] font-extrabold text-slate-300 uppercase tracking-wider whitespace-nowrap border-r border-slate-800/60 text-right">Selling Price</th>
                     <th className="py-3 px-4 text-[11px] font-extrabold text-slate-300 uppercase tracking-wider whitespace-nowrap border-r border-slate-800/60 text-center">Quantity</th>
                     <th className="py-3 px-4 text-[11px] font-extrabold text-slate-300 uppercase tracking-wider whitespace-nowrap border-r border-slate-800/60 text-center">Return</th>
                     <th className="py-3 px-4 text-[11px] font-extrabold text-slate-300 uppercase tracking-wider whitespace-nowrap text-center">Action</th>
@@ -236,20 +234,6 @@ export default function Orders() {
                       <td className="py-3 px-4 border-r border-slate-800/40">
                         <span className="text-sm text-slate-200">
                           {rec.product_name || '-'}
-                        </span>
-                      </td>
-
-                      {/* Purchase Price */}
-                      <td className="py-3 px-4 border-r border-slate-800/40 text-right">
-                        <span className="font-mono text-sm text-slate-400">
-                          {rec.purchase_price != null ? `₹${Number(rec.purchase_price).toLocaleString('en-IN')}` : '-'}
-                        </span>
-                      </td>
-
-                      {/* Selling Price */}
-                      <td className="py-3 px-4 border-r border-slate-800/40 text-right">
-                        <span className="font-mono text-sm text-slate-200">
-                          {rec.selling_price != null ? `₹${Number(rec.selling_price).toLocaleString('en-IN')}` : '-'}
                         </span>
                       </td>
 

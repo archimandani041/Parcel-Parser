@@ -23,145 +23,174 @@ function getSupabaseClient() {
 }
 
 // ===== LOCAL FILE FALLBACK =====
-const ORDER_DB = path.join(process.cwd(), 'order_records.json');
+function getOrderDbPath() {
+  const rootDir = fs.existsSync(path.join(process.cwd(), '..', 'order_records.json'))
+    ? path.resolve(process.cwd(), '..')
+    : process.cwd();
+  return path.join(rootDir, 'order_records.json');
+}
 
 function loadDb() {
-  if (!fs.existsSync(ORDER_DB)) {
-    fs.writeFileSync(ORDER_DB, JSON.stringify([], null, 2));
+  const dbPath = getOrderDbPath();
+  if (!fs.existsSync(dbPath)) {
+    try { fs.writeFileSync(dbPath, JSON.stringify([], null, 2)); } catch {}
     return [];
   }
-  try { return JSON.parse(fs.readFileSync(ORDER_DB, 'utf-8')); }
+  try { return JSON.parse(fs.readFileSync(dbPath, 'utf-8')); }
   catch { return []; }
 }
 
 function saveDb(records) {
-  fs.writeFileSync(ORDER_DB, JSON.stringify(records, null, 2));
+  const dbPath = getOrderDbPath();
+  try { fs.writeFileSync(dbPath, JSON.stringify(records, null, 2)); } catch {}
 }
 
 // ===== SERVICE =====
 export const orderRecordService = {
 
   /** 
-   * Insert or Upsert an order record from Gemini extraction.
-   * Enforces UNIQUE order_id — the same order_id will NEVER appear more than once.
+   * Insert or Upsert order records from Gemini extraction.
+   * Supports single-label and multi-label/multi-page extractions (structuredJson.labels).
    */
   async createFromExtraction(structuredJson, documentId) {
-    const order = structuredJson.order || {};
-    const customer = structuredJson.customer || {};
-    const financial = structuredJson.financial || {};
-    const items = Array.isArray(structuredJson.items) ? structuredJson.items : [];
+    if (!structuredJson) return [];
 
-    // Derive order_id or fallback
-    let orderId = order.order_id || order.order_number || null;
-    if (!orderId) {
-      orderId = `ORD_${documentId ? documentId.slice(0, 8) : Date.now()}`;
+    // Check for multi-label extraction array or single object
+    let labelObjects = [];
+    if (Array.isArray(structuredJson.labels) && structuredJson.labels.length > 0) {
+      labelObjects = structuredJson.labels;
+    } else {
+      labelObjects = [structuredJson];
     }
 
-    const customerName = customer.name || null;
+    const savedRecords = [];
+    const isUUID = (str) => typeof str === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
 
-    // Aggregate multiple line items into single values for this unique order_id
-    const skuList = items.map(i => {
-      let s = i.sku_id ? String(i.sku_id).trim() : '';
-      if (s.includes('|')) s = s.split('|')[0].trim();
-      s = s.replace(/^\d+[\.\s]+/, '').trim();
-      const words = s.split(/\s+/);
-      if (words.length >= 2 && /^([A-Za-z0-9_-]+)$/.test(words[0])) return words[0];
-      return s;
-    }).filter(Boolean);
+    for (let index = 0; index < labelObjects.length; index++) {
+      const labelObj = labelObjects[index];
+      const order = labelObj.order || {};
+      const customer = labelObj.customer || (index === 0 ? structuredJson.customer : {}) || {};
+      const financial = labelObj.financial || (index === 0 ? structuredJson.financial : {}) || {};
+      const items = Array.isArray(labelObj.items) && labelObj.items.length > 0
+        ? labelObj.items
+        : (index === 0 && Array.isArray(structuredJson.items) ? structuredJson.items : []);
 
-    const productNameList = items.map(i => {
-      let p = i.product_name ? String(i.product_name).trim() : '';
-      if ((!p || p === i.sku_id) && i.sku_id) {
-        let s = String(i.sku_id).trim();
+      // Derive unique order_id per label (never fallback to top-level order_id on index > 0)
+      let orderId = order.order_id || order.order_number || null;
+      if (!orderId) {
+        if (index === 0 && structuredJson.order?.order_id) {
+          orderId = structuredJson.order.order_id;
+        } else {
+          orderId = `ORD_${documentId ? documentId.slice(0, 8) : Date.now()}_P${index + 1}`;
+        }
+      }
+
+      const customerName = customer.name || null;
+
+      // Aggregate SKUs and Product Names
+      const skuList = items.map(i => {
+        let s = i.sku_id ? String(i.sku_id).trim() : '';
         if (s.includes('|')) s = s.split('|')[0].trim();
         s = s.replace(/^\d+[\.\s]+/, '').trim();
         const words = s.split(/\s+/);
-        if (words.length >= 2 && /^([A-Za-z0-9_-]+)$/.test(words[0])) p = words.slice(1).join(' ');
-      }
-      if (p.includes('|')) p = p.split('|')[0].trim();
-      return p;
-    }).filter(Boolean);
+        if (words.length >= 2 && /^([A-Za-z0-9_-]+)$/.test(words[0])) return words[0];
+        return s;
+      }).filter(Boolean);
 
-    const skuIdStr = skuList.length > 0 ? skuList.join(' | ') : null;
-    const productNameStr = productNameList.length > 0 ? productNameList.join(' | ') : null;
-
-    // Total quantity calculation
-    let totalQty = 0;
-    items.forEach(i => {
-      const q = parseInt(i.quantity, 10);
-      totalQty += (!isNaN(q) && q > 0) ? q : 1;
-    });
-    if (totalQty === 0) totalQty = 1;
-
-    // Extract purchase & selling prices (do not invent prices if missing)
-    const purchasePrice = items.find(i => i.purchase_price != null)?.purchase_price ?? null;
-    const sellingPrice = items.find(i => i.selling_price != null)?.selling_price ?? items.find(i => i.price != null)?.price ?? financial.total_amount ?? null;
-
-    const isUUID = (str) => typeof str === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
-
-    const recordData = {
-      order_id: orderId,
-      customer_name: customerName,
-      sku_id: skuIdStr,
-      product_name: productNameStr,
-      purchase_price: purchasePrice != null ? parseFloat(purchasePrice) : null,
-      selling_price: sellingPrice != null ? parseFloat(sellingPrice) : null,
-      quantity: totalQty,
-      is_returned: false,
-      document_id: isUUID(documentId) ? documentId : null,
-      updated_at: new Date().toISOString()
-    };
-
-    const supabase = getSupabaseClient();
-    if (supabase) {
-      try {
-        console.log(`[OrderRecords] Upserting to Supabase for order_id: ${orderId}...`);
-        
-        // Upsert on unique column 'order_id'
-        const { data, error } = await supabase
-          .from('order_records')
-          .upsert(recordData, { onConflict: 'order_id' })
-          .select()
-          .single();
-
-        if (!error && data) {
-          console.log(`[OrderRecords] Successfully saved to Supabase: ${data.order_id}`);
-        } else if (error) {
-          console.error('[OrderRecords] Supabase upsert error:', error.message);
+      const productNameList = items.map(i => {
+        let p = i.product_name ? String(i.product_name).trim() : '';
+        if ((!p || p === i.sku_id) && i.sku_id) {
+          let s = String(i.sku_id).trim();
+          if (s.includes('|')) s = s.split('|')[0].trim();
+          s = s.replace(/^\d+[\.\s]+/, '').trim();
+          const words = s.split(/\s+/);
+          if (words.length >= 2 && /^([A-Za-z0-9_-]+)$/.test(words[0])) p = words.slice(1).join(' ');
         }
-      } catch (e) {
-        console.error('[OrderRecords] Supabase exception:', e.message);
+        if (p.includes('|')) p = p.split('|')[0].trim();
+        return p;
+      }).filter(Boolean);
+
+      const skuIdStr = skuList.length > 0 ? skuList.join(' | ') : null;
+      const productNameStr = productNameList.length > 0 ? productNameList.join(' | ') : null;
+
+      // Total quantity calculation
+      let totalQty = 0;
+      items.forEach(i => {
+        const q = parseInt(i.quantity, 10);
+        totalQty += (!isNaN(q) && q > 0) ? q : 1;
+      });
+      if (totalQty === 0) totalQty = 1;
+
+      // Prices — only set selling_price if explicitly specified on item
+      const purchasePrice = items.find(i => i.purchase_price != null)?.purchase_price ?? null;
+      const sellingPrice = items.find(i => i.selling_price != null)?.selling_price ?? items.find(i => i.price != null)?.price ?? null;
+
+      const recordData = {
+        order_id: orderId,
+        customer_name: customerName,
+        sku_id: skuIdStr,
+        product_name: productNameStr,
+        purchase_price: purchasePrice != null ? parseFloat(purchasePrice) : null,
+        selling_price: sellingPrice != null ? parseFloat(sellingPrice) : null,
+        quantity: totalQty,
+        is_returned: false,
+        document_id: isUUID(documentId) ? documentId : null,
+        updated_at: new Date().toISOString()
+      };
+
+      const supabase = getSupabaseClient();
+      if (supabase) {
+        try {
+          console.log(`[OrderRecords] Upserting to Supabase for order_id: ${orderId}...`);
+          const { data, error } = await supabase
+            .from('order_records')
+            .upsert(recordData, { onConflict: 'order_id' })
+            .select()
+            .single();
+
+          if (!error && data) {
+            console.log(`[OrderRecords] Saved to Supabase: ${data.order_id}`);
+          } else if (error) {
+            console.error('[OrderRecords] Supabase upsert error:', error.message);
+          }
+        } catch (e) {
+          console.error('[OrderRecords] Supabase exception:', e.message);
+        }
       }
+
+      // Always perform local fallback persistence
+      const db = loadDb();
+      const existingIndex = db.findIndex(r => r.order_id === orderId);
+
+      let savedRecord;
+      if (existingIndex >= 0) {
+        db[existingIndex] = {
+          ...db[existingIndex],
+          ...recordData,
+          is_returned: db[existingIndex].is_returned || false
+        };
+        savedRecord = db[existingIndex];
+      } else {
+        savedRecord = {
+          id: `or_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+          ...recordData,
+          created_at: new Date().toISOString()
+        };
+        db.unshift(savedRecord);
+      }
+      saveDb(db);
+      savedRecords.push(savedRecord);
     }
 
-    // Always perform local fallback persistence
-    const db = loadDb();
-    const existingIndex = db.findIndex(r => r.order_id === orderId);
-
-    let savedRecord;
-    if (existingIndex >= 0) {
-      db[existingIndex] = {
-        ...db[existingIndex],
-        ...recordData,
-        is_returned: db[existingIndex].is_returned || false
-      };
-      savedRecord = db[existingIndex];
-    } else {
-      savedRecord = {
-        id: `or_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
-        ...recordData,
-        created_at: new Date().toISOString()
-      };
-      db.unshift(savedRecord);
-    }
-    saveDb(db);
-    return savedRecord;
+    return savedRecords;
   },
 
   /** Get all order records (with optional search by order_id) */
   async getAll(search = null) {
     const supabase = getSupabaseClient();
-    let records = [];
+    let supabaseRecords = [];
+    const localDb = loadDb();
+
     if (supabase) {
       try {
         let query = supabase.from('order_records').select('*').order('created_at', { ascending: false });
@@ -169,23 +198,28 @@ export const orderRecordService = {
           query = query.ilike('order_id', `%${search.trim()}%`);
         }
         const { data, error } = await query;
-        if (!error && data && data.length > 0) {
-          records = data;
+        if (!error && data) {
+          supabaseRecords = data;
         }
       } catch (e) {
         console.error('[OrderRecords] Supabase getAll exception:', e.message);
       }
     }
 
-    if (records.length === 0) {
-      records = loadDb();
-      if (search && search.trim()) {
-        const q = search.trim().toLowerCase();
-        records = records.filter(r => r.order_id && r.order_id.toLowerCase().includes(q));
-      }
+    // Combine local DB and Supabase records by order_id
+    const map = new Map();
+    localDb.forEach(r => { if (r.order_id) map.set(r.order_id, r); });
+    supabaseRecords.forEach(r => { if (r.order_id) map.set(r.order_id, { ...map.get(r.order_id), ...r }); });
+
+    let combined = Array.from(map.values());
+    console.log(`[OrderRecords] getAll found ${combined.length} combined records (local: ${localDb.length}, supabase: ${supabaseRecords.length})`);
+
+    if (search && search.trim()) {
+      const q = search.trim().toLowerCase();
+      combined = combined.filter(r => r.order_id && r.order_id.toLowerCase().includes(q));
     }
 
-    return records;
+    return combined;
   },
 
   /** Mark a record as returned */

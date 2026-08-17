@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ZoomIn, ZoomOut, RotateCw, RefreshCw, ExternalLink, FileText } from 'lucide-react';
 
-export default function DocumentViewer({ fileUrl, fileName, fileType }) {
+export default function DocumentViewer({ fileUrl, fileName, fileType, activePage = 1 }) {
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
 
@@ -14,6 +14,7 @@ export default function DocumentViewer({ fileUrl, fileName, fileType }) {
   const handleRotate = () => setRotation(prev => (prev + 90) % 360);
 
   const isPdf = fileType?.toLowerCase().includes('pdf') || fileName?.toLowerCase().endsWith('.pdf');
+  const pdfUrlWithPage = (isPdf && fileUrl) ? `${fileUrl}#page=${activePage}` : fileUrl;
 
   return (
     <div className="flex flex-col h-full bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
@@ -22,6 +23,11 @@ export default function DocumentViewer({ fileUrl, fileName, fileType }) {
         <div className="flex items-center gap-2 text-xs font-semibold text-slate-300 truncate max-w-[200px]">
           <FileText className="w-4 h-4 text-indigo-400 shrink-0" />
           <span className="truncate">{fileName || 'Label Document'}</span>
+          {isPdf && activePage && (
+            <span className="text-[10px] bg-indigo-950 text-indigo-300 font-mono px-2 py-0.5 rounded-full border border-indigo-800/60 ml-1">
+              Page {activePage}
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-1.5 bg-slate-900 border border-slate-800 rounded-lg p-1">
@@ -59,7 +65,7 @@ export default function DocumentViewer({ fileUrl, fileName, fileType }) {
           </button>
           {fileUrl && (
             <a
-              href={fileUrl}
+              href={pdfUrlWithPage}
               target="_blank"
               rel="noreferrer"
               title="Open Original File"
@@ -75,8 +81,9 @@ export default function DocumentViewer({ fileUrl, fileName, fileType }) {
       <div className="flex-1 flex items-center justify-center p-6 bg-slate-950/40 overflow-auto relative min-h-[450px]">
         {isPdf ? (
           <iframe
-            src={fileUrl}
-            title="PDF Document Viewer"
+            key={pdfUrlWithPage}
+            src={pdfUrlWithPage}
+            title={`PDF Document Viewer - Page ${activePage}`}
             className="w-full h-full min-h-[500px] rounded-lg border border-slate-800"
           />
         ) : (

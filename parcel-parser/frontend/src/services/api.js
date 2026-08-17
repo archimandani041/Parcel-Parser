@@ -97,3 +97,59 @@ export const exportOrdersExcel = async () => {
   const response = await api.get('/orders/export-excel', { responseType: 'blob' });
   return response;
 };
+
+export const exportMasterExcel = async () => {
+  const response = await api.get('/orders/export-master', { responseType: 'blob' });
+  return response;
+};
+
+// ===== STOCK & RETURN API =====
+
+export const getStockOverview = async () => {
+  const response = await api.get('/stock');
+  return response.data;
+};
+
+export const exportStockExcel = async () => {
+  const response = await api.get('/stock/export-excel', { responseType: 'blob' });
+  return response;
+};
+
+export const updateStockProductPrice = async (skuId, purchasePrice, sellingPrice, productName) => {
+  const response = await api.put(`/stock/products/${encodeURIComponent(skuId)}`, {
+    sku_id: skuId,
+    purchase_price: purchasePrice,
+    selling_price: sellingPrice,
+    product_name: productName
+  });
+  return response.data;
+};
+
+export const getReturnsOverview = async () => {
+  const response = await api.get('/stock/returns');
+  return response.data;
+};
+
+export const exportReturnsExcel = async () => {
+  const response = await api.get('/stock/returns/export-excel', { responseType: 'blob' });
+  return response;
+};
+
+export const updateReturnDeliveryCharge = async (orderId, deliveryBoyCharge) => {
+  const response = await api.put(`/stock/returns/${encodeURIComponent(orderId)}`, {
+    order_id: orderId,
+    delivery_boy_charge: deliveryBoyCharge
+  });
+  return response.data;
+};
+
+export const deleteStockProduct = async (skuId) => {
+  const response = await api.delete(`/stock/products/${encodeURIComponent(skuId)}`);
+  return response.data;
+};
+
+export const deleteStockReturn = async (orderId) => {
+  const response = await api.delete(`/stock/returns/${encodeURIComponent(orderId)}`);
+  return response.data;
+};
+

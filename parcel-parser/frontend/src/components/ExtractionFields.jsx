@@ -15,7 +15,24 @@ import {
   MapPin
 } from 'lucide-react';
 
-export default function ExtractionFields({ structuredJson, warnings = [], onEditField }) {
+export default function ExtractionFields({
+  structuredJson,
+  warnings = [],
+  onEditField,
+  selectedLabelIdx: externalSelectedIdx = 0,
+  onSelectLabel
+}) {
+  const [internalSelectedIdx, setInternalSelectedIdx] = React.useState(0);
+  const selectedLabelIdx = onSelectLabel ? externalSelectedIdx : internalSelectedIdx;
+
+  const handleTabClick = (idx) => {
+    if (onSelectLabel) {
+      onSelectLabel(idx);
+    } else {
+      setInternalSelectedIdx(idx);
+    }
+  };
+
   if (!structuredJson) {
     return (
       <div className="p-12 text-center text-slate-500 font-mono text-xs">
@@ -23,6 +40,11 @@ export default function ExtractionFields({ structuredJson, warnings = [], onEdit
       </div>
     );
   }
+
+  const hasMultipleLabels = Array.isArray(structuredJson.labels) && structuredJson.labels.length > 1;
+  const currentData = (hasMultipleLabels && structuredJson.labels[selectedLabelIdx])
+    ? structuredJson.labels[selectedLabelIdx]
+    : structuredJson;
 
   const {
     order = {},
@@ -34,7 +56,7 @@ export default function ExtractionFields({ structuredJson, warnings = [], onEdit
     package: pkg = {},
     other = {},
     additional_fields = []
-  } = structuredJson;
+  } = currentData;
 
   const renderField = (fieldName, value, label) => {
     const isNull = value === null || value === undefined || value === '';
@@ -93,6 +115,45 @@ export default function ExtractionFields({ structuredJson, warnings = [], onEdit
                 <li key={idx}>{w}</li>
               ))}
             </ul>
+          </div>
+        </div>
+      )}
+
+      {/* Multi-Label Batch Selector Bar */}
+      {hasMultipleLabels && (
+        <div className="bg-slate-950 border border-slate-800/90 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
+          <div className="flex items-center gap-3 text-xs font-extrabold text-slate-100">
+            <span className="p-2 rounded-xl bg-indigo-950/90 border border-indigo-800/60 text-indigo-400">
+              <Layers className="w-4 h-4" />
+            </span>
+            <div>
+              <span className="text-white font-extrabold text-sm block">Multi-Label Document Batch ({structuredJson.labels.length} Extracted)</span>
+              <span className="text-[11px] text-slate-400 font-mono">Select a label below to view recipient, SKU, courier & financial details</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 overflow-x-auto max-w-full pb-1 sm:pb-0">
+            {structuredJson.labels.map((lbl, idx) => {
+              const labelId = lbl.order?.order_id || lbl.order?.order_number || `Label #${idx + 1}`;
+              const isSelected = selectedLabelIdx === idx;
+              return (
+                <button
+                  key={idx}
+                  onClick={() => handleTabClick(idx)}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-bold font-mono transition-all shrink-0 flex items-center gap-2 ${
+                    isSelected
+                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 border border-indigo-400/40'
+                      : 'bg-slate-900 text-slate-400 hover:text-slate-100 hover:bg-slate-800 border border-slate-800'
+                  }`}
+                >
+                  <span className={`w-2 h-2 rounded-full ${isSelected ? 'bg-emerald-400 animate-pulse' : 'bg-slate-600'}`} />
+                  <span>Label #{idx + 1}</span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-md ${isSelected ? 'bg-indigo-700/80 text-white' : 'bg-slate-950 text-slate-400'}`}>
+                    {labelId.length > 14 ? `${labelId.slice(0, 12)}...` : labelId}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}

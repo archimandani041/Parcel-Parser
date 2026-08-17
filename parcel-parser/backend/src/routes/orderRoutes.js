@@ -1,10 +1,13 @@
 import express from 'express';
-import { getOrderRecords, returnOrderRecord, deleteOrderRecord, exportOrdersExcel, syncOrdersToSupabase } from '../controllers/orderController.js';
+import { getOrderRecords, returnOrderRecord, deleteOrderRecord, exportOrdersExcel, exportMasterExcel, syncOrdersToSupabase } from '../controllers/orderController.js';
 
 const router = express.Router();
 
-// GET /api/orders/export-excel — Download XLSX
+// GET /api/orders/export-excel — Download Orders XLSX
 router.get('/export-excel', exportOrdersExcel);
+
+// GET /api/orders/export-master — Download All 3 (Orders, Stock, Returns) in 1 Master Excel
+router.get('/export-master', exportMasterExcel);
 
 // POST /api/orders/sync — Sync local orders to Supabase
 router.post('/sync', syncOrdersToSupabase);

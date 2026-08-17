@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
-import { getDocuments } from '../services/api';
+import { getDocuments, exportMasterExcel } from '../services/api';
 import { getStatusBadgeConfig, formatDate, formatConfidence } from '../utils/formatters';
 import { 
   FileText, 
@@ -17,7 +17,8 @@ import {
   Sparkles,
   TrendingUp,
   SlidersHorizontal,
-  PackageCheck
+  PackageCheck,
+  Download
 } from 'lucide-react';
 
 export default function Dashboard() {
@@ -31,6 +32,29 @@ export default function Dashboard() {
   const [recentDocs, setRecentDocs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [exportingMaster, setExportingMaster] = useState(false);
+
+  const handleExportMaster = async () => {
+    setExportingMaster(true);
+    try {
+      const response = await exportMasterExcel();
+      const blob = new Blob([response.data], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `master_report_orders_stock_returns_${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert('Master Export failed: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setExportingMaster(false);
+    }
+  };
 
   const loadDashboardData = () => {
     setLoading(true);
@@ -75,7 +99,18 @@ export default function Dashboard() {
               </p>
             </div>
 
-            <div className="flex items-center gap-4 shrink-0">
+            <div className="flex items-center gap-3 shrink-0 flex-wrap">
+              <button
+                id="export-master-excel-btn"
+                onClick={handleExportMaster}
+                disabled={exportingMaster}
+                className="flex items-center gap-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm px-5 py-3.5 rounded-2xl shadow-xl shadow-emerald-600/30 transition-all duration-200 hover:scale-[1.02] border border-emerald-400/30 disabled:opacity-50 cursor-pointer"
+                title="Download single master Excel containing 3 sheets: Orders, Stock, and Returns"
+              >
+                <Download className={`w-5 h-5 ${exportingMaster ? 'animate-bounce' : ''}`} />
+                {exportingMaster ? 'Generating...' : 'Download All 3 Excels'}
+              </button>
+
               <Link
                 to="/upload"
                 className="flex items-center gap-2.5 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-bold text-sm px-6 py-3.5 rounded-2xl shadow-xl shadow-indigo-600/30 transition-all duration-200 hover:scale-[1.02] border border-indigo-400/30"

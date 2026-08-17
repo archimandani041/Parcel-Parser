@@ -5,6 +5,7 @@ import Upload from './pages/Upload';
 import DocumentsList from './pages/DocumentsList';
 import DocumentDetail from './pages/DocumentDetail';
 import Orders from './pages/Orders';
+import Stock from './pages/Stock';
 
 export default function App() {
   return (
@@ -13,9 +14,11 @@ export default function App() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/upload" element={<Upload />} />
         <Route path="/orders" element={<Orders />} />
+        <Route path="/stock" element={<Stock />} />
         <Route path="/documents" element={<DocumentsList />} />
         <Route path="/document/:id" element={<DocumentDetail />} />
       </Routes>
     </Router>
   );
 }
+

@@ -39,7 +39,12 @@ export default function Upload() {
       setErrorMessage(null);
     }
 
-    setSelectedFiles(prev => [...prev, ...validFiles]);
+    // Annotate each file with isPdf flag
+    const annotated = validFiles.map(f => Object.assign(f, {
+      _isPdf: f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf')
+    }));
+
+    setSelectedFiles(prev => [...prev, ...annotated]);
   };
 
   const handleDrop = (e) => {
@@ -176,12 +181,12 @@ export default function Upload() {
             Drop your parcel label or click to browse
           </h3>
           <p className="text-xs text-slate-400 mb-5 max-w-sm mx-auto">
-            Supports standard shipping labels, invoices, air waybills & delivery receipts
+            Supports shipping labels, invoices, air waybills, delivery receipts & multi-page PDF documents
           </p>
 
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-950/90 border border-slate-800 rounded-full text-xs text-slate-400 font-mono shadow-inner">
             <FileCheck2 className="w-3.5 h-3.5 text-indigo-400" />
-            JPG • PNG • WEBP • TIFF • PDF
+            JPG • PNG • WEBP • TIFF • <span className="text-rose-400 font-bold">PDF</span>
           </div>
         </div>
 
@@ -211,15 +216,27 @@ export default function Upload() {
             <div className="space-y-3">
               {selectedFiles.map((file, idx) => {
                 const ext = file.name.split('.').pop()?.toUpperCase() || 'FILE';
+                const isPdf = file._isPdf || file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
                 return (
                   <div key={idx} className="flex items-center justify-between bg-slate-950/80 border border-slate-800/90 p-4 rounded-2xl shadow-inner hover:border-slate-700 transition-all">
                     <div className="flex items-center gap-3.5 truncate pr-4">
-                      <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 font-extrabold text-xs uppercase shrink-0 font-mono">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-extrabold text-xs uppercase shrink-0 font-mono border ${
+                        isPdf
+                          ? 'bg-rose-500/15 border-rose-500/30 text-rose-400'
+                          : 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400'
+                      }`}>
                         {ext}
                       </div>
                       <div className="truncate">
                         <p className="text-xs font-bold text-slate-200 truncate">{file.name}</p>
-                        <p className="text-[10px] text-slate-500 font-mono mt-0.5">{formatBytes(file.size)}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <p className="text-[10px] text-slate-500 font-mono">{formatBytes(file.size)}</p>
+                          {isPdf && (
+                            <span className="text-[9px] font-bold text-rose-400 bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+                              PDF · AI Text+Vision Extraction
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
 

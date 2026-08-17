@@ -79,6 +79,31 @@ CREATE TABLE IF NOT EXISTS public.order_records (
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 7. Stock Products Table
+CREATE TABLE IF NOT EXISTS public.stock_products (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    sku_id TEXT UNIQUE NOT NULL,
+    product_name TEXT,
+    purchase_price NUMERIC(12,2),
+    selling_price NUMERIC(12,2),
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 8. Stock Returns Table
+CREATE TABLE IF NOT EXISTS public.stock_returns (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    order_id TEXT UNIQUE NOT NULL,
+    order_item_id TEXT,
+    sku_id TEXT,
+    quantity INTEGER DEFAULT 1,
+    delivery_boy_charge NUMERIC(12,2) DEFAULT 0,
+    return_reason TEXT,
+    returned_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
 -- DISABLE ROW LEVEL SECURITY (RLS) across all tables to allow full API access
 ALTER TABLE public.documents DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.extraction_results DISABLE ROW LEVEL SECURITY;
@@ -86,6 +111,8 @@ ALTER TABLE public.extracted_items DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.extracted_fields DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.corrections DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.order_records DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.stock_products DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.stock_returns DISABLE ROW LEVEL SECURITY;
 
 -- INDEXES
 CREATE INDEX IF NOT EXISTS idx_documents_status ON public.documents(status);
@@ -95,8 +122,11 @@ CREATE INDEX IF NOT EXISTS idx_extracted_items_doc ON public.extracted_items(doc
 CREATE INDEX IF NOT EXISTS idx_extracted_fields_doc ON public.extracted_fields(document_id);
 CREATE INDEX IF NOT EXISTS idx_corrections_doc ON public.corrections(document_id);
 CREATE INDEX IF NOT EXISTS idx_order_records_order_id ON public.order_records(order_id);
+CREATE INDEX IF NOT EXISTS idx_stock_products_sku_id ON public.stock_products(sku_id);
+CREATE INDEX IF NOT EXISTS idx_stock_returns_order_id ON public.stock_returns(order_id);
 
 -- Storage Bucket Setup
 INSERT INTO storage.buckets (id, name, public) 
 VALUES ('parcel-labels', 'parcel-labels', true)
 ON CONFLICT (id) DO NOTHING;
+
