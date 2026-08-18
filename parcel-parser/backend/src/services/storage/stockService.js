@@ -22,11 +22,13 @@ function getSupabaseClient() {
   return null;
 }
 
-// ===== LOCAL FILE FALLBACKS =====
 function getRootDir() {
-  if (fs.existsSync(path.join(process.cwd(), '..', 'package.json'))) {
-    return path.resolve(process.cwd(), '..');
-  }
+  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) return '/tmp';
+  try {
+    if (fs.existsSync(path.join(process.cwd(), '..', 'package.json'))) {
+      return path.resolve(process.cwd(), '..');
+    }
+  } catch {}
   return process.cwd();
 }
 

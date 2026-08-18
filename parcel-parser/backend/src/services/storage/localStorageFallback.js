@@ -6,17 +6,22 @@ import path from 'path';
  * Ensures the application runs seamlessly out of the box in local dev/demo environments.
  */
 
-const DB_FILE = path.join(process.cwd(), 'uploads_db.json');
-const UPLOADS_DIR = path.join(process.cwd(), 'uploads');
+const baseDir = (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) ? '/tmp' : process.cwd();
+const DB_FILE = path.join(baseDir, 'uploads_db.json');
+const UPLOADS_DIR = path.join(baseDir, 'uploads');
 
-if (!fs.existsSync(UPLOADS_DIR)) {
-  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+try {
+  if (!fs.existsSync(UPLOADS_DIR)) {
+    fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+  }
+} catch (e) {
+  console.warn('[LocalStorage] Could not create uploads dir:', e.message);
 }
 
 function loadLocalDb() {
   if (!fs.existsSync(DB_FILE)) {
     const initial = { documents: [], extraction_results: [], extracted_items: [], extracted_fields: [], corrections: [] };
-    fs.writeFileSync(DB_FILE, JSON.stringify(initial, null, 2));
+    try { fs.writeFileSync(DB_FILE, JSON.stringify(initial, null, 2)); } catch {}
     return initial;
   }
   try {
@@ -29,7 +34,11 @@ function loadLocalDb() {
 }
 
 function saveLocalDb(db) {
-  fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2));
+  try {
+    fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2));
+  } catch (e) {
+    console.error('[LocalStorage] Could not write DB file:', e.message);
+  }
 }
 
 export const localStorageService = {

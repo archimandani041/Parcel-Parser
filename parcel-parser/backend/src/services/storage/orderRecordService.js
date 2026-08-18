@@ -22,11 +22,16 @@ function getSupabaseClient() {
   return null;
 }
 
-// ===== LOCAL FILE FALLBACK =====
 function getOrderDbPath() {
-  const rootDir = fs.existsSync(path.join(process.cwd(), '..', 'order_records.json'))
-    ? path.resolve(process.cwd(), '..')
-    : process.cwd();
+  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
+    return path.join('/tmp', 'order_records.json');
+  }
+  let rootDir = process.cwd();
+  try {
+    if (fs.existsSync(path.join(process.cwd(), '..', 'order_records.json'))) {
+      rootDir = path.resolve(process.cwd(), '..');
+    }
+  } catch {}
   return path.join(rootDir, 'order_records.json');
 }
 

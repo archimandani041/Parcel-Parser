@@ -3,7 +3,9 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 
-dotenv.config({ path: path.resolve(process.cwd(), 'backend/.env') });
+try {
+  dotenv.config({ path: path.resolve(process.cwd(), 'backend/.env') });
+} catch {}
 dotenv.config();
 
 import uploadRoutes from './routes/uploadRoutes.js';
@@ -20,8 +22,11 @@ const PORT = process.env.PORT || 5000;
 
 app.use(cors({
   origin: true,
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
+app.options('*', cors());
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
