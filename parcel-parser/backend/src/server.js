@@ -46,31 +46,37 @@ app.use('/api/stock', stockRoutes);
 
 app.use(errorHandler);
 
-const server = app.listen(PORT, () => {
-  console.log(`===================================================`);
-  console.log(` 🚀 Parcel Label Extraction API Server`);
-  console.log(` 📍 Running on: http://localhost:${PORT}`);
-  console.log(` 🤖 Configured Gemini Model: ${getGeminiModelName()}`);
-  const isDbConfigured = typeof dbService.isConfigured === 'function' ? dbService.isConfigured() : false;
-  console.log(` 🗄️ Database Backend: ${isDbConfigured ? 'Supabase PostgreSQL' : 'Local Fallback Storage'}`);
-  console.log(`===================================================`);
-});
+let server;
+if (!process.env.VERCEL) {
+  server = app.listen(PORT, () => {
+    console.log(`===================================================`);
+    console.log(` 🚀 Parcel Label Extraction API Server`);
+    console.log(` 📍 Running on: http://localhost:${PORT}`);
+    console.log(` 🤖 Configured Gemini Model: ${getGeminiModelName()}`);
+    const isDbConfigured = typeof dbService.isConfigured === 'function' ? dbService.isConfigured() : false;
+    console.log(` 🗄️ Database Backend: ${isDbConfigured ? 'Supabase PostgreSQL' : 'Local Fallback Storage'}`);
+    console.log(`===================================================`);
+  });
 
-server.on('error', (err) => {
-  if (err.code === 'EADDRINUSE') {
-    console.error(`[Server Warning] Port ${PORT} is busy. Retrying in 1s...`);
-    setTimeout(() => {
-      server.close();
-      server.listen(PORT);
-    }, 1000);
-  } else {
-    console.error('[Server Error]', err);
-  }
-});
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`[Server Warning] Port ${PORT} is busy. Retrying in 1s...`);
+      setTimeout(() => {
+        server.close();
+        server.listen(PORT);
+      }, 1000);
+    } else {
+      console.error('[Server Error]', err);
+    }
+  });
 
-process.on('SIGINT', () => {
-  server.close(() => process.exit(0));
-});
-process.on('SIGTERM', () => {
-  server.close(() => process.exit(0));
-});
+  process.on('SIGINT', () => {
+    if (server) server.close(() => process.exit(0));
+  });
+  process.on('SIGTERM', () => {
+    if (server) server.close(() => process.exit(0));
+  });
+}
+
+export default app;
+
