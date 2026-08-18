@@ -33,6 +33,15 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
+app.get('/', (req, res) => {
+  res.json({
+    status: 'ok',
+    service: 'Parcel Label AI Extraction API',
+    model: getGeminiModelName(),
+    timestamp: new Date().toISOString()
+  });
+});
+
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
