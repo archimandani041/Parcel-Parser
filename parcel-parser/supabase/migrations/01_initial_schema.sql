@@ -1,7 +1,7 @@
 -- Supabase PostgreSQL Migration Script for Parcel Label Information Extraction
 -- Enables storage bucket and creates required tables with indexes & foreign keys.
-
 -- Enable UUID extension if not enabled
+
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- 1. Documents Table
