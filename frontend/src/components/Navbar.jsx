@@ -7,6 +7,7 @@ import {
   Sparkles,
   Boxes,
   Package,
+  RotateCcw,
   Activity,
   Menu,
   X,
@@ -22,6 +23,7 @@ export default function Navbar({ title = 'Parcel Information Extractor', healthI
     { path: '/upload', label: 'Upload Label', icon: UploadCloud, badge: 'AI' },
     { path: '/orders', label: 'Orders', icon: Package },
     { path: '/stock', label: 'Stock', icon: Boxes },
+    { path: '/return', label: 'Return', icon: RotateCcw },
     { path: '/documents', label: 'All Documents', icon: FileText },
   ];
 

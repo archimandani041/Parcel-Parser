@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
 import {
   getDocuments,
-  getStockOverview,
+  getDashboardStats,
   exportOrdersExcel,
   exportStockExcel,
   exportReturnsExcel,
@@ -12,46 +12,41 @@ import {
 import { getStatusBadgeConfig, formatDate, formatConfidence } from '../utils/formatters';
 import {
   FileText,
-  CheckCircle2,
-  AlertTriangle,
-  XCircle,
-  Zap,
+  TrendingUp,
+  TrendingDown,
   UploadCloud,
   ArrowRight,
   RefreshCw,
   Search,
   ExternalLink,
-  Sparkles,
-  TrendingUp,
-  PackageCheck,
   Download,
   Layers,
-  Package,
   Boxes,
   RotateCcw,
-  FileSpreadsheet,
-  Check,
+  Coins,
   IndianRupee,
-  Coins
+  PackageCheck,
+  BarChart3,
+  Calendar
 } from 'lucide-react';
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
-    total_documents: 0,
-    completed: 0,
-    needs_review: 0,
-    failed: 0,
-    avg_confidence: 0
+    total_profit: 0,
+    total_selling: 0,
+    total_return: 0,
+    total_stock_items: 0,
+    total_labels: 0,
+    total_orders: 0
   });
+  const [graphData, setGraphData] = useState([]);
+  const [selectedRange, setSelectedRange] = useState('30');
   const [recentDocs, setRecentDocs] = useState([]);
-  const [totalProfit, setTotalProfit] = useState(null);
-  const [profitSummary, setProfitSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [exportingMaster, setExportingMaster] = useState(false);
   const [exportingAll, setExportingAll] = useState(false);
   const [exportProgress, setExportProgress] = useState('');
-  const [downloadSuccess, setDownloadSuccess] = useState(false);
+  const [hoveredDataPoint, setHoveredDataPoint] = useState(null);
 
   // Helper function to trigger browser file download from Blob
   const triggerDownload = (data, filename) => {
@@ -68,92 +63,26 @@ export default function Dashboard() {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
-  // Single Click Download for ALL 3 Excels (1. Orders, 2. Stock, 3. Return)
+  // Single Click Download for Master Excel (Contains 3 Sheets: Orders, Stock, Return)
   const handleDownloadAllThree = async () => {
     setExportingAll(true);
-    setDownloadSuccess(false);
-    setExportProgress('Fetching reports...');
+    setExportProgress('Downloading Master Excel (3-in-1)...');
 
     try {
       const dateStr = new Date().toISOString().split('T')[0];
+      const masterRes = await exportMasterExcel();
+      triggerDownload(masterRes.data, `master_report_orders_stock_returns_${dateStr}.xlsx`);
 
-      // 1. Download Orders Excel
-      setExportProgress('1/3: Downloading Orders Excel...');
-      const ordersRes = await exportOrdersExcel();
-      triggerDownload(ordersRes.data, `1_orders_report_${dateStr}.xlsx`);
-
-      // Small delay between downloads so browser handles files cleanly
-      await new Promise(r => setTimeout(r, 400));
-
-      // 2. Download Stock Excel
-      setExportProgress('2/3: Downloading Stock Excel...');
-      const stockRes = await exportStockExcel();
-      triggerDownload(stockRes.data, `2_stock_report_${dateStr}.xlsx`);
-
-      await new Promise(r => setTimeout(r, 400));
-
-      // 3. Download Return Excel
-      setExportProgress('3/3: Downloading Returns Excel...');
-      const returnsRes = await exportReturnsExcel();
-      triggerDownload(returnsRes.data, `3_returns_report_${dateStr}.xlsx`);
-
-      setExportProgress('Downloaded all 3 Excel files!');
-      setDownloadSuccess(true);
+      setExportProgress('Master Excel Downloaded!');
       setTimeout(() => {
         setExportProgress('');
-        setDownloadSuccess(false);
       }, 4000);
 
     } catch (err) {
-      alert('Single Click Download failed: ' + (err.response?.data?.error || err.message));
+      alert('Master Excel Download failed: ' + (err.response?.data?.error || err.message));
       setExportProgress('');
     } finally {
       setExportingAll(false);
-    }
-  };
-
-  const handleExportOrders = async () => {
-    try {
-      const dateStr = new Date().toISOString().split('T')[0];
-      const res = await exportOrdersExcel();
-      triggerDownload(res.data, `1_orders_report_${dateStr}.xlsx`);
-    } catch (err) {
-      alert('Orders export failed: ' + (err.response?.data?.error || err.message));
-    }
-  };
-
-  const handleExportStock = async () => {
-    try {
-      const dateStr = new Date().toISOString().split('T')[0];
-      const res = await exportStockExcel();
-      triggerDownload(res.data, `2_stock_report_${dateStr}.xlsx`);
-    } catch (err) {
-      alert('Stock export failed: ' + (err.response?.data?.error || err.message));
-    }
-  };
-
-  const handleExportReturns = async () => {
-    try {
-      const dateStr = new Date().toISOString().split('T')[0];
-      const res = await exportReturnsExcel();
-      triggerDownload(res.data, `3_returns_report_${dateStr}.xlsx`);
-    } catch (err) {
-      alert('Returns export failed: ' + (err.response?.data?.error || err.message));
-    }
-  };
-
-  const handleExportMaster = async () => {
-    setExportingMaster(true);
-    try {
-      const response = await exportMasterExcel();
-      triggerDownload(
-        response.data,
-        `master_report_orders_stock_returns_${new Date().toISOString().split('T')[0]}.xlsx`
-      );
-    } catch (err) {
-      alert('Master Export failed: ' + (err.response?.data?.error || err.message));
-    } finally {
-      setExportingMaster(false);
     }
   };
 
@@ -165,184 +94,334 @@ export default function Dashboard() {
     return isNeg ? `-₹${formatted}` : `₹${formatted}`;
   };
 
-  const loadDashboardData = () => {
+  const loadDashboardData = (range = selectedRange) => {
     setLoading(true);
     Promise.all([
-      getDocuments(),
-      getStockOverview().catch(() => null)
+      getDashboardStats(range).catch(() => null),
+      getDocuments().catch(() => null)
     ])
-      .then(([res, stockRes]) => {
-        setStats(res.stats || {});
-        setRecentDocs(res.documents || []);
-        if (stockRes?.success && stockRes.summary) {
-          setTotalProfit(stockRes.summary.total_profit);
-          setProfitSummary(stockRes.summary);
+      .then(([statsRes, docsRes]) => {
+        if (statsRes?.success && statsRes.stats) {
+          setStats(statsRes.stats);
+          setGraphData(statsRes.graph_data || []);
+        }
+        if (docsRes?.documents) {
+          setRecentDocs(docsRes.documents);
         }
       })
-      .catch(err => console.error('Dashboard load error:', err))
+      .catch(err => console.error('Dashboard data load error:', err))
       .finally(() => setLoading(false));
   };
 
   useEffect(() => {
-    loadDashboardData();
-  }, []);
+    loadDashboardData(selectedRange);
+  }, [selectedRange]);
 
   const filteredDocs = recentDocs.filter(d =>
     d.file_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     d.status?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Profit/Loss graph calculations
+  const maxGraphVal = Math.max(
+    ...graphData.flatMap(d => [d.profit || 0, d.loss || 0]),
+    100
+  ) * 1.25;
+  const hasGraphData = graphData.some(d => (d.profit || 0) > 0 || (d.loss || 0) > 0);
+
   return (
-    <Layout title="Document Intelligence Dashboard">
+    <Layout title="Business Intelligence Dashboard">
       <div className="space-y-8 pb-10">
 
-        {/* Executive Hero Banner with Light Pastel Card & Ambient Lavender Glow */}
-        <div className="relative overflow-hidden rounded-3xl pastel-light-hero p-8 sm:p-10 shadow-lg shadow-purple-900/5 text-slate-900">
-          {/* Subtle Ambient Background Pastel Blobs */}
-          <div className="absolute top-0 right-0 w-96 h-96 bg-purple-200/30 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute bottom-0 left-10 w-80 h-80 bg-blue-200/30 rounded-full blur-2xl pointer-events-none" />
+        {/* Action Header Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/80 border border-purple-100 p-5 rounded-2xl shadow-xs">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
+              Real-Time Business Intelligence
+            </h1>
+            <p className="text-xs text-slate-500 font-medium mt-0.5">
+              Live operational metrics, returns tracking, and profit analytics
+            </p>
+          </div>
 
-          <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-            <div className="space-y-4 max-w-3xl">
-              <div className="flex items-center gap-2 flex-wrap">
-                <div className="inline-flex items-center gap-2 px-3.5 py-1 bg-white/90 border border-purple-200/80 rounded-full text-xs font-extrabold text-purple-900 shadow-xs">
-                  <Sparkles className="w-3.5 h-3.5 text-purple-600" /> Next-Gen Multimodal Vision Engine
-                </div>
-                {totalProfit != null && (
-                  <div className="inline-flex items-center gap-1.5 px-3.5 py-1 bg-emerald-100/90 border border-emerald-300/80 rounded-full text-xs font-extrabold text-emerald-950 shadow-xs">
-                    <TrendingUp className="w-3.5 h-3.5 text-emerald-700" /> Total Profit: <span className="font-mono text-xs font-extrabold text-emerald-800">{formatCurrency(totalProfit)}</span>
-                  </div>
-                )}
-              </div>
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight text-slate-900">
-                Discover high-accuracy parcel <span className="font-serif-italic font-normal text-purple-700 underline decoration-purple-300 decoration-wavy">extractions</span>
-              </h1>
-              <p className="text-sm sm:text-base text-slate-600 leading-relaxed max-w-2xl font-medium">
-                Extract AWB tracking codes, courier logistics, recipient addresses, line item SKUs, tax GSTIN, and monetary amounts automatically from any label layout without predefined pixel templates.
-              </p>
-            </div>
+          <div className="flex items-center gap-3 shrink-0 flex-wrap">
+            <button
+              id="download-all-3-excels-btn"
+              onClick={handleDownloadAllThree}
+              disabled={exportingAll}
+              className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-700 hover:to-teal-800 text-white font-extrabold text-xs px-5 py-2.5 rounded-full shadow-md shadow-emerald-500/15 transition-all duration-200 hover:scale-[1.02] disabled:opacity-50 cursor-pointer"
+              title="Download 1. Orders, 2. Stock, and 3. Return Excel files"
+            >
+              <Download className={`w-3.5 h-3.5 text-white ${exportingAll ? 'animate-bounce' : ''}`} />
+              {exportingAll ? exportProgress : 'Download All 3 Excels (1-Click)'}
+            </button>
 
-            <div className="flex items-center gap-3 shrink-0 flex-wrap">
-              {/* Primary 1-Click Button in Hero */}
-              <button
-                id="download-all-3-excels-hero-btn"
-                onClick={handleDownloadAllThree}
-                disabled={exportingAll}
-                className="flex items-center gap-2.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-700 hover:to-teal-800 text-white font-extrabold text-xs sm:text-sm px-7 py-3.5 rounded-full shadow-lg shadow-emerald-500/20 transition-all duration-200 hover:scale-[1.02] disabled:opacity-50 cursor-pointer"
-                title="Download 1. Orders, 2. Stock, and 3. Return Excel files with a single click"
-              >
-                <Download className={`w-4 h-4 text-white ${exportingAll ? 'animate-bounce' : ''}`} />
-                {exportingAll ? exportProgress : 'Download All 3 Excels (1-Click)'}
-              </button>
-
-              <Link
-                to="/upload"
-                className="pill-button-dark flex items-center gap-2.5 px-7 py-3.5 text-xs sm:text-sm font-extrabold shadow-sm"
-              >
-                <UploadCloud className="w-4 h-4 text-purple-600" />
-                Upload New Label
-              </Link>
-            </div>
+            <Link
+              to="/upload"
+              className="pill-button-dark flex items-center gap-2 px-5 py-2.5 text-xs font-extrabold shadow-xs"
+            >
+              <UploadCloud className="w-3.5 h-3.5 text-purple-400" />
+              Upload New Label
+            </Link>
           </div>
         </div>
 
-        {/* Executive KPI Metric Cards (Uniform Professional Light Styling with Pastel Accents) */}
+        {/* TOP STATISTICS CARDS (6 CARDS) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
 
-          {/* Total Profit Card */}
-          <div className="ui-card ui-card-hover p-5 space-y-2 bg-gradient-to-br from-emerald-50/80 via-teal-50/40 to-white border border-emerald-200 shadow-md">
+          {/* 1. Total Profit Card */}
+          <div className="ui-card ui-card-hover p-5 space-y-2 bg-gradient-to-br from-emerald-50/80 via-teal-50/30 to-white border border-emerald-200/90 shadow-xs">
             <div className="flex items-center justify-between text-slate-500">
               <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-800">Total Profit</span>
-              <div className="w-9 h-9 rounded-2xl bg-emerald-100 border border-emerald-200 flex items-center justify-center text-emerald-700 shadow-xs">
-                <Coins className="w-4.5 h-4.5" />
+              <div className="w-8 h-8 rounded-xl bg-emerald-100 border border-emerald-200 flex items-center justify-center text-emerald-700 shadow-xs">
+                <Coins className="w-4 h-4" />
               </div>
             </div>
-            <p className={`text-3xl font-extrabold font-mono tracking-tight ${totalProfit >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
-              {formatCurrency(totalProfit)}
+            <p className={`text-2xl font-extrabold font-mono tracking-tight ${stats.total_profit >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
+              {formatCurrency(stats.total_profit)}
             </p>
-            <div className="flex items-center gap-1.5 text-[11px] text-emerald-700 font-semibold">
-              <TrendingUp className="w-3 h-3 text-emerald-600" /> Net after return charges
+            <div className="flex items-center gap-1 text-[10px] text-emerald-700 font-semibold">
+              <TrendingUp className="w-3 h-3 text-emerald-600" /> Matches Stock Net Profit
             </div>
           </div>
 
-          {/* Total Documents */}
-          <div className="ui-card ui-card-hover p-5 space-y-2">
+          {/* 2. Total Selling Card */}
+          <div className="ui-card ui-card-hover p-5 space-y-2 bg-gradient-to-br from-purple-50/60 via-violet-50/20 to-white border border-purple-200/80 shadow-xs">
             <div className="flex items-center justify-between text-slate-500">
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Total Labels</span>
-              <div className="w-9 h-9 rounded-2xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shadow-xs">
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-purple-800">Total Selling</span>
+              <div className="w-8 h-8 rounded-xl bg-purple-100 border border-purple-200 flex items-center justify-center text-purple-700 shadow-xs">
+                <IndianRupee className="w-4 h-4" />
+              </div>
+            </div>
+            <p className="text-2xl font-extrabold text-purple-900 font-mono tracking-tight">
+              {formatCurrency(stats.total_selling)}
+            </p>
+            <div className="flex items-center gap-1 text-[10px] text-purple-700 font-semibold">
+              <TrendingUp className="w-3 h-3 text-purple-600" /> Realized sold revenue
+            </div>
+          </div>
+
+          {/* 3. Total Return Card */}
+          <div className="ui-card ui-card-hover p-5 space-y-2 bg-gradient-to-br from-rose-50/60 via-amber-50/20 to-white border border-rose-200/80 shadow-xs">
+            <div className="flex items-center justify-between text-slate-500">
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-rose-800">Total Return</span>
+              <div className="w-8 h-8 rounded-xl bg-rose-100 border border-rose-200 flex items-center justify-center text-rose-600 shadow-xs">
+                <RotateCcw className="w-4 h-4" />
+              </div>
+            </div>
+            <p className="text-2xl font-extrabold text-rose-700 font-mono tracking-tight">
+              {stats.total_return || 0}
+            </p>
+            <div className="flex items-center gap-1 text-[10px] text-rose-600 font-semibold">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" /> Customer + RTO Returns
+            </div>
+          </div>
+
+          {/* 4. Total Stock Items Card */}
+          <div className="ui-card ui-card-hover p-5 space-y-2 bg-gradient-to-br from-blue-50/60 via-sky-50/20 to-white border border-blue-200/80 shadow-xs">
+            <div className="flex items-center justify-between text-slate-500">
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-blue-800">Total Stock Items</span>
+              <div className="w-8 h-8 rounded-xl bg-blue-100 border border-blue-200 flex items-center justify-center text-blue-700 shadow-xs">
+                <Boxes className="w-4 h-4" />
+              </div>
+            </div>
+            <p className="text-2xl font-extrabold text-blue-900 font-mono tracking-tight">
+              {stats.total_stock_items || 0}
+            </p>
+            <div className="flex items-center gap-1 text-[10px] text-blue-700 font-semibold">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500" /> Available inventory
+            </div>
+          </div>
+
+          {/* 5. Total Labels Card */}
+          <div className="ui-card ui-card-hover p-5 space-y-2 bg-gradient-to-br from-violet-50/60 via-indigo-50/20 to-white border border-violet-200/80 shadow-xs">
+            <div className="flex items-center justify-between text-slate-500">
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-violet-800">Total Labels</span>
+              <div className="w-8 h-8 rounded-xl bg-violet-100 border border-violet-200 flex items-center justify-center text-violet-700 shadow-xs">
                 <FileText className="w-4 h-4" />
               </div>
             </div>
-            <p className="text-3xl font-extrabold text-slate-900 font-mono tracking-tight">{stats.total_documents || 0}</p>
-            <div className="flex items-center gap-1.5 text-[11px] text-purple-600 font-semibold">
-              <TrendingUp className="w-3 h-3 text-purple-600" /> Processed across session
+            <p className="text-2xl font-extrabold text-violet-900 font-mono tracking-tight">
+              {stats.total_labels || 0}
+            </p>
+            <div className="flex items-center gap-1 text-[10px] text-violet-700 font-semibold">
+              <span className="w-1.5 h-1.5 rounded-full bg-violet-500" /> Extracted documents
             </div>
           </div>
 
-          {/* Completed */}
-          <div className="ui-card ui-card-hover p-5 space-y-2">
+          {/* 6. Total Orders Card */}
+          <div className="ui-card ui-card-hover p-5 space-y-2 bg-gradient-to-br from-amber-50/60 via-orange-50/20 to-white border border-amber-200/80 shadow-xs">
             <div className="flex items-center justify-between text-slate-500">
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Successfully Parsed</span>
-              <div className="w-9 h-9 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shadow-xs">
-                <CheckCircle2 className="w-4 h-4" />
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-800">Total Orders</span>
+              <div className="w-8 h-8 rounded-xl bg-amber-100 border border-amber-200 flex items-center justify-center text-amber-700 shadow-xs">
+                <Layers className="w-4 h-4" />
               </div>
             </div>
-            <p className="text-3xl font-extrabold text-emerald-600 font-mono tracking-tight">{stats.completed || 0}</p>
-            <div className="flex items-center gap-1 text-[11px] text-emerald-600 font-semibold">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Validated extraction
-            </div>
-          </div>
-
-          {/* Needs Review */}
-          <div className="ui-card ui-card-hover p-5 space-y-2">
-            <div className="flex items-center justify-between text-slate-500">
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Needs Review</span>
-              <div className="w-9 h-9 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shadow-xs">
-                <AlertTriangle className="w-4 h-4" />
-              </div>
-            </div>
-            <p className="text-3xl font-extrabold text-amber-600 font-mono tracking-tight">{stats.needs_review || 0}</p>
-            <div className="flex items-center gap-1 text-[11px] text-amber-600 font-semibold">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Low confidence fields
-            </div>
-          </div>
-
-          {/* Failed */}
-          <div className="ui-card ui-card-hover p-5 space-y-2">
-            <div className="flex items-center justify-between text-slate-500">
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Failed / Errors</span>
-              <div className="w-9 h-9 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600 shadow-xs">
-                <XCircle className="w-4 h-4" />
-              </div>
-            </div>
-            <p className="text-3xl font-extrabold text-rose-600 font-mono tracking-tight">{stats.failed || 0}</p>
-            <div className="flex items-center gap-1 text-[11px] text-slate-400 font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-rose-400"></span> Unreadable media
-            </div>
-          </div>
-
-          {/* Average Confidence */}
-          <div className="ui-card ui-card-hover p-5 space-y-2">
-            <div className="flex items-center justify-between text-slate-500">
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Avg Confidence</span>
-              <div className="w-9 h-9 rounded-2xl bg-violet-50 border border-violet-100 flex items-center justify-center text-violet-600 shadow-xs">
-                <Zap className="w-4 h-4" />
-              </div>
-            </div>
-            <p className="text-3xl font-extrabold text-violet-700 font-mono tracking-tight">{formatConfidence(stats.avg_confidence)}</p>
-            <div className="w-full bg-purple-100/70 h-1.5 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-violet-600 rounded-full transition-all duration-500"
-                style={{ width: `${Math.round((stats.avg_confidence || 0) * 100)}%` }}
-              />
+            <p className="text-2xl font-extrabold text-amber-900 font-mono tracking-tight">
+              {stats.total_orders || 0}
+            </p>
+            <div className="flex items-center gap-1 text-[10px] text-amber-700 font-semibold">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Unique Order IDs
             </div>
           </div>
 
         </div>
 
 
+        {/* PROFIT & LOSS GRAPH SECTION */}
+        <div className="ui-card p-6 sm:p-8 space-y-6">
 
-        {/* Recent Extracted Documents Section */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-purple-100/80 pb-5">
+            <div>
+              <h3 className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-purple-600" />
+                Profit & Loss
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5 font-medium">
+                Real-time tracking of sales profits and return delivery losses over time
+              </p>
+            </div>
+
+            {/* Range Selector & Legend */}
+            <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex items-center gap-3 text-xs font-semibold text-slate-600 bg-purple-50/50 px-3 py-1.5 rounded-full border border-purple-100">
+                <span className="flex items-center gap-1 text-emerald-700">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Profit
+                </span>
+                <span className="flex items-center gap-1 text-rose-700">
+                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500" /> Loss
+                </span>
+              </div>
+
+              <div className="inline-flex items-center bg-purple-50/70 p-1 rounded-full border border-purple-200/80">
+                {[
+                  { label: '7 Days', value: '7' },
+                  { label: '30 Days', value: '30' },
+                  { label: '90 Days', value: '90' },
+                  { label: 'All', value: 'all' }
+                ].map(r => (
+                  <button
+                    key={r.value}
+                    onClick={() => setSelectedRange(r.value)}
+                    className={`px-3.5 py-1 text-xs font-extrabold rounded-full transition-all cursor-pointer ${
+                      selectedRange === r.value
+                        ? 'bg-purple-700 text-white shadow-xs'
+                        : 'text-purple-700 hover:bg-purple-100/80'
+                    }`}
+                  >
+                    {r.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Visual Graph Container */}
+          {!hasGraphData ? (
+            <div className="py-20 text-center text-slate-400 text-sm border-2 border-dashed border-purple-200/60 rounded-3xl bg-purple-50/20 p-8 space-y-2">
+              <BarChart3 className="w-10 h-10 text-purple-300 mx-auto" />
+              <h4 className="font-bold text-slate-700">No profit or loss data available yet.</h4>
+              <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                Upload parcel documents or record customer returns to generate real-time profit and loss trends.
+              </p>
+            </div>
+          ) : (
+            <div className="relative pt-4 pb-2">
+              {/* Active Hover Data Banner */}
+              <div className="mb-4 p-3 bg-slate-900 text-white rounded-xl text-xs flex items-center justify-between shadow-md max-w-md transition-all">
+                <span className="font-bold text-purple-200">
+                  {hoveredDataPoint ? hoveredDataPoint.displayDate : 'Hover over bars for daily breakdown'}
+                </span>
+                <div className="flex items-center gap-4">
+                  <span className="text-emerald-400 font-mono font-bold">
+                    Profit: {formatCurrency(hoveredDataPoint ? hoveredDataPoint.profit : graphData.reduce((a, b) => a + (b.profit || 0), 0))}
+                  </span>
+                  <span className="text-rose-400 font-mono font-bold">
+                    Loss: {formatCurrency(hoveredDataPoint ? hoveredDataPoint.loss : graphData.reduce((a, b) => a + (b.loss || 0), 0))}
+                  </span>
+                </div>
+              </div>
+
+              {/* Responsive Bar Chart Visualization with Grid lines */}
+              <div className="relative h-64 w-full pt-8 pb-6 px-2 border-b border-purple-100 bg-gradient-to-b from-purple-50/20 to-transparent rounded-2xl">
+                {/* Horizontal Guide Lines */}
+                <div className="absolute inset-0 flex flex-col justify-between pointer-events-none px-4 py-8">
+                  <div className="border-b border-purple-100/60 w-full text-[10px] text-slate-400 font-mono flex justify-between">
+                    <span>{formatCurrency(Math.round(maxGraphVal))}</span>
+                  </div>
+                  <div className="border-b border-purple-100/40 w-full text-[10px] text-slate-400 font-mono flex justify-between">
+                    <span>{formatCurrency(Math.round(maxGraphVal / 2))}</span>
+                  </div>
+                  <div className="border-b border-purple-200/80 w-full text-[10px] text-slate-400 font-mono flex justify-between">
+                    <span>₹0</span>
+                  </div>
+                </div>
+
+                {/* Bars Container */}
+                <div className="relative z-10 h-full flex items-end justify-around gap-2 sm:gap-6 px-6">
+                  {graphData.map((d, idx) => {
+                    const profitHeightPercent = Math.max(Math.round(((d.profit || 0) / maxGraphVal) * 100), (d.profit > 0 ? 10 : 0));
+                    const lossHeightPercent = Math.max(Math.round(((d.loss || 0) / maxGraphVal) * 100), (d.loss > 0 ? 10 : 0));
+
+                    return (
+                      <div
+                        key={idx}
+                        onMouseEnter={() => setHoveredDataPoint(d)}
+                        onMouseLeave={() => setHoveredDataPoint(null)}
+                        className="flex-1 flex flex-col items-center justify-end h-full group cursor-pointer max-w-[80px]"
+                      >
+                        {/* Bar Pair */}
+                        <div className="w-full flex items-end justify-center gap-2 h-full">
+                          {/* Profit Bar (Emerald) */}
+                          <div className="w-full max-w-[24px] flex flex-col items-center h-full justify-end">
+                            {d.profit > 0 && (
+                              <span className="text-[10px] font-mono font-bold text-emerald-700 mb-1 leading-none">
+                                {formatCurrency(d.profit)}
+                              </span>
+                            )}
+                            <div
+                              className={`w-full rounded-t-md transition-all duration-300 ${
+                                d.profit > 0
+                                  ? 'bg-gradient-to-t from-emerald-600 via-teal-500 to-emerald-400 shadow-xs shadow-emerald-500/20 group-hover:scale-y-105'
+                                  : 'bg-slate-100 h-1'
+                              }`}
+                              style={{ height: d.profit > 0 ? `${profitHeightPercent}%` : '2px' }}
+                            />
+                          </div>
+
+                          {/* Loss Bar (Rose) */}
+                          <div className="w-full max-w-[24px] flex flex-col items-center h-full justify-end">
+                            {d.loss > 0 && (
+                              <span className="text-[10px] font-mono font-bold text-rose-700 mb-1 leading-none">
+                                {formatCurrency(d.loss)}
+                              </span>
+                            )}
+                            <div
+                              className={`w-full rounded-t-md transition-all duration-300 ${
+                                d.loss > 0
+                                  ? 'bg-gradient-to-t from-rose-600 via-pink-500 to-rose-400 shadow-xs shadow-rose-500/20 group-hover:scale-y-105'
+                                  : 'bg-slate-100 h-1'
+                              }`}
+                              style={{ height: d.loss > 0 ? `${lossHeightPercent}%` : '2px' }}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Date Label */}
+                        <span className="text-[11px] font-bold text-slate-600 mt-3 truncate w-full text-center group-hover:text-purple-900 transition-colors">
+                          {d.displayDate}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+
+        {/* RECENT EXTRACTED PARCEL DOCUMENTS SECTION */}
         <div className="ui-card p-6 sm:p-8 space-y-6">
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-purple-100/80 pb-5">
@@ -367,9 +446,9 @@ export default function Dashboard() {
               </div>
 
               <button
-                onClick={loadDashboardData}
+                onClick={() => loadDashboardData(selectedRange)}
                 title="Refresh Table Data"
-                className="p-2.5 text-purple-600 hover:text-purple-900 bg-purple-50 border border-purple-200/80 hover:bg-purple-100 rounded-full transition-all shadow-xs"
+                className="p-2.5 text-purple-600 hover:text-purple-900 bg-purple-50 border border-purple-200/80 hover:bg-purple-100 rounded-full transition-all shadow-xs cursor-pointer"
               >
                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               </button>
@@ -383,7 +462,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Table Container */}
+          {/* Documents Table */}
           {loading ? (
             <div className="py-20 text-center text-slate-400 text-sm space-y-3">
               <RefreshCw className="w-6 h-6 animate-spin mx-auto text-purple-600" />
@@ -476,7 +555,3 @@ export default function Dashboard() {
     </Layout>
   );
 }
-
-
-
-

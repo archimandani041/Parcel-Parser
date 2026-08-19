@@ -6,6 +6,7 @@ import {
   FileText, 
   Sparkles, 
   Boxes, 
+  RotateCcw,
   Database,
   Cpu,
   Activity,
@@ -19,6 +20,7 @@ export default function Sidebar({ healthInfo }) {
     { path: '/upload', label: 'Upload Label', icon: UploadCloud, badge: 'AI' },
     { path: '/orders', label: 'Orders', icon: Package, badge: null },
     { path: '/stock', label: 'Stock', icon: Boxes, badge: null },
+    { path: '/return', label: 'Return', icon: RotateCcw, badge: null },
     { path: '/documents', label: 'All Documents', icon: FileText, badge: null },
   ];
 

@@ -1,6 +1,7 @@
 import express from 'express';
 import {
   getStockOverview,
+  getDashboardStats,
   exportStockExcel,
   updateProductPrice,
   getReturnsOverview,
@@ -11,6 +12,9 @@ import {
 } from '../controllers/stockController.js';
 
 const router = express.Router();
+
+// GET /api/stock/dashboard-stats
+router.get('/dashboard-stats', getDashboardStats);
 
 // GET /api/stock/export-excel — Stock XLSX Export
 router.get('/export-excel', exportStockExcel);

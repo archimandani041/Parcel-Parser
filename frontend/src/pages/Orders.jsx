@@ -24,7 +24,8 @@ export default function Orders() {
   const [exporting, setExporting] = useState(false);
   const [syncing, setSyncing] = useState(false);
 
-  // Undo Return modal state & Toast message
+  // Return modal state
+  const [returnModalOrder, setReturnModalOrder] = useState(null);
   const [confirmUndoOrder, setConfirmUndoOrder] = useState(null);
   const [undoingId, setUndoingId] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
@@ -55,20 +56,15 @@ export default function Orders() {
     setSearchQuery(searchInput.trim());
   };
 
-  const handleReturn = async (id, orderId) => {
-    setReturningId(id);
-    const targetId = orderId || id;
+  const executeReturn = async (rec, returnType) => {
+    const targetId = rec.order_id || rec.id;
+    setReturningId(rec.id);
+    setReturnModalOrder(null);
     try {
-      await returnOrderRecord(targetId);
+      await returnOrderRecord(targetId, returnType);
+      showToast(`Order #${rec.order_id || rec.id} marked as ${returnType === 'RTO_RETURN' ? 'RTO Return' : 'Customer Return'}.`);
       await loadRecords();
     } catch (err) {
-      if (orderId && id !== orderId) {
-        try {
-          await returnOrderRecord(id);
-          await loadRecords();
-          return;
-        } catch {}
-      }
       alert('Return failed: ' + (err.response?.data?.error || err.message));
     } finally {
       setReturningId(null);
@@ -296,7 +292,7 @@ export default function Orders() {
                           </button>
                         ) : (
                           <button
-                            onClick={() => handleReturn(rec.id, rec.order_id)}
+                            onClick={() => setReturnModalOrder(rec)}
                             disabled={returningId === rec.id}
                             className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-amber-100/90 text-amber-800 border border-amber-200 hover:bg-amber-200 transition-all cursor-pointer disabled:opacity-50"
                           >
@@ -339,6 +335,65 @@ export default function Orders() {
             </div>
           )}
         </div>
+
+        {/* Modal: Select Return Type (Customer Return vs RTO Return) */}
+        {returnModalOrder && (
+          <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+            <div className="bg-white border border-purple-100 rounded-3xl shadow-2xl max-w-md w-full p-6 space-y-5 animate-in zoom-in-95 duration-200">
+              <div className="flex items-start gap-4">
+                <div className="w-11 h-11 rounded-2xl bg-amber-100 border border-amber-200 text-amber-700 flex items-center justify-center shrink-0 shadow-xs">
+                  <RotateCcw className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900">Select Return Type</h3>
+                  <p className="text-xs text-slate-500 font-medium mt-1">
+                    Choose category for returned Order <span className="font-mono font-bold text-slate-800">#{returnModalOrder.order_id}</span>
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-purple-50/60 rounded-2xl p-3.5 border border-purple-100 space-y-1.5 text-xs text-slate-600 font-medium">
+                <div className="flex justify-between">
+                  <span>SKU ID:</span>
+                  <span className="font-mono font-bold text-purple-950">{returnModalOrder.sku_id}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Customer:</span>
+                  <span className="font-bold text-slate-800">{returnModalOrder.customer_name || '-'}</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                <button
+                  onClick={() => executeReturn(returnModalOrder, 'CUSTOMER_RETURN')}
+                  className="flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-950 transition-all group cursor-pointer"
+                >
+                  <RotateCcw className="w-6 h-6 text-amber-700 mb-1.5 group-hover:scale-110 transition-transform" />
+                  <span className="text-xs font-extrabold">Customer Return</span>
+                  <span className="text-[10px] text-amber-800/80 font-medium text-center mt-0.5">Delivery charge applies</span>
+                </button>
+
+                <button
+                  onClick={() => executeReturn(returnModalOrder, 'RTO_RETURN')}
+                  className="flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-950 transition-all group cursor-pointer"
+                >
+                  <Package className="w-6 h-6 text-purple-700 mb-1.5 group-hover:scale-110 transition-transform" />
+                  <span className="text-xs font-extrabold">RTO Return</span>
+                  <span className="text-[10px] text-purple-800/80 font-medium text-center mt-0.5">Return to origin (₹0 loss)</span>
+                </button>
+              </div>
+
+              <div className="flex justify-end pt-2 border-t border-slate-100">
+                <button
+                  onClick={() => setReturnModalOrder(null)}
+                  className="px-4 py-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Confirmation Modal for Undo Return */}
         {confirmUndoOrder && (

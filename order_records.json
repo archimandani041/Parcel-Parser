@@ -8,10 +8,11 @@
     "purchase_price": null,
     "selling_price": null,
     "quantity": 1,
-    "is_returned": true,
+    "is_returned": false,
     "document_id": null,
-    "updated_at": "2026-08-19T17:44:03.970Z",
-    "created_at": "2026-08-17T18:25:14.958Z"
+    "updated_at": "2026-08-19T19:55:37.886Z",
+    "created_at": "2026-08-17T18:25:14.958Z",
+    "return_type": "CUSTOMER_RETURN"
   },
   {
     "id": "or_1786991114534_qownun",
@@ -22,10 +23,11 @@
     "purchase_price": null,
     "selling_price": null,
     "quantity": 1,
-    "is_returned": false,
+    "is_returned": true,
     "document_id": null,
-    "updated_at": "2026-08-19T15:38:03.393Z",
-    "created_at": "2026-08-17T18:25:14.534Z"
+    "updated_at": "2026-08-19T19:55:56.533Z",
+    "created_at": "2026-08-17T18:25:14.534Z",
+    "return_type": "RTO_RETURN"
   },
   {
     "id": "or_1786991114211_21u38u",
@@ -36,9 +38,10 @@
     "purchase_price": null,
     "selling_price": null,
     "quantity": 1,
-    "is_returned": false,
+    "is_returned": true,
     "document_id": null,
-    "updated_at": "2026-08-19T17:37:42.146Z",
-    "created_at": "2026-08-17T18:25:14.211Z"
+    "updated_at": "2026-08-19T19:54:20.514Z",
+    "created_at": "2026-08-17T18:25:14.211Z",
+    "return_type": "CUSTOMER_RETURN"
   }
 ]

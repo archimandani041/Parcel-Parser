@@ -15,7 +15,8 @@ export async function getOrderRecords(req, res, next) {
 export async function returnOrderRecord(req, res, next) {
   try {
     const { id } = req.params;
-    const record = await orderRecordService.markReturned(id);
+    const { return_type } = req.body || {};
+    const record = await orderRecordService.markReturned(id, return_type);
     res.status(200).json({ success: true, record });
   } catch (err) {
     if (err.message === 'Record not found') {
@@ -68,13 +69,18 @@ export async function exportOrdersExcel(req, res, next) {
   try {
     const records = await orderRecordService.getAllForExport();
 
+    const formatReturnStatus = (r) => {
+      if (!r.is_returned) return 'Active';
+      return r.return_type === 'RTO_RETURN' ? 'RTO Return' : 'Customer Return';
+    };
+
     const rows = records.map(r => ({
       'Order ID': r.order_id || '',
       'Customer Name': r.customer_name || '',
       'SKU ID': r.sku_id || '',
       'Product Name': r.product_name || '',
       'Quantity': r.quantity || 1,
-      'Return Status': r.is_returned ? 'Returned' : 'Active'
+      'Return Status': formatReturnStatus(r)
     }));
 
     const ws = XLSX.utils.json_to_sheet(rows);
@@ -83,7 +89,7 @@ export async function exportOrdersExcel(req, res, next) {
 
     // Set column widths
     ws['!cols'] = [
-      { wch: 25 }, { wch: 22 }, { wch: 12 }, { wch: 22 }, { wch: 10 }, { wch: 14 }
+      { wch: 25 }, { wch: 22 }, { wch: 12 }, { wch: 22 }, { wch: 10 }, { wch: 18 }
     ];
 
     const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
@@ -101,6 +107,11 @@ export async function exportMasterExcel(req, res, next) {
     const { products: stockProducts } = await stockService.getStockOverview();
     const { returns: returnRecords } = await stockService.getReturnsOverview();
 
+    const formatReturnStatus = (r) => {
+      if (!r.is_returned) return 'Active';
+      return r.return_type === 'RTO_RETURN' ? 'RTO Return' : 'Customer Return';
+    };
+
     const wb = XLSX.utils.book_new();
 
     // 1. Orders Sheet
@@ -110,11 +121,11 @@ export async function exportMasterExcel(req, res, next) {
       'SKU ID': r.sku_id || '',
       'Product Name': r.product_name || '',
       'Quantity': r.quantity || 1,
-      'Return Status': r.is_returned ? 'Returned' : 'Active'
+      'Return Status': formatReturnStatus(r)
     }));
     const wsOrders = XLSX.utils.json_to_sheet(orderRows);
     wsOrders['!cols'] = [
-      { wch: 25 }, { wch: 22 }, { wch: 12 }, { wch: 22 }, { wch: 10 }, { wch: 14 }
+      { wch: 25 }, { wch: 22 }, { wch: 12 }, { wch: 22 }, { wch: 10 }, { wch: 18 }
     ];
     XLSX.utils.book_append_sheet(wb, wsOrders, 'Orders');
 
@@ -123,20 +134,23 @@ export async function exportMasterExcel(req, res, next) {
       'SKU ID': p.sku_id || '',
       'Product Name': p.product_name || '',
       'Total Quantity': p.total_quantity || 0,
-      'Active Quantity': p.active_quantity || 0,
-      'Returned Quantity': p.returned_quantity || 0,
+      'Customer Returned Qty': p.customer_returned_quantity || 0,
+      'RTO Returned Qty': p.rto_returned_quantity || 0,
+      'Total Returned Qty': p.returned_quantity || 0,
+      'selling QTY.': p.available_quantity || 0,
       'Purchase Price (₹)': p.purchase_price != null ? Number(p.purchase_price) : '',
       'Selling Price (₹)': p.selling_price != null ? Number(p.selling_price) : '',
-      'Total Cost (₹)': p.total_cost != null ? Number(p.total_cost) : '',
-      'Total Selling Value (₹)': p.total_selling_value != null ? Number(p.total_selling_value) : '',
-      'Est. Profit (₹)': p.profit != null ? Number(p.profit) : '',
-      'Stock Status': p.status || 'In Stock'
+      'Inventory Cost (₹)': p.inventory_cost != null ? Number(p.inventory_cost) : '',
+      'Inventory Value (₹)': p.inventory_value != null ? Number(p.inventory_value) : '',
+      'Realized Sales Profit (₹)': p.realized_sales_profit != null ? Number(p.realized_sales_profit) : '',
+      'Return Loss (₹)': p.return_loss != null ? Number(p.return_loss) : 0,
+      'Net Profit (₹)': p.net_profit != null ? Number(p.net_profit) : ''
     }));
     const wsStock = XLSX.utils.json_to_sheet(stockRows);
     wsStock['!cols'] = [
-      { wch: 15 }, { wch: 25 }, { wch: 15 }, { wch: 15 },
-      { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 16 },
-      { wch: 22 }, { wch: 16 }, { wch: 14 }
+      { wch: 15 }, { wch: 25 }, { wch: 15 }, { wch: 22 }, { wch: 18 }, { wch: 18 }, { wch: 18 },
+      { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 20 }, { wch: 22 },
+      { wch: 16 }, { wch: 16 }
     ];
     XLSX.utils.book_append_sheet(wb, wsStock, 'Stock');
 
@@ -146,14 +160,17 @@ export async function exportMasterExcel(req, res, next) {
       'Customer Name': r.customer_name || '',
       'SKU ID': r.sku_id || '',
       'Product Name': r.product_name || '',
-      'Delivery Boy Charge (₹)': r.delivery_boy_charge != null ? Number(r.delivery_boy_charge) : 0,
-      'Profit Lost from Return (₹)': r.profit_lost != null ? Number(r.profit_lost) : 0,
-      'Return Status': r.status || 'Returned'
+      'Quantity': r.quantity || 1,
+      'Return Type': r.return_type === 'RTO_RETURN' ? 'RTO Return' : 'Customer Return',
+      'Purchase Price (₹)': r.purchase_price != null ? Number(r.purchase_price) : '',
+      'Selling Price (₹)': r.selling_price != null ? Number(r.selling_price) : '',
+      'Delivery Charge (₹)': r.return_type === 'RTO_RETURN' ? 0 : (r.delivery_boy_charge != null ? Number(r.delivery_boy_charge) : 0),
+      'Return Loss (₹)': r.return_type === 'RTO_RETURN' ? 0 : (r.return_loss != null ? Number(r.return_loss) : 0)
     }));
     const wsReturns = XLSX.utils.json_to_sheet(returnRows);
     wsReturns['!cols'] = [
-      { wch: 25 }, { wch: 22 }, { wch: 12 }, { wch: 22 },
-      { wch: 24 }, { wch: 26 }, { wch: 14 }
+      { wch: 25 }, { wch: 22 }, { wch: 14 }, { wch: 24 },
+      { wch: 10 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 20 }, { wch: 16 }
     ];
     XLSX.utils.book_append_sheet(wb, wsReturns, 'Returns');
 

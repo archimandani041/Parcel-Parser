@@ -35,6 +35,19 @@ function getOrderDbPath() {
   return path.join(rootDir, 'order_records.json');
 }
 
+function getReturnsDbPath() {
+  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
+    return path.join('/tmp', 'stock_returns.json');
+  }
+  let rootDir = process.cwd();
+  try {
+    if (fs.existsSync(path.join(process.cwd(), '..', 'stock_returns.json'))) {
+      rootDir = path.resolve(process.cwd(), '..');
+    }
+  } catch {}
+  return path.join(rootDir, 'stock_returns.json');
+}
+
 function loadDb() {
   const dbPath = getOrderDbPath();
   if (!fs.existsSync(dbPath)) {
@@ -214,7 +227,17 @@ export const orderRecordService = {
     // Combine local DB and Supabase records by order_id
     const map = new Map();
     localDb.forEach(r => { if (r.order_id) map.set(r.order_id, r); });
-    supabaseRecords.forEach(r => { if (r.order_id) map.set(r.order_id, { ...map.get(r.order_id), ...r }); });
+    supabaseRecords.forEach(r => {
+      if (r.order_id) {
+        const local = map.get(r.order_id) || {};
+        map.set(r.order_id, {
+          ...local,
+          ...r,
+          is_returned: Boolean(r.is_returned || local.is_returned),
+          return_type: r.return_type || local.return_type || 'CUSTOMER_RETURN'
+        });
+      }
+    });
 
     let combined = Array.from(map.values());
     console.log(`[OrderRecords] getAll found ${combined.length} combined records (local: ${localDb.length}, supabase: ${supabaseRecords.length})`);
@@ -228,9 +251,10 @@ export const orderRecordService = {
   },
 
   /** Mark a record as returned */
-  async markReturned(id) {
+  async markReturned(id, return_type = 'CUSTOMER_RETURN') {
     let orderId = id;
     let targetId = id;
+    const cleanReturnType = return_type === 'RTO_RETURN' ? 'RTO_RETURN' : 'CUSTOMER_RETURN';
 
     const isUUID = (str) => typeof str === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
 
@@ -246,7 +270,7 @@ export const orderRecordService = {
       try {
         let query = supabase
           .from('order_records')
-          .update({ is_returned: true, updated_at: new Date().toISOString() });
+          .update({ is_returned: true, return_type: cleanReturnType, updated_at: new Date().toISOString() });
 
         if (isUUID(targetId)) {
           query = query.or(`id.eq.${targetId},order_id.eq.${orderId}`);
@@ -257,8 +281,29 @@ export const orderRecordService = {
         const { data, error } = await query.select();
         if (error) {
           console.error('[OrderRecords] Supabase return update error:', error.message);
+          // Fallback if return_type column is missing in Supabase schema
+          let fallbackQuery = supabase
+            .from('order_records')
+            .update({ is_returned: true, updated_at: new Date().toISOString() });
+
+          if (isUUID(targetId)) {
+            fallbackQuery = fallbackQuery.or(`id.eq.${targetId},order_id.eq.${orderId}`);
+          } else {
+            fallbackQuery = fallbackQuery.eq('order_id', orderId);
+          }
+          await fallbackQuery.select();
         } else if (data && data.length > 0) {
-          console.log(`[OrderRecords] Supabase marked returned: ${orderId}`);
+          console.log(`[OrderRecords] Supabase marked returned: ${orderId} (${cleanReturnType})`);
+        }
+
+        // Upsert stock_returns entry with return_type
+        if (orderId) {
+          await supabase.from('stock_returns').upsert({
+            order_id: orderId,
+            return_type: cleanReturnType,
+            delivery_boy_charge: 0,
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'order_id' });
         }
       } catch (e) {
         console.error('[OrderRecords] Supabase return exception:', e.message);
@@ -270,13 +315,38 @@ export const orderRecordService = {
     const rec = db.find(r => r.id === targetId || r.order_id === orderId || r.id === id || r.order_id === id);
     if (rec) {
       rec.is_returned = true;
+      rec.return_type = cleanReturnType;
       rec.updated_at = new Date().toISOString();
       saveDb(db);
-      return rec;
     }
 
+    // Upsert into local stock_returns fallback
+    if (orderId) {
+      const returnsDbPath = getReturnsDbPath();
+      let retDb = [];
+      if (fs.existsSync(returnsDbPath)) {
+        try { retDb = JSON.parse(fs.readFileSync(returnsDbPath, 'utf-8')); } catch {}
+      }
+      const existingIdx = retDb.findIndex(r => r.order_id === orderId);
+      if (existingIdx >= 0) {
+        retDb[existingIdx].return_type = cleanReturnType;
+        if (cleanReturnType === 'RTO_RETURN') retDb[existingIdx].delivery_boy_charge = 0;
+      } else {
+        retDb.push({
+          id: `sr_${Date.now()}`,
+          order_id: orderId,
+          return_type: cleanReturnType,
+          delivery_boy_charge: 0,
+          returned_at: new Date().toISOString()
+        });
+      }
+      try { fs.writeFileSync(returnsDbPath, JSON.stringify(retDb, null, 2)); } catch {}
+    }
+
+    if (rec) return rec;
     if (match) {
       match.is_returned = true;
+      match.return_type = cleanReturnType;
       return match;
     }
 
@@ -286,6 +356,7 @@ export const orderRecordService = {
         id: targetId,
         order_id: orderId,
         is_returned: true,
+        return_type: cleanReturnType,
         updated_at: new Date().toISOString()
       };
       db.unshift(fallbackRec);

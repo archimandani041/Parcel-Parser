@@ -3,6 +3,7 @@ import path from 'path';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import { orderRecordService } from './orderRecordService.js';
+import { dbService } from './supabaseService.js';
 
 dotenv.config({ path: path.resolve(process.cwd(), 'backend/.env') });
 dotenv.config();
@@ -174,13 +175,17 @@ export const stockService = {
     allOrders.forEach(order => {
       const sku = normalizeSku(order.sku_id, order.product_name);
       const qty = parseInt(order.quantity, 10) || 1;
-      const isReturned = Boolean(order.is_returned);
+      const retConfig = returnsMap.get(order.order_id);
+      const isReturned = Boolean(order.is_returned || retConfig != null);
+      const return_type = retConfig?.return_type || order.return_type || 'CUSTOMER_RETURN';
 
       if (!skuGroupMap.has(sku)) {
         skuGroupMap.set(sku, {
           sku_id: sku,
           product_name: cleanProductName(order.sku_id, order.product_name),
           total_quantity: 0,
+          customer_returned_quantity: 0,
+          rto_returned_quantity: 0,
           returned_quantity: 0,
           orders: [],
           order_purchase_price: order.purchase_price != null ? Number(order.purchase_price) : null,
@@ -191,9 +196,14 @@ export const stockService = {
       const group = skuGroupMap.get(sku);
       group.total_quantity += qty;
       if (isReturned) {
+        if (return_type === 'RTO_RETURN') {
+          group.rto_returned_quantity += qty;
+        } else {
+          group.customer_returned_quantity += qty;
+        }
         group.returned_quantity += qty;
       }
-      group.orders.push(order);
+      group.orders.push({ ...order, return_type });
 
       // Keep product name updated if currently generic
       if ((!group.product_name || group.product_name === 'Product') && order.product_name) {
@@ -222,40 +232,53 @@ export const stockService = {
 
       const product_name = storedConfig?.product_name || group.product_name;
 
-      const available_quantity = group.total_quantity - group.returned_quantity;
+      const available_quantity = group.returned_quantity;
+      const realized_sales_quantity = Math.max(0, group.total_quantity - group.returned_quantity);
 
-      const product_cost = purchase_price != null ? purchase_price * group.total_quantity : null;
-      const selling_value = selling_price != null ? selling_price * group.total_quantity : null;
+      const inventory_cost = purchase_price != null ? purchase_price * available_quantity : null;
+      const inventory_value = selling_price != null ? selling_price * available_quantity : null;
 
-      const base_profit = (purchase_price != null && selling_price != null)
-        ? (selling_price - purchase_price) * group.total_quantity
+      const realized_sales_profit = (purchase_price != null && selling_price != null)
+        ? (selling_price - purchase_price) * realized_sales_quantity
         : null;
 
-      // Calculate return delivery charges for returned parcels of this SKU
-      let total_return_delivery_charges = 0;
+      // Calculate return delivery charges ONLY for CUSTOMER_RETURN parcels of this SKU
+      let customer_return_loss = 0;
       group.orders.forEach(ord => {
         if (ord.is_returned) {
           const retConfig = returnsMap.get(ord.order_id);
-          if (retConfig && retConfig.delivery_boy_charge != null) {
-            total_return_delivery_charges += Number(retConfig.delivery_boy_charge);
+          const rType = retConfig?.return_type || ord.return_type || 'CUSTOMER_RETURN';
+          if (rType === 'CUSTOMER_RETURN' && retConfig && retConfig.delivery_boy_charge != null) {
+            customer_return_loss += Number(retConfig.delivery_boy_charge);
           }
         }
       });
 
-      const profit = base_profit != null ? base_profit - total_return_delivery_charges : null;
+      const net_profit = realized_sales_profit != null ? realized_sales_profit - customer_return_loss : null;
 
       products.push({
         sku_id: sku,
         product_name,
         total_quantity: group.total_quantity,
+        customer_returned_quantity: group.customer_returned_quantity,
+        rto_returned_quantity: group.rto_returned_quantity,
         returned_quantity: group.returned_quantity,
         available_quantity,
+        realized_sales_quantity,
         purchase_price,
         selling_price,
-        product_cost,
-        selling_value,
-        total_return_delivery_charges,
-        profit
+        inventory_cost,
+        inventory_value,
+        realized_sales_profit,
+        customer_return_loss,
+        rto_return_loss: 0,
+        return_loss: customer_return_loss,
+        net_profit,
+        // Backward compatibility aliases
+        product_cost: inventory_cost,
+        selling_value: inventory_value,
+        total_return_delivery_charges: customer_return_loss,
+        profit: net_profit
       });
     });
 
@@ -263,9 +286,20 @@ export const stockService = {
     const summary = {
       total_products: products.length,
       total_quantity: products.reduce((acc, p) => acc + p.total_quantity, 0),
-      total_product_cost: products.reduce((acc, p) => acc + (p.product_cost || 0), 0),
-      total_selling_value: products.reduce((acc, p) => acc + (p.selling_value || 0), 0),
-      total_profit: products.reduce((acc, p) => acc + (p.profit || 0), 0)
+      total_customer_returned_quantity: products.reduce((acc, p) => acc + p.customer_returned_quantity, 0),
+      total_rto_returned_quantity: products.reduce((acc, p) => acc + p.rto_returned_quantity, 0),
+      total_returned_quantity: products.reduce((acc, p) => acc + p.returned_quantity, 0),
+      total_available_quantity: products.reduce((acc, p) => acc + p.available_quantity, 0),
+      total_inventory_cost: products.reduce((acc, p) => acc + (p.inventory_cost || 0), 0),
+      total_inventory_value: products.reduce((acc, p) => acc + (p.inventory_value || 0), 0),
+      total_realized_sales_profit: products.reduce((acc, p) => acc + (p.realized_sales_profit || 0), 0),
+      total_customer_return_loss: products.reduce((acc, p) => acc + (p.customer_return_loss || 0), 0),
+      total_return_loss: products.reduce((acc, p) => acc + (p.customer_return_loss || 0), 0),
+      total_net_profit: products.reduce((acc, p) => acc + (p.net_profit || 0), 0),
+      // Backward compatibility aliases
+      total_product_cost: products.reduce((acc, p) => acc + (p.inventory_cost || 0), 0),
+      total_selling_value: products.reduce((acc, p) => acc + (p.inventory_value || 0), 0),
+      total_profit: products.reduce((acc, p) => acc + (p.net_profit || 0), 0)
     };
 
     return { products, summary };
@@ -323,14 +357,16 @@ export const stockService = {
   /** Get Return overview of all returned orders */
   async getReturnsOverview() {
     const allOrders = await orderRecordService.getAll();
-    const returnedOrders = allOrders.filter(o => Boolean(o.is_returned));
     const productsMap = await this.getStockProductsMap();
     const returnsMap = await this.getStockReturnsMap();
+    const returnedOrders = allOrders.filter(o => Boolean(o.is_returned || returnsMap.has(o.order_id)));
 
     const returns = returnedOrders.map(order => {
       const sku = normalizeSku(order.sku_id, order.product_name);
       const storedSkuConfig = productsMap.get(sku);
       const storedReturnConfig = returnsMap.get(order.order_id);
+
+      const return_type = storedReturnConfig?.return_type || order.return_type || 'CUSTOMER_RETURN';
 
       const purchase_price = storedSkuConfig?.purchase_price != null
         ? Number(storedSkuConfig.purchase_price)
@@ -342,42 +378,59 @@ export const stockService = {
 
       const product_name = storedSkuConfig?.product_name || cleanProductName(order.sku_id, order.product_name);
       const quantity = parseInt(order.quantity, 10) || 1;
-      const delivery_boy_charge = storedReturnConfig?.delivery_boy_charge != null
-        ? Number(storedReturnConfig.delivery_boy_charge)
-        : 0;
+      const delivery_boy_charge = return_type === 'RTO_RETURN'
+        ? 0
+        : (storedReturnConfig?.delivery_boy_charge != null ? Number(storedReturnConfig.delivery_boy_charge) : 0);
 
-      let profit_after_return = null;
-      if (selling_price != null && purchase_price != null) {
-        const baseProfit = (selling_price - purchase_price) * quantity;
-        profit_after_return = baseProfit - delivery_boy_charge;
-      }
+      const return_loss = return_type === 'RTO_RETURN' ? 0 : delivery_boy_charge;
 
       return {
         id: order.id,
         order_id: order.order_id,
+        customer_name: order.customer_name || '',
         sku_id: sku,
         product_name,
         quantity,
         purchase_price,
         selling_price,
+        return_type,
         delivery_boy_charge,
-        profit_after_return,
+        return_loss,
+        profit_after_return: return_loss,
         return_date: storedReturnConfig?.returned_at || order.updated_at || order.created_at || new Date().toISOString()
       };
     });
 
+    const customerReturns = returns.filter(r => r.return_type === 'CUSTOMER_RETURN');
+    const rtoReturns = returns.filter(r => r.return_type === 'RTO_RETURN');
+
     const summary = {
       total_returned_parcels: returns.length,
       total_returned_quantity: returns.reduce((acc, r) => acc + r.quantity, 0),
-      total_delivery_boy_charges: returns.reduce((acc, r) => acc + r.delivery_boy_charge, 0),
-      total_profit_lost_from_returns: returns.reduce((acc, r) => acc + r.delivery_boy_charge, 0)
+
+      // Customer Return Category Summary
+      total_customer_returns: customerReturns.length,
+      total_customer_returned_quantity: customerReturns.reduce((acc, r) => acc + r.quantity, 0),
+      total_customer_delivery_charges: customerReturns.reduce((acc, r) => acc + r.delivery_boy_charge, 0),
+      total_customer_return_loss: customerReturns.reduce((acc, r) => acc + r.return_loss, 0),
+
+      // RTO Return Category Summary
+      total_rto_returns: rtoReturns.length,
+      total_rto_returned_quantity: rtoReturns.reduce((acc, r) => acc + r.quantity, 0),
+      total_rto_delivery_charges: 0,
+      total_rto_return_loss: 0,
+
+      // Combined
+      total_delivery_boy_charges: customerReturns.reduce((acc, r) => acc + r.delivery_boy_charge, 0),
+      total_return_loss: customerReturns.reduce((acc, r) => acc + r.return_loss, 0),
+      total_profit_lost_from_returns: customerReturns.reduce((acc, r) => acc + r.return_loss, 0)
     };
 
-    return { returns, summary };
+    return { returns, customerReturns, rtoReturns, summary };
   },
 
   /** Update or insert delivery boy charge for a returned order */
-  async updateReturnCharge(order_id, delivery_boy_charge) {
+  async updateReturnCharge(order_id, delivery_boy_charge, return_type) {
     const chargeNum = delivery_boy_charge !== '' && delivery_boy_charge != null ? parseFloat(delivery_boy_charge) : 0;
 
     const payload = {
@@ -385,6 +438,7 @@ export const stockService = {
       delivery_boy_charge: chargeNum,
       updated_at: new Date().toISOString()
     };
+    if (return_type) payload.return_type = return_type;
 
     const supabase = getSupabaseClient();
     if (supabase) {
@@ -478,5 +532,112 @@ export const stockService = {
     }
 
     return { success: true, deletedOrderId: order_id };
+  },
+
+  /** Get aggregated dashboard metrics & Profit/Loss graph data */
+  async getDashboardStats(range = '30') {
+    const { products, summary: stockSummary } = await this.getStockOverview();
+    const { returns, summary: returnsSummary } = await this.getReturnsOverview();
+    const productsMap = await this.getStockProductsMap();
+    const returnsMap = await this.getStockReturnsMap();
+    const allOrders = await orderRecordService.getAll();
+    const docs = await dbService.getDocuments().catch(() => []);
+
+    // 1. Total Profit: Matches Net Profit from Stock page
+    const totalProfit = stockSummary.total_net_profit || 0;
+
+    // 2. Total Selling: SUM(Selling Price * Successfully Sold Quantity)
+    const totalSelling = products.reduce((acc, p) => {
+      const price = p.selling_price != null ? Number(p.selling_price) : 0;
+      const soldQty = p.realized_sales_quantity || 0;
+      return acc + (price * soldQty);
+    }, 0);
+
+    // 3. Total Return: Total returned parcels (Customer Returns + RTO Returns)
+    const totalReturn = returnsSummary.total_returned_parcels || 0;
+
+    // 4. Total Stock Items: SUM(Available Quantity)
+    const totalStockItems = stockSummary.total_available_quantity || 0;
+
+    // 5. Total Labels: Successfully processed / extracted labels from documents database
+    const totalLabels = docs.filter(d => d.status !== 'FAILED').length;
+
+    // 6. Total Orders: Count of unique Order IDs
+    const uniqueOrders = new Set(allOrders.map(o => o.order_id).filter(Boolean));
+    const totalOrders = uniqueOrders.size;
+
+    // PROFIT & LOSS GRAPH DATA (Aggregated by Date)
+    const now = new Date();
+    let cutoffDate = null;
+    if (range === '7') {
+      cutoffDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
+    } else if (range === '30') {
+      cutoffDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30);
+    } else if (range === '90') {
+      cutoffDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 90);
+    }
+
+    const dateMap = new Map();
+
+    // Map order sales profit
+    allOrders.forEach(o => {
+      const rawDate = o.order_date || o.created_at || o.updated_at;
+      if (!rawDate) return;
+      const d = new Date(rawDate);
+      if (isNaN(d.getTime())) return;
+      if (cutoffDate && d < cutoffDate) return;
+
+      const dateStr = d.toISOString().split('T')[0];
+      if (!dateMap.has(dateStr)) {
+        const displayDate = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        dateMap.set(dateStr, { date: dateStr, displayDate, profit: 0, loss: 0 });
+      }
+      const entry = dateMap.get(dateStr);
+      const isReturned = Boolean(o.is_returned || returnsMap.has(o.order_id));
+
+      if (!isReturned) {
+        const sku = normalizeSku(o.sku_id, o.product_name);
+        const storedConfig = productsMap.get(sku);
+        const pPrice = storedConfig?.purchase_price != null ? Number(storedConfig.purchase_price) : (o.purchase_price != null ? Number(o.purchase_price) : 0);
+        const sPrice = storedConfig?.selling_price != null ? Number(storedConfig.selling_price) : (o.selling_price != null ? Number(o.selling_price) : 0);
+        const qty = parseInt(o.quantity, 10) || 1;
+        if (sPrice > pPrice) {
+          entry.profit += (sPrice - pPrice) * qty;
+        }
+      }
+    });
+
+    // Map return losses
+    (returns || []).forEach(r => {
+      const rawDate = r.return_date || r.returned_at || r.created_at;
+      if (!rawDate) return;
+      const d = new Date(rawDate);
+      if (isNaN(d.getTime())) return;
+      if (cutoffDate && d < cutoffDate) return;
+
+      const dateStr = d.toISOString().split('T')[0];
+      if (!dateMap.has(dateStr)) {
+        const displayDate = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        dateMap.set(dateStr, { date: dateStr, displayDate, profit: 0, loss: 0 });
+      }
+      const entry = dateMap.get(dateStr);
+      if (r.return_type === 'CUSTOMER_RETURN') {
+        entry.loss += Number(r.delivery_boy_charge || 0);
+      }
+    });
+
+    const graphData = Array.from(dateMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+
+    return {
+      stats: {
+        total_profit: totalProfit,
+        total_selling: totalSelling,
+        total_return: totalReturn,
+        total_stock_items: totalStockItems,
+        total_labels: totalLabels,
+        total_orders: totalOrders
+      },
+      graph_data: graphData
+    };
   }
 };

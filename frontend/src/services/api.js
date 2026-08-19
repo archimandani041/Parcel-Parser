@@ -78,8 +78,8 @@ export const getOrderRecords = async (search = '') => {
   return response.data;
 };
 
-export const returnOrderRecord = async (id) => {
-  const response = await api.post(`/orders/${id}/return`);
+export const returnOrderRecord = async (id, return_type = 'CUSTOMER_RETURN') => {
+  const response = await api.post(`/orders/${id}/return`, { return_type });
   return response.data;
 };
 
@@ -109,6 +109,11 @@ export const exportMasterExcel = async () => {
 };
 
 // ===== STOCK & RETURN API =====
+
+export const getDashboardStats = async (range = '30') => {
+  const response = await api.get(`/stock/dashboard-stats?range=${range}`);
+  return response.data;
+};
 
 export const getStockOverview = async () => {
   const response = await api.get('/stock');
@@ -140,10 +145,11 @@ export const exportReturnsExcel = async () => {
   return response;
 };
 
-export const updateReturnDeliveryCharge = async (orderId, deliveryBoyCharge) => {
+export const updateReturnDeliveryCharge = async (orderId, deliveryBoyCharge, return_type) => {
   const response = await api.put(`/stock/returns/${encodeURIComponent(orderId)}`, {
     order_id: orderId,
-    delivery_boy_charge: deliveryBoyCharge
+    delivery_boy_charge: deliveryBoyCharge,
+    return_type
   });
   return response.data;
 };

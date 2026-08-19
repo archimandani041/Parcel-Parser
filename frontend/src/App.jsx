@@ -6,6 +6,7 @@ import DocumentsList from './pages/DocumentsList';
 import DocumentDetail from './pages/DocumentDetail';
 import Orders from './pages/Orders';
 import Stock from './pages/Stock';
+import Return from './pages/Return';
 
 export default function App() {
   return (
@@ -15,6 +16,7 @@ export default function App() {
         <Route path="/upload" element={<Upload />} />
         <Route path="/orders" element={<Orders />} />
         <Route path="/stock" element={<Stock />} />
+        <Route path="/return" element={<Return />} />
         <Route path="/documents" element={<DocumentsList />} />
         <Route path="/document/:id" element={<DocumentDetail />} />
       </Routes>
