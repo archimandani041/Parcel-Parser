@@ -39,6 +39,9 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
+  app.use('/uploads', express.static(path.join('/tmp', 'uploads')));
+}
 
 app.get('/', (req, res) => {
   res.json({

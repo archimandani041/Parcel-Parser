@@ -55,12 +55,20 @@ export default function Orders() {
     setSearchQuery(searchInput.trim());
   };
 
-  const handleReturn = async (id) => {
+  const handleReturn = async (id, orderId) => {
     setReturningId(id);
+    const targetId = orderId || id;
     try {
-      await returnOrderRecord(id);
+      await returnOrderRecord(targetId);
       await loadRecords();
     } catch (err) {
+      if (orderId && id !== orderId) {
+        try {
+          await returnOrderRecord(id);
+          await loadRecords();
+          return;
+        } catch {}
+      }
       alert('Return failed: ' + (err.response?.data?.error || err.message));
     } finally {
       setReturningId(null);
@@ -288,7 +296,7 @@ export default function Orders() {
                           </button>
                         ) : (
                           <button
-                            onClick={() => handleReturn(rec.id)}
+                            onClick={() => handleReturn(rec.id, rec.order_id)}
                             disabled={returningId === rec.id}
                             className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-amber-100/90 text-amber-800 border border-amber-200 hover:bg-amber-200 transition-all cursor-pointer disabled:opacity-50"
                           >

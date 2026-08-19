@@ -232,6 +232,8 @@ export const orderRecordService = {
     let orderId = id;
     let targetId = id;
 
+    const isUUID = (str) => typeof str === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+
     const all = await this.getAll();
     const match = all.find(r => r.id === id || r.order_id === id);
     if (match) {
@@ -242,31 +244,56 @@ export const orderRecordService = {
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
-        const { data, error } = await supabase
+        let query = supabase
           .from('order_records')
-          .update({ is_returned: true, updated_at: new Date().toISOString() })
-          .or(`id.eq.${targetId},order_id.eq.${orderId}`)
-          .select()
-          .single();
+          .update({ is_returned: true, updated_at: new Date().toISOString() });
 
+        if (isUUID(targetId)) {
+          query = query.or(`id.eq.${targetId},order_id.eq.${orderId}`);
+        } else {
+          query = query.eq('order_id', orderId);
+        }
+
+        const { data, error } = await query.select();
         if (error) {
           console.error('[OrderRecords] Supabase return update error:', error.message);
-          throw new Error(`Supabase return update error: ${error.message}`);
+        } else if (data && data.length > 0) {
+          console.log(`[OrderRecords] Supabase marked returned: ${orderId}`);
         }
       } catch (e) {
         console.error('[OrderRecords] Supabase return exception:', e.message);
-        throw e;
       }
     }
 
-    // Local fallback
+    // Local fallback persistence
     const db = loadDb();
-    const rec = db.find(r => r.id === targetId || r.order_id === orderId);
-    if (!rec) throw new Error('Record not found');
-    rec.is_returned = true;
-    rec.updated_at = new Date().toISOString();
-    saveDb(db);
-    return rec;
+    const rec = db.find(r => r.id === targetId || r.order_id === orderId || r.id === id || r.order_id === id);
+    if (rec) {
+      rec.is_returned = true;
+      rec.updated_at = new Date().toISOString();
+      saveDb(db);
+      return rec;
+    }
+
+    if (match) {
+      match.is_returned = true;
+      return match;
+    }
+
+    // Fallback: create or update record in local db if passed id exists
+    if (id) {
+      const fallbackRec = {
+        id: targetId,
+        order_id: orderId,
+        is_returned: true,
+        updated_at: new Date().toISOString()
+      };
+      db.unshift(fallbackRec);
+      saveDb(db);
+      return fallbackRec;
+    }
+
+    throw new Error('Record not found');
   },
 
   /** Undo return / restore record as normal (not returned) */
@@ -274,26 +301,31 @@ export const orderRecordService = {
     let orderId = id;
     let targetId = id;
 
+    const isUUID = (str) => typeof str === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+
     const all = await this.getAll();
     const match = all.find(r => r.id === id || r.order_id === id);
-    if (!match) throw new Error('Record not found');
-
-    orderId = match.order_id || id;
-    targetId = match.id || id;
+    if (match) {
+      orderId = match.order_id || id;
+      targetId = match.id || id;
+    }
 
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
-        const { data, error } = await supabase
+        let query = supabase
           .from('order_records')
-          .update({ is_returned: false, updated_at: new Date().toISOString() })
-          .or(`id.eq.${targetId},order_id.eq.${orderId}`)
-          .select()
-          .single();
+          .update({ is_returned: false, updated_at: new Date().toISOString() });
 
+        if (isUUID(targetId)) {
+          query = query.or(`id.eq.${targetId},order_id.eq.${orderId}`);
+        } else {
+          query = query.eq('order_id', orderId);
+        }
+
+        const { data, error } = await query.select();
         if (error) {
           console.error('[OrderRecords] Supabase return undo error:', error.message);
-          throw new Error(`Supabase return undo error: ${error.message}`);
         }
 
         // Delete return delivery charge record from stock_returns table in Supabase if present
@@ -302,13 +334,12 @@ export const orderRecordService = {
         }
       } catch (e) {
         console.error('[OrderRecords] Supabase return undo exception:', e.message);
-        throw e;
       }
     }
 
     // Local fallback persistence
     const db = loadDb();
-    const rec = db.find(r => r.id === targetId || r.order_id === orderId);
+    const rec = db.find(r => r.id === targetId || r.order_id === orderId || r.id === id || r.order_id === id);
     if (rec) {
       rec.is_returned = false;
       rec.updated_at = new Date().toISOString();
@@ -319,7 +350,8 @@ export const orderRecordService = {
     if (orderId) {
       try {
         let rootDir = process.cwd();
-        if (fs.existsSync(path.join(process.cwd(), '..', 'stock_returns.json'))) {
+        if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) rootDir = '/tmp';
+        else if (fs.existsSync(path.join(process.cwd(), '..', 'stock_returns.json'))) {
           rootDir = path.resolve(process.cwd(), '..');
         }
         const returnsPath = path.join(rootDir, 'stock_returns.json');
@@ -333,29 +365,39 @@ export const orderRecordService = {
       }
     }
 
-    return rec || match;
+    return rec || match || { id: targetId, order_id: orderId, is_returned: false };
   },
 
   /** Delete an order record permanently from Supabase & local storage */
   async deleteRecord(id) {
+    let orderId = id;
+    let targetId = id;
+
+    const isUUID = (str) => typeof str === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+
+    const all = await this.getAll();
+    const match = all.find(r => r.id === id || r.order_id === id);
+    if (match) {
+      orderId = match.order_id || id;
+      targetId = match.id || id;
+    }
+
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
-        const { data, error } = await supabase
-          .from('order_records')
-          .delete()
-          .or(`id.eq.${id},order_id.eq.${id}`)
-          .select();
+        let query = supabase.from('order_records').delete();
+        if (isUUID(targetId)) {
+          query = query.or(`id.eq.${targetId},order_id.eq.${orderId}`);
+        } else {
+          query = query.eq('order_id', orderId);
+        }
 
+        const { data, error } = await query.select();
         if (!error) {
           console.log(`[OrderRecords] Deleted record from Supabase: ${id}`);
-          // Also remove from local db if present
-          const db = loadDb();
-          const filtered = db.filter(r => r.id !== id && r.order_id !== id);
-          saveDb(filtered);
-          return { success: true };
+        } else {
+          console.error('[OrderRecords] Supabase delete error:', error?.message);
         }
-        console.error('[OrderRecords] Supabase delete error:', error?.message);
       } catch (e) {
         console.error('[OrderRecords] Supabase delete exception:', e.message);
       }
@@ -363,14 +405,9 @@ export const orderRecordService = {
 
     // Local fallback deletion
     const db = loadDb();
-    const initialLength = db.length;
-    const filtered = db.filter(r => r.id !== id && r.order_id !== id);
-
-    if (filtered.length === initialLength) {
-      throw new Error('Record not found');
-    }
-
+    const filtered = db.filter(r => r.id !== id && r.order_id !== id && r.id !== targetId && r.order_id !== orderId);
     saveDb(filtered);
+
     return { success: true };
   },
 

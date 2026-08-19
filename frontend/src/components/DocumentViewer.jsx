@@ -13,8 +13,20 @@ export default function DocumentViewer({ fileUrl, fileName, fileType, activePage
   };
   const handleRotate = () => setRotation(prev => (prev + 90) % 360);
 
-  const isPdf = fileType?.toLowerCase().includes('pdf') || fileName?.toLowerCase().endsWith('.pdf');
-  const pdfUrlWithPage = (isPdf && fileUrl) ? `${fileUrl}#page=${activePage}` : fileUrl;
+  const getFullFileUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('blob:')) {
+      return url;
+    }
+    const apiBase = import.meta.env.VITE_API_BASE_URL || '/api';
+    const baseUrl = apiBase.startsWith('http') ? apiBase.replace(/\/api\/?$/, '') : '';
+    const cleanPath = url.startsWith('/') ? url : `/${url}`;
+    return `${baseUrl}${cleanPath}`;
+  };
+
+  const resolvedUrl = getFullFileUrl(fileUrl);
+  const isPdf = fileType?.toLowerCase().includes('pdf') || fileName?.toLowerCase().endsWith('.pdf') || resolvedUrl.toLowerCase().includes('.pdf');
+  const pdfUrlWithPage = (isPdf && resolvedUrl) ? `${resolvedUrl}#page=${activePage}` : resolvedUrl;
 
   return (
     <div className="flex flex-col h-full bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
@@ -89,7 +101,7 @@ export default function DocumentViewer({ fileUrl, fileName, fileType, activePage
         ) : (
           <div className="transition-transform duration-200 ease-out flex items-center justify-center">
             <img
-              src={fileUrl}
+              src={resolvedUrl}
               alt="Parcel Label Document"
               style={{
                 transform: `scale(${zoom}) rotate(${rotation}deg)`,
