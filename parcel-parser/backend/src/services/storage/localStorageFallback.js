@@ -6,7 +6,8 @@ import path from 'path';
  * Ensures the application runs seamlessly out of the box in local dev/demo environments.
  */
 
-const baseDir = (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) ? '/tmp' : process.cwd();
+const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.NODE_ENV === 'production' || !process.env.PORT);
+const baseDir = isServerless ? '/tmp' : process.cwd();
 const DB_FILE = path.join(baseDir, 'uploads_db.json');
 const UPLOADS_DIR = path.join(baseDir, 'uploads');
 

@@ -1,7 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
-import { getDocuments, exportMasterExcel } from '../services/api';
+import { 
+  getDocuments, 
+  getStockOverview,
+  exportOrdersExcel, 
+  exportStockExcel, 
+  exportReturnsExcel, 
+  exportMasterExcel 
+} from '../services/api';
 import { getStatusBadgeConfig, formatDate, formatConfidence } from '../utils/formatters';
 import { 
   FileText, 
@@ -16,10 +23,16 @@ import {
   ExternalLink,
   Sparkles,
   TrendingUp,
-  SlidersHorizontal,
   PackageCheck,
   Download,
-  Layers
+  Layers,
+  Package,
+  Boxes,
+  RotateCcw,
+  FileSpreadsheet,
+  Check,
+  IndianRupee,
+  Coins
 } from 'lucide-react';
 
 export default function Dashboard() {
@@ -31,25 +44,112 @@ export default function Dashboard() {
     avg_confidence: 0
   });
   const [recentDocs, setRecentDocs] = useState([]);
+  const [totalProfit, setTotalProfit] = useState(null);
+  const [profitSummary, setProfitSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [exportingMaster, setExportingMaster] = useState(false);
+  const [exportingAll, setExportingAll] = useState(false);
+  const [exportProgress, setExportProgress] = useState('');
+  const [downloadSuccess, setDownloadSuccess] = useState(false);
+
+  // Helper function to trigger browser file download from Blob
+  const triggerDownload = (data, filename) => {
+    const blob = new Blob([data], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
+  // Single Click Download for ALL 3 Excels (1. Orders, 2. Stock, 3. Return)
+  const handleDownloadAllThree = async () => {
+    setExportingAll(true);
+    setDownloadSuccess(false);
+    setExportProgress('Fetching reports...');
+
+    try {
+      const dateStr = new Date().toISOString().split('T')[0];
+
+      // 1. Download Orders Excel
+      setExportProgress('1/3: Downloading Orders Excel...');
+      const ordersRes = await exportOrdersExcel();
+      triggerDownload(ordersRes.data, `1_orders_report_${dateStr}.xlsx`);
+
+      // Small delay between downloads so browser handles files cleanly
+      await new Promise(r => setTimeout(r, 400));
+
+      // 2. Download Stock Excel
+      setExportProgress('2/3: Downloading Stock Excel...');
+      const stockRes = await exportStockExcel();
+      triggerDownload(stockRes.data, `2_stock_report_${dateStr}.xlsx`);
+
+      await new Promise(r => setTimeout(r, 400));
+
+      // 3. Download Return Excel
+      setExportProgress('3/3: Downloading Returns Excel...');
+      const returnsRes = await exportReturnsExcel();
+      triggerDownload(returnsRes.data, `3_returns_report_${dateStr}.xlsx`);
+
+      setExportProgress('Downloaded all 3 Excel files!');
+      setDownloadSuccess(true);
+      setTimeout(() => {
+        setExportProgress('');
+        setDownloadSuccess(false);
+      }, 4000);
+
+    } catch (err) {
+      alert('Single Click Download failed: ' + (err.response?.data?.error || err.message));
+      setExportProgress('');
+    } finally {
+      setExportingAll(false);
+    }
+  };
+
+  const handleExportOrders = async () => {
+    try {
+      const dateStr = new Date().toISOString().split('T')[0];
+      const res = await exportOrdersExcel();
+      triggerDownload(res.data, `1_orders_report_${dateStr}.xlsx`);
+    } catch (err) {
+      alert('Orders export failed: ' + (err.response?.data?.error || err.message));
+    }
+  };
+
+  const handleExportStock = async () => {
+    try {
+      const dateStr = new Date().toISOString().split('T')[0];
+      const res = await exportStockExcel();
+      triggerDownload(res.data, `2_stock_report_${dateStr}.xlsx`);
+    } catch (err) {
+      alert('Stock export failed: ' + (err.response?.data?.error || err.message));
+    }
+  };
+
+  const handleExportReturns = async () => {
+    try {
+      const dateStr = new Date().toISOString().split('T')[0];
+      const res = await exportReturnsExcel();
+      triggerDownload(res.data, `3_returns_report_${dateStr}.xlsx`);
+    } catch (err) {
+      alert('Returns export failed: ' + (err.response?.data?.error || err.message));
+    }
+  };
 
   const handleExportMaster = async () => {
     setExportingMaster(true);
     try {
       const response = await exportMasterExcel();
-      const blob = new Blob([response.data], {
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-      });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `master_report_orders_stock_returns_${new Date().toISOString().split('T')[0]}.xlsx`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      triggerDownload(
+        response.data, 
+        `master_report_orders_stock_returns_${new Date().toISOString().split('T')[0]}.xlsx`
+      );
     } catch (err) {
       alert('Master Export failed: ' + (err.response?.data?.error || err.message));
     } finally {
@@ -57,12 +157,27 @@ export default function Dashboard() {
     }
   };
 
+  const formatCurrency = (val) => {
+    if (val == null || isNaN(val)) return '₹0';
+    const num = Number(val);
+    const isNeg = num < 0;
+    const formatted = Math.abs(num).toLocaleString('en-IN');
+    return isNeg ? `-₹${formatted}` : `₹${formatted}`;
+  };
+
   const loadDashboardData = () => {
     setLoading(true);
-    getDocuments()
-      .then(res => {
+    Promise.all([
+      getDocuments(),
+      getStockOverview().catch(() => null)
+    ])
+      .then(([res, stockRes]) => {
         setStats(res.stats || {});
         setRecentDocs(res.documents || []);
+        if (stockRes?.success && stockRes.summary) {
+          setTotalProfit(stockRes.summary.total_profit);
+          setProfitSummary(stockRes.summary);
+        }
       })
       .catch(err => console.error('Dashboard load error:', err))
       .finally(() => setLoading(false));
@@ -89,8 +204,15 @@ export default function Dashboard() {
 
           <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
             <div className="space-y-4 max-w-3xl">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1 bg-white/90 border border-purple-200/80 rounded-full text-xs font-extrabold text-purple-900 shadow-xs">
-                <Sparkles className="w-3.5 h-3.5 text-purple-600" /> Next-Gen Multimodal Vision Engine
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1 bg-white/90 border border-purple-200/80 rounded-full text-xs font-extrabold text-purple-900 shadow-xs">
+                  <Sparkles className="w-3.5 h-3.5 text-purple-600" /> Next-Gen Multimodal Vision Engine
+                </div>
+                {totalProfit != null && (
+                  <div className="inline-flex items-center gap-1.5 px-3.5 py-1 bg-emerald-100/90 border border-emerald-300/80 rounded-full text-xs font-extrabold text-emerald-950 shadow-xs">
+                    <TrendingUp className="w-3.5 h-3.5 text-emerald-700" /> Total Profit: <span className="font-mono text-xs font-extrabold text-emerald-800">{formatCurrency(totalProfit)}</span>
+                  </div>
+                )}
               </div>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight text-slate-900">
                 Discover high-accuracy parcel <span className="font-serif-italic font-normal text-purple-700 underline decoration-purple-300 decoration-wavy">extractions</span>
@@ -101,15 +223,16 @@ export default function Dashboard() {
             </div>
 
             <div className="flex items-center gap-3 shrink-0 flex-wrap">
+              {/* Primary 1-Click Button in Hero */}
               <button
-                id="export-master-excel-btn"
-                onClick={handleExportMaster}
-                disabled={exportingMaster}
-                className="flex items-center gap-2.5 bg-emerald-100/90 hover:bg-emerald-200/90 text-emerald-950 font-extrabold text-xs sm:text-sm px-6 py-3.5 rounded-full shadow-xs transition-all duration-200 hover:scale-[1.02] border border-emerald-300/80 disabled:opacity-50 cursor-pointer"
-                title="Download single master Excel containing 3 sheets: Orders, Stock, and Returns"
+                id="download-all-3-excels-hero-btn"
+                onClick={handleDownloadAllThree}
+                disabled={exportingAll}
+                className="flex items-center gap-2.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-700 hover:to-teal-800 text-white font-extrabold text-xs sm:text-sm px-7 py-3.5 rounded-full shadow-lg shadow-emerald-500/20 transition-all duration-200 hover:scale-[1.02] disabled:opacity-50 cursor-pointer"
+                title="Download 1. Orders, 2. Stock, and 3. Return Excel files with a single click"
               >
-                <Download className={`w-4 h-4 text-emerald-700 ${exportingMaster ? 'animate-bounce' : ''}`} />
-                {exportingMaster ? 'Generating...' : 'Master Excel (All 3)'}
+                <Download className={`w-4 h-4 text-white ${exportingAll ? 'animate-bounce' : ''}`} />
+                {exportingAll ? exportProgress : 'Download All 3 Excels (1-Click)'}
               </button>
 
               <Link
@@ -124,8 +247,24 @@ export default function Dashboard() {
         </div>
 
         {/* Executive KPI Metric Cards (Uniform Professional Light Styling with Pastel Accents) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
           
+          {/* Total Profit Card */}
+          <div className="ui-card ui-card-hover p-5 space-y-2 bg-gradient-to-br from-emerald-50/80 via-teal-50/40 to-white border border-emerald-200 shadow-md">
+            <div className="flex items-center justify-between text-slate-500">
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-800">Total Profit</span>
+              <div className="w-9 h-9 rounded-2xl bg-emerald-100 border border-emerald-200 flex items-center justify-center text-emerald-700 shadow-xs">
+                <Coins className="w-4.5 h-4.5" />
+              </div>
+            </div>
+            <p className={`text-3xl font-extrabold font-mono tracking-tight ${totalProfit >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
+              {formatCurrency(totalProfit)}
+            </p>
+            <div className="flex items-center gap-1.5 text-[11px] text-emerald-700 font-semibold">
+              <TrendingUp className="w-3 h-3 text-emerald-600" /> Net after return charges
+            </div>
+          </div>
+
           {/* Total Documents */}
           <div className="ui-card ui-card-hover p-5 space-y-2">
             <div className="flex items-center justify-between text-slate-500">
@@ -200,6 +339,8 @@ export default function Dashboard() {
           </div>
 
         </div>
+
+
 
         {/* Recent Extracted Documents Section */}
         <div className="ui-card p-6 sm:p-8 space-y-6">

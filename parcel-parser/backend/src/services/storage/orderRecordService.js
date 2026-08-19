@@ -229,31 +229,111 @@ export const orderRecordService = {
 
   /** Mark a record as returned */
   async markReturned(id) {
+    let orderId = id;
+    let targetId = id;
+
+    const all = await this.getAll();
+    const match = all.find(r => r.id === id || r.order_id === id);
+    if (match) {
+      orderId = match.order_id || id;
+      targetId = match.id || id;
+    }
+
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
         const { data, error } = await supabase
           .from('order_records')
           .update({ is_returned: true, updated_at: new Date().toISOString() })
-          .or(`id.eq.${id},order_id.eq.${id}`)
+          .or(`id.eq.${targetId},order_id.eq.${orderId}`)
           .select()
           .single();
 
-        if (!error && data) return data;
-        console.error('[OrderRecords] Supabase return update error:', error?.message);
+        if (error) {
+          console.error('[OrderRecords] Supabase return update error:', error.message);
+          throw new Error(`Supabase return update error: ${error.message}`);
+        }
       } catch (e) {
         console.error('[OrderRecords] Supabase return exception:', e.message);
+        throw e;
       }
     }
 
     // Local fallback
     const db = loadDb();
-    const rec = db.find(r => r.id === id || r.order_id === id);
+    const rec = db.find(r => r.id === targetId || r.order_id === orderId);
     if (!rec) throw new Error('Record not found');
     rec.is_returned = true;
     rec.updated_at = new Date().toISOString();
     saveDb(db);
     return rec;
+  },
+
+  /** Undo return / restore record as normal (not returned) */
+  async unmarkReturned(id) {
+    let orderId = id;
+    let targetId = id;
+
+    const all = await this.getAll();
+    const match = all.find(r => r.id === id || r.order_id === id);
+    if (!match) throw new Error('Record not found');
+
+    orderId = match.order_id || id;
+    targetId = match.id || id;
+
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('order_records')
+          .update({ is_returned: false, updated_at: new Date().toISOString() })
+          .or(`id.eq.${targetId},order_id.eq.${orderId}`)
+          .select()
+          .single();
+
+        if (error) {
+          console.error('[OrderRecords] Supabase return undo error:', error.message);
+          throw new Error(`Supabase return undo error: ${error.message}`);
+        }
+
+        // Delete return delivery charge record from stock_returns table in Supabase if present
+        if (orderId) {
+          await supabase.from('stock_returns').delete().eq('order_id', orderId);
+        }
+      } catch (e) {
+        console.error('[OrderRecords] Supabase return undo exception:', e.message);
+        throw e;
+      }
+    }
+
+    // Local fallback persistence
+    const db = loadDb();
+    const rec = db.find(r => r.id === targetId || r.order_id === orderId);
+    if (rec) {
+      rec.is_returned = false;
+      rec.updated_at = new Date().toISOString();
+      saveDb(db);
+    }
+
+    // Delete from local stock_returns.json fallback if present
+    if (orderId) {
+      try {
+        let rootDir = process.cwd();
+        if (fs.existsSync(path.join(process.cwd(), '..', 'stock_returns.json'))) {
+          rootDir = path.resolve(process.cwd(), '..');
+        }
+        const returnsPath = path.join(rootDir, 'stock_returns.json');
+        if (fs.existsSync(returnsPath)) {
+          const returnsData = JSON.parse(fs.readFileSync(returnsPath, 'utf-8'));
+          const updatedData = returnsData.filter(r => r.order_id !== orderId);
+          fs.writeFileSync(returnsPath, JSON.stringify(updatedData, null, 2));
+        }
+      } catch (err) {
+        console.error('[OrderRecords] Error updating local stock_returns.json:', err.message);
+      }
+    }
+
+    return rec || match;
   },
 
   /** Delete an order record permanently from Supabase & local storage */

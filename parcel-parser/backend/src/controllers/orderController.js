@@ -25,6 +25,20 @@ export async function returnOrderRecord(req, res, next) {
   }
 }
 
+/** POST /api/orders/:id/undo-return */
+export async function undoReturnOrderRecord(req, res, next) {
+  try {
+    const { id } = req.params;
+    const record = await orderRecordService.unmarkReturned(id);
+    res.status(200).json({ success: true, record, message: 'Return undone successfully' });
+  } catch (err) {
+    if (err.message === 'Record not found') {
+      return res.status(404).json({ success: false, error: err.message });
+    }
+    next(err);
+  }
+}
+
 /** DELETE /api/orders/:id */
 export async function deleteOrderRecord(req, res, next) {
   try {

@@ -1,5 +1,5 @@
 import express from 'express';
-import { getOrderRecords, returnOrderRecord, deleteOrderRecord, exportOrdersExcel, exportMasterExcel, syncOrdersToSupabase } from '../controllers/orderController.js';
+import { getOrderRecords, returnOrderRecord, undoReturnOrderRecord, deleteOrderRecord, exportOrdersExcel, exportMasterExcel, syncOrdersToSupabase } from '../controllers/orderController.js';
 
 const router = express.Router();
 
@@ -17,6 +17,9 @@ router.get('/', getOrderRecords);
 
 // POST /api/orders/:id/return — Mark record as returned
 router.post('/:id/return', returnOrderRecord);
+
+// POST /api/orders/:id/undo-return — Undo record returned status
+router.post('/:id/undo-return', undoReturnOrderRecord);
 
 // DELETE /api/orders/:id — Delete an order record permanently
 router.delete('/:id', deleteOrderRecord);

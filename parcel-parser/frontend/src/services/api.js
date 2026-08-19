@@ -83,6 +83,11 @@ export const returnOrderRecord = async (id) => {
   return response.data;
 };
 
+export const undoReturnOrderRecord = async (id) => {
+  const response = await api.post(`/orders/${id}/undo-return`);
+  return response.data;
+};
+
 export const deleteOrderRecord = async (id) => {
   const response = await api.delete(`/orders/${id}`);
   return response.data;
