@@ -1,19 +1,22 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600;1,700&family=Playfair+Display:ital,wght@0,600;1,400;1,600;1,700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600;1,700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 @import "tailwindcss";
 
 @layer base {
   body {
-    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    /* Soft multi-pastel background gradient (lavender, sage, peach & soft ice blue blend) */
-    background: linear-gradient(135deg, #f3f0fd 0%, #f7f3fb 35%, #f0f7f4 70%, #f6f2f9 100%);
-    background-attachment: fixed;
-    color: #1e1b4b;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #fdfbf7;
+    color: #1c1815;
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
   }
 
+  .font-serif-title {
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-weight: 400;
+  }
+
   .font-serif-italic {
-    font-family: 'Playfair Display', Georgia, serif;
+    font-family: 'Instrument Serif', Georgia, serif;
     font-style: italic;
   }
 
@@ -22,42 +25,40 @@
   }
 }
 
-/* Custom smooth scrollbars with light pastel touch */
+/* Custom smooth scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(243, 240, 253, 0.8);
+  background: #f4efe6;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(216, 207, 244, 0.8);
+  background: #d8cebe;
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(197, 185, 238, 0.95);
+  background: #bfae99;
 }
 
-/* Floating Glassmorphic Light Pastel Navbar */
+/* Floating Glassmorphic Executive Navbar */
 .floating-navbar {
-  background: rgba(255, 255, 255, 0.88);
+  background: rgba(253, 251, 247, 0.92);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(226, 218, 248, 0.9);
-  box-shadow: 0 10px 25px -5px rgba(168, 145, 225, 0.1), 0 4px 10px -2px rgba(147, 112, 219, 0.04);
+  border: 1px solid rgba(220, 210, 195, 0.8);
+  box-shadow: 0 8px 20px -4px rgba(28, 24, 21, 0.04);
 }
 
-/* Executive Professional Light Pastel Card Utilities */
+/* Editorial Executive Warm Cards */
 .ui-card {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(230, 222, 250, 0.9);
-  box-shadow: 0 10px 30px -8px rgba(147, 112, 219, 0.07), 0 4px 12px -2px rgba(120, 100, 200, 0.03);
-  border-radius: 1.5rem;
+  background: #ffffff;
+  border: 1px solid #eae3d5;
+  box-shadow: 0 4px 20px -4px rgba(28, 24, 21, 0.03);
+  border-radius: 1.25rem;
 }
 
 .ui-card-hover {
@@ -65,87 +66,62 @@
 }
 
 .ui-card-hover:hover {
-  border-color: rgba(200, 185, 245, 0.95);
-  background: rgba(255, 255, 255, 0.95);
+  border-color: #d4c7b2;
+  box-shadow: 0 12px 32px -8px rgba(28, 24, 21, 0.08);
   transform: translateY(-2px);
-  box-shadow: 0 16px 36px -10px rgba(147, 112, 219, 0.12);
 }
 
-/* Soft Executive Hero Banner Gradient (Light Pastel Container) */
-.pastel-light-hero {
-  background: linear-gradient(135deg, #f5effe 0%, #faf6ff 50%, #f0f4fe 100%);
-  border: 1px solid rgba(225, 215, 250, 0.9);
+/* Dark Warm Executive Banner */
+.editorial-dark-card {
+  background: radial-gradient(120% 120% at 50% 10%, #2e2621 0%, #1c1815 100%);
+  color: #fdfbf7;
+  border: 1px solid #3d332c;
+  border-radius: 1.75rem;
+  box-shadow: 0 20px 40px -15px rgba(28, 24, 21, 0.25);
 }
 
-/* Page Ambient Light Pastel Wrapper */
-.page-pastel-bg {
-  background: rgba(255, 255, 255, 0.65);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(230, 222, 250, 0.8);
-  border-radius: 2rem;
-  box-shadow: 0 20px 40px -15px rgba(147, 112, 219, 0.08);
+/* Editorial Pills & Buttons */
+.pill-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.875rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: #f4efe6;
+  color: #574b40;
+  border: 1px solid #e2d7c5;
 }
 
-/* Light Pastel Button Utilities - Strict 100% Light Pastel Color System */
 .pill-button-dark {
-  background: linear-gradient(135deg, #f2e9fe 0%, #e9ddff 100%);
-  color: #4c1d95;
-  border: 1px solid #ddd0fc;
+  background: #1c1815;
+  color: #fdfbf7;
+  border: 1px solid #3d332c;
   border-radius: 9999px;
   font-weight: 700;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 12px -2px rgba(139, 92, 246, 0.15);
+  box-shadow: 0 4px 14px -3px rgba(28, 24, 21, 0.2);
 }
 
 .pill-button-dark:hover {
-  background: linear-gradient(135deg, #e9ddff 0%, #dfcefd 100%);
-  color: #3b0764;
-  border-color: #cebbfb;
+  background: #2e2621;
+  color: #ffffff;
   transform: translateY(-1px);
-  box-shadow: 0 8px 18px -4px rgba(139, 92, 246, 0.25);
+  box-shadow: 0 8px 20px -4px rgba(28, 24, 21, 0.3);
 }
 
-.pill-button-pastel {
-  background: linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%);
-  color: #3730a3;
-  border: 1px solid #c7d2fe;
-  border-radius: 9999px;
-  font-weight: 700;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 12px -2px rgba(99, 102, 241, 0.15);
-}
-
-.pill-button-pastel:hover {
-  background: linear-gradient(135deg, #c7d2fe 0%, #c4b5fd 100%);
-  color: #312e81;
-  border-color: #a5b4fc;
-  transform: translateY(-1px);
-  box-shadow: 0 8px 18px -4px rgba(99, 102, 241, 0.25);
-}
-
-.pill-button-light-pastel {
-  background: #f5f0fe;
-  color: #5b21b6;
-  border: 1px solid #e4d8fd;
+.pill-button-light {
+  background: #ffffff;
+  color: #1c1815;
+  border: 1px solid #e2d7c5;
   border-radius: 9999px;
   font-weight: 700;
   transition: all 0.2s ease;
 }
 
-.pill-button-light-pastel:hover {
-  background: #ebe0fc;
-  color: #4c1d95;
-  border-color: #d8c5fc;
+.pill-button-light:hover {
+  background: #f4efe6;
+  border-color: #d4c7b2;
   transform: translateY(-1px);
 }
-
-/* Glowing accent effects */
-.glow-pastel {
-  box-shadow: 0 0 25px -5px rgba(168, 145, 225, 0.25);
-}
-
-
-
-
-
