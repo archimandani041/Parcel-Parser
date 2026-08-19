@@ -35,12 +35,7 @@ export default function Navbar({ title = 'Parcel Information Extractor', healthI
             <Boxes className="w-4 h-4" />
           </div>
           <div className="hidden sm:block">
-            <div className="flex items-center gap-1.5">
-              <span className="font-extrabold text-sm text-slate-800 tracking-tight">ParcelAI</span>
-              <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-purple-100 text-purple-700 border border-purple-200 uppercase tracking-wider">
-                PASTEL
-              </span>
-            </div>
+            <span className="font-extrabold text-sm text-slate-800 tracking-tight">ParcelAI</span>
           </div>
         </NavLink>
 
@@ -78,18 +73,8 @@ export default function Navbar({ title = 'Parcel Information Extractor', healthI
           })}
         </nav>
 
-        {/* Right: Engine Status Badge & Mobile Toggle */}
+        {/* Right: Quick Action Button & Mobile Toggle */}
         <div className="flex items-center gap-2.5">
-          {/* Gemini AI Status Badge */}
-          <div className="hidden lg:flex items-center gap-2 px-3.5 py-1 bg-sky-100/70 border border-sky-200/90 rounded-full text-[11px] font-bold text-sky-900 shadow-xs">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-sky-500"></span>
-            </span>
-            <Sparkles className="w-3.5 h-3.5 text-sky-600" />
-            <span>{healthInfo?.model || 'Gemini Vision AI'}</span>
-          </div>
-
           {/* Quick Upload Action Button (Light Pastel) */}
           <NavLink
             to="/upload"
@@ -144,7 +129,7 @@ export default function Navbar({ title = 'Parcel Information Extractor', healthI
 
           <div className="pt-2 mt-2 border-t border-purple-100 flex items-center justify-between px-4 py-2 text-[11px] font-medium text-slate-500">
             <span className="flex items-center gap-1.5 text-purple-700 font-bold">
-              <Sparkles className="w-3.5 h-3.5" /> {healthInfo?.model || 'Gemini Vision AI'}
+              <Sparkles className="w-3.5 h-3.5" /> AI Parser
             </span>
             <span className="flex items-center gap-1 text-emerald-600 font-bold">
               <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Online
