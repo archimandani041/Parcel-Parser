@@ -4,6 +4,7 @@
   "description": "AI-Powered Parcel Label Information Extraction Platform",
   "private": true,
   "scripts": {
+    "build": "echo 'Root build ready'",
     "dev": "concurrently --names \"BACKEND,FRONTEND\" --prefix-colors \"cyan,magenta\" \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:backend": "cd backend && npm run dev",
     "dev:frontend": "cd frontend && npm run dev",
