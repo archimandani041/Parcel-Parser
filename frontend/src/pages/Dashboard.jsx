@@ -1,29 +1,37 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
-import { 
-  getDocuments, 
+import {
+  getDocuments,
   getStockOverview,
-  exportOrdersExcel, 
-  exportStockExcel, 
-  exportReturnsExcel, 
-  exportMasterExcel 
+  exportOrdersExcel,
+  exportStockExcel,
+  exportReturnsExcel,
+  exportMasterExcel
 } from '../services/api';
 import { getStatusBadgeConfig, formatDate, formatConfidence } from '../utils/formatters';
-import { 
-  FileText, 
-  CheckCircle2, 
-  AlertTriangle, 
-  XCircle, 
-  UploadCloud, 
-  ArrowRight, 
+import {
+  FileText,
+  CheckCircle2,
+  AlertTriangle,
+  XCircle,
+  Zap,
+  UploadCloud,
+  ArrowRight,
   RefreshCw,
   Search,
   ExternalLink,
   Sparkles,
   TrendingUp,
+  PackageCheck,
   Download,
+  Layers,
+  Package,
+  Boxes,
+  RotateCcw,
+  FileSpreadsheet,
   Check,
+  IndianRupee,
   Coins
 } from 'lucide-react';
 
@@ -40,21 +48,12 @@ export default function Dashboard() {
   const [profitSummary, setProfitSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [exportingMaster, setExportingMaster] = useState(false);
   const [exportingAll, setExportingAll] = useState(false);
   const [exportProgress, setExportProgress] = useState('');
-  const [briefSubmitted, setBriefSubmitted] = useState(false);
+  const [downloadSuccess, setDownloadSuccess] = useState(false);
 
-  // Form State
-  const [briefForm, setBriefForm] = useState({
-    company: '',
-    name: '',
-    email: '',
-    mobile: '',
-    city: 'Surat',
-    website: '',
-    note: ''
-  });
-
+  // Helper function to trigger browser file download from Blob
   const triggerDownload = (data, filename) => {
     const blob = new Blob([data], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -69,33 +68,92 @@ export default function Dashboard() {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
+  // Single Click Download for ALL 3 Excels (1. Orders, 2. Stock, 3. Return)
   const handleDownloadAllThree = async () => {
     setExportingAll(true);
+    setDownloadSuccess(false);
     setExportProgress('Fetching reports...');
+
     try {
       const dateStr = new Date().toISOString().split('T')[0];
 
-      setExportProgress('1/3: Orders Excel...');
+      // 1. Download Orders Excel
+      setExportProgress('1/3: Downloading Orders Excel...');
       const ordersRes = await exportOrdersExcel();
       triggerDownload(ordersRes.data, `1_orders_report_${dateStr}.xlsx`);
+
+      // Small delay between downloads so browser handles files cleanly
       await new Promise(r => setTimeout(r, 400));
 
-      setExportProgress('2/3: Stock Excel...');
+      // 2. Download Stock Excel
+      setExportProgress('2/3: Downloading Stock Excel...');
       const stockRes = await exportStockExcel();
       triggerDownload(stockRes.data, `2_stock_report_${dateStr}.xlsx`);
+
       await new Promise(r => setTimeout(r, 400));
 
-      setExportProgress('3/3: Returns Excel...');
+      // 3. Download Return Excel
+      setExportProgress('3/3: Downloading Returns Excel...');
       const returnsRes = await exportReturnsExcel();
       triggerDownload(returnsRes.data, `3_returns_report_${dateStr}.xlsx`);
 
-      setExportProgress('Downloaded all 3 Excels!');
-      setTimeout(() => setExportProgress(''), 3000);
+      setExportProgress('Downloaded all 3 Excel files!');
+      setDownloadSuccess(true);
+      setTimeout(() => {
+        setExportProgress('');
+        setDownloadSuccess(false);
+      }, 4000);
+
     } catch (err) {
-      alert('Download failed: ' + (err.response?.data?.error || err.message));
+      alert('Single Click Download failed: ' + (err.response?.data?.error || err.message));
       setExportProgress('');
     } finally {
       setExportingAll(false);
+    }
+  };
+
+  const handleExportOrders = async () => {
+    try {
+      const dateStr = new Date().toISOString().split('T')[0];
+      const res = await exportOrdersExcel();
+      triggerDownload(res.data, `1_orders_report_${dateStr}.xlsx`);
+    } catch (err) {
+      alert('Orders export failed: ' + (err.response?.data?.error || err.message));
+    }
+  };
+
+  const handleExportStock = async () => {
+    try {
+      const dateStr = new Date().toISOString().split('T')[0];
+      const res = await exportStockExcel();
+      triggerDownload(res.data, `2_stock_report_${dateStr}.xlsx`);
+    } catch (err) {
+      alert('Stock export failed: ' + (err.response?.data?.error || err.message));
+    }
+  };
+
+  const handleExportReturns = async () => {
+    try {
+      const dateStr = new Date().toISOString().split('T')[0];
+      const res = await exportReturnsExcel();
+      triggerDownload(res.data, `3_returns_report_${dateStr}.xlsx`);
+    } catch (err) {
+      alert('Returns export failed: ' + (err.response?.data?.error || err.message));
+    }
+  };
+
+  const handleExportMaster = async () => {
+    setExportingMaster(true);
+    try {
+      const response = await exportMasterExcel();
+      triggerDownload(
+        response.data,
+        `master_report_orders_stock_returns_${new Date().toISOString().split('T')[0]}.xlsx`
+      );
+    } catch (err) {
+      alert('Master Export failed: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setExportingMaster(false);
     }
   };
 
@@ -129,494 +187,280 @@ export default function Dashboard() {
     loadDashboardData();
   }, []);
 
-  const handleBriefSubmit = (e) => {
-    e.preventDefault();
-    setBriefSubmitted(true);
-    setTimeout(() => {
-      setBriefSubmitted(false);
-      setBriefForm({
-        company: '',
-        name: '',
-        email: '',
-        mobile: '',
-        city: 'Surat',
-        website: '',
-        note: ''
-      });
-    }, 4000);
-  };
-
-  const filteredDocs = recentDocs.filter(d => 
+  const filteredDocs = recentDocs.filter(d =>
     d.file_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     d.status?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
-    <Layout title="ParcelAI Intelligence Platform">
-      <div className="space-y-16 pb-16 font-sans">
-        
-        {/* ================= 1. EDITORIAL HERO SECTION ================= */}
-        <section className="space-y-6 pt-4">
-          <div className="space-y-3">
-            <h1 className="text-4xl sm:text-6xl lg:text-7xl tracking-tight text-[#1c1815] font-serif-title leading-[1.08]">
-              Don't sell to us. <br />
-              <span className="font-serif-italic italic text-[#3d332c]">Sit at the table.</span>
-            </h1>
-            <p className="text-sm sm:text-base text-[#574b40] max-w-2xl font-medium leading-relaxed">
-              125 Indian agencies already live in SarvaaOne. A partner does not buy that room. They sit next to it. A pitch deck is optional. A brief is not.
-            </p>
-          </div>
+    <Layout title="Document Intelligence Dashboard">
+      <div className="space-y-8 pb-10">
 
-          {/* Dark Warm Executive Banner ("LIVE FROM THE BOOK") */}
-          <div className="editorial-dark-card p-8 sm:p-12 space-y-8 relative overflow-hidden">
-            <div className="space-y-2">
-              <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#a89988]">
-                LIVE FROM THE BOOK
-              </span>
-              <h2 className="text-2xl sm:text-4xl font-serif-title text-[#fdfbf7]">
-                This is who you would sit next to.
-              </h2>
+        {/* Executive Hero Banner with Light Pastel Card & Ambient Lavender Glow */}
+        <div className="relative overflow-hidden rounded-3xl pastel-light-hero p-8 sm:p-10 shadow-lg shadow-purple-900/5 text-slate-900">
+          {/* Subtle Ambient Background Pastel Blobs */}
+          <div className="absolute top-0 right-0 w-96 h-96 bg-purple-200/30 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 left-10 w-80 h-80 bg-blue-200/30 rounded-full blur-2xl pointer-events-none" />
+
+          <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+            <div className="space-y-4 max-w-3xl">
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1 bg-white/90 border border-purple-200/80 rounded-full text-xs font-extrabold text-purple-900 shadow-xs">
+                  <Sparkles className="w-3.5 h-3.5 text-purple-600" /> Next-Gen Multimodal Vision Engine
+                </div>
+                {totalProfit != null && (
+                  <div className="inline-flex items-center gap-1.5 px-3.5 py-1 bg-emerald-100/90 border border-emerald-300/80 rounded-full text-xs font-extrabold text-emerald-950 shadow-xs">
+                    <TrendingUp className="w-3.5 h-3.5 text-emerald-700" /> Total Profit: <span className="font-mono text-xs font-extrabold text-emerald-800">{formatCurrency(totalProfit)}</span>
+                  </div>
+                )}
+              </div>
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight text-slate-900">
+                Discover high-accuracy parcel <span className="font-serif-italic font-normal text-purple-700 underline decoration-purple-300 decoration-wavy">extractions</span>
+              </h1>
+              <p className="text-sm sm:text-base text-slate-600 leading-relaxed max-w-2xl font-medium">
+                Extract AWB tracking codes, courier logistics, recipient addresses, line item SKUs, tax GSTIN, and monetary amounts automatically from any label layout without predefined pixel templates.
+              </p>
             </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-10 border-t border-[#3d332c] pt-8">
-              <div className="space-y-1">
-                <p className="text-3xl sm:text-5xl font-serif-title text-[#fdfbf7]">130+</p>
-                <p className="text-xs font-bold text-[#d4c7b2]">People connected</p>
-                <p className="text-[11px] text-[#8c7b6c]">Agents and their teams</p>
-              </div>
-
-              <div className="space-y-1">
-                <p className="text-3xl sm:text-5xl font-serif-title text-[#fdfbf7]">38</p>
-                <p className="text-xs font-bold text-[#d4c7b2]">Active this week</p>
-                <p className="text-[11px] text-[#8c7b6c]">Opened the OS in 7 days</p>
-              </div>
-
-              <div className="space-y-1">
-                <p className="text-3xl sm:text-5xl font-serif-title text-[#fdfbf7]">125+</p>
-                <p className="text-xs font-bold text-[#d4c7b2]">Agencies</p>
-                <p className="text-[11px] text-[#8c7b6c]">Owner accounts, live</p>
-              </div>
-
-              <div className="space-y-1">
-                <p className="text-3xl sm:text-5xl font-serif-title text-[#fdfbf7]">1,693+</p>
-                <p className="text-xs font-bold text-[#d4c7b2]">Households in the book</p>
-                <p className="text-[11px] text-[#8c7b6c]">Customers, not a rented list</p>
-              </div>
-            </div>
-
-            {/* Quick Hero Actions */}
-            <div className="pt-4 flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-3 shrink-0 flex-wrap">
+              {/* Primary 1-Click Button in Hero */}
               <button
+                id="download-all-3-excels-hero-btn"
                 onClick={handleDownloadAllThree}
                 disabled={exportingAll}
-                className="pill-button-light px-6 py-3 text-xs font-extrabold flex items-center gap-2 cursor-pointer"
+                className="flex items-center gap-2.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-700 hover:to-teal-800 text-white font-extrabold text-xs sm:text-sm px-7 py-3.5 rounded-full shadow-lg shadow-emerald-500/20 transition-all duration-200 hover:scale-[1.02] disabled:opacity-50 cursor-pointer"
+                title="Download 1. Orders, 2. Stock, and 3. Return Excel files with a single click"
               >
-                <Download className="w-4 h-4 text-[#1c1815]" />
+                <Download className={`w-4 h-4 text-white ${exportingAll ? 'animate-bounce' : ''}`} />
                 {exportingAll ? exportProgress : 'Download All 3 Excels (1-Click)'}
               </button>
 
               <Link
                 to="/upload"
-                className="bg-[#3d332c] hover:bg-[#4a3f37] text-[#fdfbf7] px-6 py-3 rounded-full text-xs font-extrabold flex items-center gap-2 border border-[#574b40] transition-colors"
+                className="pill-button-dark flex items-center gap-2.5 px-7 py-3.5 text-xs sm:text-sm font-extrabold shadow-sm"
               >
-                <UploadCloud className="w-4 h-4 text-[#d4c7b2]" />
-                Upload Shipping Label
+                <UploadCloud className="w-4 h-4 text-purple-600" />
+                Upload New Label
               </Link>
             </div>
           </div>
-        </section>
+        </div>
 
+        {/* Executive KPI Metric Cards (Uniform Professional Light Styling with Pastel Accents) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
 
-        {/* ================= 2. WHAT A PARTNER ACTUALLY PLUGS INTO ================= */}
-        <section className="space-y-8 pt-4">
-          <div className="text-center space-y-3">
-            <span className="pill-tag">The platform</span>
-            <h2 className="text-3xl sm:text-5xl font-serif-title text-[#1c1815]">
-              What a partner actually plugs into
-            </h2>
-            <p className="text-xs sm:text-sm text-[#574b40] font-medium max-w-xl mx-auto">
-              Not impressions. The operating system an agent already opens at 9pm.
-            </p>
-          </div>
-
-          {/* 8 Metric Cards Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="ui-card p-6 space-y-2">
-              <p className="text-3xl sm:text-4xl font-serif-title text-[#1c1815]">130+</p>
-              <p className="text-xs font-bold text-[#1c1815]">Active this month</p>
-              <p className="text-[11px] text-[#8c7b6c]">Seen in the last 30 days</p>
-            </div>
-
-            <div className="ui-card p-6 space-y-2">
-              <p className="text-3xl sm:text-4xl font-serif-title text-[#1c1815]">2,168</p>
-              <p className="text-xs font-bold text-[#1c1815]">Live policies</p>
-              <p className="text-[11px] text-[#8c7b6c]">Active covers on the platform</p>
-            </div>
-
-            <div className="ui-card p-6 space-y-2 bg-[#f4efe6]/50">
-              <p className="text-3xl sm:text-4xl font-serif-title text-[#1c1815]">
-                {totalProfit != null ? formatCurrency(totalProfit) : '₹5.43Cr+'}
-              </p>
-              <p className="text-xs font-bold text-[#1c1815]">Premium under watch / Profit</p>
-              <p className="text-[11px] text-[#8c7b6c]">Active portfolios</p>
-            </div>
-
-            <div className="ui-card p-6 space-y-2">
-              <p className="text-3xl sm:text-4xl font-serif-title text-[#1c1815]">8</p>
-              <p className="text-xs font-bold text-[#1c1815]">Cities</p>
-              <p className="text-[11px] text-[#8c7b6c]">Where agencies told us they work</p>
-            </div>
-
-            <div className="ui-card p-6 space-y-2">
-              <p className="text-3xl sm:text-4xl font-serif-title text-[#1c1815]">
-                {stats.completed || '2,653'}
-              </p>
-              <p className="text-xs font-bold text-[#1c1815]">Policy documents in house</p>
-              <p className="text-[11px] text-[#8c7b6c]">The PDF sits with the customer</p>
-            </div>
-
-            <div className="ui-card p-6 space-y-2">
-              <p className="text-3xl sm:text-4xl font-serif-title text-[#1c1815]">11</p>
-              <p className="text-xs font-bold text-[#1c1815]">Agencies on a paid plan</p>
-              <p className="text-[11px] text-[#8c7b6c]">They stayed past the trial</p>
-            </div>
-
-            <div className="ui-card p-6 space-y-2">
-              <p className="text-3xl sm:text-4xl font-serif-title text-[#1c1815]">368</p>
-              <p className="text-xs font-bold text-[#1c1815]">Insurers in the catalogue</p>
-              <p className="text-[11px] text-[#8c7b6c]">The companies agents already sell</p>
-            </div>
-
-            <div className="ui-card p-6 space-y-2">
-              <p className="text-3xl sm:text-4xl font-serif-title text-[#1c1815]">14</p>
-              <p className="text-xs font-bold text-[#1c1815]">Claim intimations filed</p>
-              <p className="text-[11px] text-[#8c7b6c]">Hospitals and TPAs already have a door</p>
-            </div>
-          </div>
-
-          {/* 4 Feature Explanation Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
-            <div className="ui-card p-6 space-y-3">
-              <h3 className="text-lg font-bold text-[#1c1815]">The OS they already open</h3>
-              <p className="text-xs text-[#574b40] leading-relaxed font-medium">
-                Customers, policies, renewals, documents, commissions — one room. A partner sits next to that room. You do not rent a mailing list.
-              </p>
-            </div>
-
-            <div className="ui-card p-6 space-y-3">
-              <h3 className="text-lg font-bold text-[#1c1815]">Renewals that actually fire</h3>
-              <p className="text-xs text-[#574b40] leading-relaxed font-medium">
-                Reminders at 30, 15 and 1 day. A voucher or a hospital desk is useful on the day the policy is being talked about — not in a forgotten app.
-              </p>
-            </div>
-
-            <div className="ui-card p-6 space-y-3">
-              <h3 className="text-lg font-bold text-[#1c1815]">The document is in the house</h3>
-              <p className="text-xs text-[#574b40] leading-relaxed font-medium">
-                Agents upload the policy. SarvaaAI reads it. Benefits and claims have somewhere honest to live.
-              </p>
-            </div>
-
-            <div className="ui-card p-6 space-y-3">
-              <h3 className="text-lg font-bold text-[#1c1815]">India, on purpose</h3>
-              <p className="text-xs text-[#574b40] leading-relaxed font-medium">
-                Data hosted in India. IRDAI-aligned. Built in Surat for Indian agents — not a US CRM with a rupee toggle.
-              </p>
-            </div>
-          </div>
-        </section>
-
-
-        {/* ================= 3. THREE REFUSALS SECTION ================= */}
-        <section className="space-y-8 pt-6">
-          <div className="text-center space-y-3">
-            <span className="pill-tag">What we will never do</span>
-            <h2 className="text-3xl sm:text-5xl font-serif-title text-[#1c1815]">
-              Three refusals
-            </h2>
-            <p className="text-xs sm:text-sm text-[#574b40] font-medium max-w-md mx-auto">
-              The table is expensive because of what does not sit on it.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="ui-card p-8 space-y-4 relative overflow-hidden">
-              <span className="text-5xl font-serif-title text-[#e2d7c5] absolute top-6 right-6 select-none">01</span>
-              <h3 className="text-lg font-bold text-[#1c1815] pr-10">We do not sell the book</h3>
-              <p className="text-xs text-[#574b40] leading-relaxed font-medium">
-                An agent's clients are not inventory. Sitting together never means we hand you the household.
-              </p>
-            </div>
-
-            <div className="ui-card p-8 space-y-4 relative overflow-hidden">
-              <span className="text-5xl font-serif-title text-[#e2d7c5] absolute top-6 right-6 select-none">02</span>
-              <h3 className="text-lg font-bold text-[#1c1815] pr-10">We do not white-label spam</h3>
-              <p className="text-xs text-[#574b40] leading-relaxed font-medium">
-                No blast in our name. If it would make an agent look cheap, it does not sit at this table.
-              </p>
-            </div>
-
-            <div className="ui-card p-8 space-y-4 relative overflow-hidden">
-              <span className="text-5xl font-serif-title text-[#e2d7c5] absolute top-6 right-6 select-none">03</span>
-              <h3 className="text-lg font-bold text-[#1c1815] pr-10">We do not take a deck without a brief</h3>
-              <p className="text-xs text-[#574b40] leading-relaxed font-medium">
-                A PDF is not a conversation. Write how we sit together, or we will not open the file.
-              </p>
-            </div>
-          </div>
-        </section>
-
-
-        {/* ================= 4. CHOOSE A TABLE BRIEF FORM SECTION ================= */}
-        <section className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start pt-6">
-          
-          {/* Left Column Text */}
-          <div className="lg:col-span-5 space-y-6">
-            <span className="pill-tag">The brief</span>
-            
-            <h2 className="text-3xl sm:text-5xl font-serif-title text-[#1c1815] leading-tight">
-              Choose a table. <br />
-              Then tell us how we sit together.
-            </h2>
-
-            <p className="text-xs sm:text-sm text-[#574b40] font-medium leading-relaxed">
-              Not a lead form. A one-page note the founders will actually read. If the fit is real, we will set a time. If it is not, we will say so.
-            </p>
-
-            <ul className="space-y-3 text-xs text-[#1c1815] font-semibold">
-              <li className="flex items-center gap-2.5">
-                <Check className="w-4 h-4 text-[#8c7b6c]" /> No cold decks in the inbox without a brief
-              </li>
-              <li className="flex items-center gap-2.5">
-                <Check className="w-4 h-4 text-[#8c7b6c]" /> Surat first — we would rather meet than zoom forever
-              </li>
-              <li className="flex items-center gap-2.5">
-                <Check className="w-4 h-4 text-[#8c7b6c]" /> Replies from careers@sarvaaone.in
-              </li>
-            </ul>
-
-            <div className="pt-2 text-xs text-[#574b40] font-medium">
-              Building the agency itself? That is the product.{' '}
-              <Link to="/upload" className="font-bold text-[#1c1815] underline decoration-[#8c7b6c]">
-                Create a free account →
-              </Link>
-            </div>
-          </div>
-
-          {/* Right Column Form */}
-          <div className="lg:col-span-7 ui-card p-8 sm:p-10 space-y-6">
-            <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#8c7b6c]">
-              PICK A TABLE ABOVE FIRST
-            </p>
-
-            {briefSubmitted ? (
-              <div className="p-6 bg-[#f4efe6] border border-[#e2d7c5] rounded-2xl text-center space-y-2">
-                <p className="text-sm font-bold text-[#1c1815]">Brief Sent Successfully</p>
-                <p className="text-xs text-[#574b40]">The founders will read your brief and get back to you shortly.</p>
+          {/* Total Profit Card */}
+          <div className="ui-card ui-card-hover p-5 space-y-2 bg-gradient-to-br from-emerald-50/80 via-teal-50/40 to-white border border-emerald-200 shadow-md">
+            <div className="flex items-center justify-between text-slate-500">
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-800">Total Profit</span>
+              <div className="w-9 h-9 rounded-2xl bg-emerald-100 border border-emerald-200 flex items-center justify-center text-emerald-700 shadow-xs">
+                <Coins className="w-4.5 h-4.5" />
               </div>
-            ) : (
-              <form onSubmit={handleBriefSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-extrabold uppercase text-[#8c7b6c]">COMPANY</label>
-                    <input
-                      type="text"
-                      required
-                      value={briefForm.company}
-                      onChange={(e) => setBriefForm({ ...briefForm, company: e.target.value })}
-                      className="w-full bg-[#fdfbf7] border border-[#e2d7c5] rounded-xl px-3.5 py-2.5 text-xs text-[#1c1815] outline-none focus:border-[#1c1815] transition-all"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-extrabold uppercase text-[#8c7b6c]">YOUR NAME</label>
-                    <input
-                      type="text"
-                      required
-                      value={briefForm.name}
-                      onChange={(e) => setBriefForm({ ...briefForm, name: e.target.value })}
-                      className="w-full bg-[#fdfbf7] border border-[#e2d7c5] rounded-xl px-3.5 py-2.5 text-xs text-[#1c1815] outline-none focus:border-[#1c1815] transition-all"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-extrabold uppercase text-[#8c7b6c]">EMAIL</label>
-                    <input
-                      type="email"
-                      required
-                      value={briefForm.email}
-                      onChange={(e) => setBriefForm({ ...briefForm, email: e.target.value })}
-                      className="w-full bg-[#fdfbf7] border border-[#e2d7c5] rounded-xl px-3.5 py-2.5 text-xs text-[#1c1815] outline-none focus:border-[#1c1815] transition-all"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-extrabold uppercase text-[#8c7b6c]">MOBILE</label>
-                    <input
-                      type="text"
-                      placeholder="Optional"
-                      value={briefForm.mobile}
-                      onChange={(e) => setBriefForm({ ...briefForm, mobile: e.target.value })}
-                      className="w-full bg-[#fdfbf7] border border-[#e2d7c5] rounded-xl px-3.5 py-2.5 text-xs text-[#1c1815] placeholder-[#8c7b6c] outline-none focus:border-[#1c1815] transition-all"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-extrabold uppercase text-[#8c7b6c]">CITY</label>
-                    <input
-                      type="text"
-                      value={briefForm.city}
-                      onChange={(e) => setBriefForm({ ...briefForm, city: e.target.value })}
-                      className="w-full bg-[#fdfbf7] border border-[#e2d7c5] rounded-xl px-3.5 py-2.5 text-xs text-[#1c1815] outline-none focus:border-[#1c1815] transition-all"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-extrabold uppercase text-[#8c7b6c]">WEBSITE</label>
-                    <input
-                      type="text"
-                      placeholder="https://"
-                      value={briefForm.website}
-                      onChange={(e) => setBriefForm({ ...briefForm, website: e.target.value })}
-                      className="w-full bg-[#fdfbf7] border border-[#e2d7c5] rounded-xl px-3.5 py-2.5 text-xs text-[#1c1815] placeholder-[#8c7b6c] outline-none focus:border-[#1c1815] transition-all"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-extrabold uppercase text-[#8c7b6c]">HOW WE SIT TOGETHER</label>
-                  <textarea
-                    rows={4}
-                    placeholder="What you bring, who it is for, and what the first ninety days could look like..."
-                    value={briefForm.note}
-                    onChange={(e) => setBriefForm({ ...briefForm, note: e.target.value })}
-                    className="w-full bg-[#fdfbf7] border border-[#e2d7c5] rounded-xl p-3.5 text-xs text-[#1c1815] placeholder-[#8c7b6c] outline-none focus:border-[#1c1815] transition-all resize-none"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  className="pill-button-dark w-full py-3.5 text-xs font-extrabold flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  Send the brief →
-                </button>
-              </form>
-            )}
+            </div>
+            <p className={`text-3xl font-extrabold font-mono tracking-tight ${totalProfit >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
+              {formatCurrency(totalProfit)}
+            </p>
+            <div className="flex items-center gap-1.5 text-[11px] text-emerald-700 font-semibold">
+              <TrendingUp className="w-3 h-3 text-emerald-600" /> Net after return charges
+            </div>
           </div>
-        </section>
+
+          {/* Total Documents */}
+          <div className="ui-card ui-card-hover p-5 space-y-2">
+            <div className="flex items-center justify-between text-slate-500">
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Total Labels</span>
+              <div className="w-9 h-9 rounded-2xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shadow-xs">
+                <FileText className="w-4 h-4" />
+              </div>
+            </div>
+            <p className="text-3xl font-extrabold text-slate-900 font-mono tracking-tight">{stats.total_documents || 0}</p>
+            <div className="flex items-center gap-1.5 text-[11px] text-purple-600 font-semibold">
+              <TrendingUp className="w-3 h-3 text-purple-600" /> Processed across session
+            </div>
+          </div>
+
+          {/* Completed */}
+          <div className="ui-card ui-card-hover p-5 space-y-2">
+            <div className="flex items-center justify-between text-slate-500">
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Successfully Parsed</span>
+              <div className="w-9 h-9 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shadow-xs">
+                <CheckCircle2 className="w-4 h-4" />
+              </div>
+            </div>
+            <p className="text-3xl font-extrabold text-emerald-600 font-mono tracking-tight">{stats.completed || 0}</p>
+            <div className="flex items-center gap-1 text-[11px] text-emerald-600 font-semibold">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Validated extraction
+            </div>
+          </div>
+
+          {/* Needs Review */}
+          <div className="ui-card ui-card-hover p-5 space-y-2">
+            <div className="flex items-center justify-between text-slate-500">
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Needs Review</span>
+              <div className="w-9 h-9 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shadow-xs">
+                <AlertTriangle className="w-4 h-4" />
+              </div>
+            </div>
+            <p className="text-3xl font-extrabold text-amber-600 font-mono tracking-tight">{stats.needs_review || 0}</p>
+            <div className="flex items-center gap-1 text-[11px] text-amber-600 font-semibold">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Low confidence fields
+            </div>
+          </div>
+
+          {/* Failed */}
+          <div className="ui-card ui-card-hover p-5 space-y-2">
+            <div className="flex items-center justify-between text-slate-500">
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Failed / Errors</span>
+              <div className="w-9 h-9 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600 shadow-xs">
+                <XCircle className="w-4 h-4" />
+              </div>
+            </div>
+            <p className="text-3xl font-extrabold text-rose-600 font-mono tracking-tight">{stats.failed || 0}</p>
+            <div className="flex items-center gap-1 text-[11px] text-slate-400 font-medium">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-400"></span> Unreadable media
+            </div>
+          </div>
+
+          {/* Average Confidence */}
+          <div className="ui-card ui-card-hover p-5 space-y-2">
+            <div className="flex items-center justify-between text-slate-500">
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Avg Confidence</span>
+              <div className="w-9 h-9 rounded-2xl bg-violet-50 border border-violet-100 flex items-center justify-center text-violet-600 shadow-xs">
+                <Zap className="w-4 h-4" />
+              </div>
+            </div>
+            <p className="text-3xl font-extrabold text-violet-700 font-mono tracking-tight">{formatConfidence(stats.avg_confidence)}</p>
+            <div className="w-full bg-purple-100/70 h-1.5 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-violet-600 rounded-full transition-all duration-500"
+                style={{ width: `${Math.round((stats.avg_confidence || 0) * 100)}%` }}
+              />
+            </div>
+          </div>
+
+        </div>
 
 
-        {/* ================= 5. RECENT PARCEL DOCUMENTS TABLE ================= */}
-        <section className="ui-card p-6 sm:p-8 space-y-6 pt-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#e2d7c5] pb-5">
+
+        {/* Recent Extracted Documents Section */}
+        <div className="ui-card p-6 sm:p-8 space-y-6">
+
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-purple-100/80 pb-5">
             <div>
-              <h3 className="text-xl font-serif-title text-[#1c1815]">
-                Recent extracted parcel documents
+              <h3 className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
+                <PackageCheck className="w-5 h-5 text-purple-600" />
+                Recent extracted parcel <span className="font-serif-italic font-normal text-purple-600">documents</span>
               </h3>
-              <p className="text-xs text-[#574b40]">Live feed of parsed shipping labels and metadata</p>
+              <p className="text-xs text-slate-500 mt-0.5">Live feed of parsed shipping labels and metadata</p>
             </div>
 
             <div className="flex items-center gap-3">
               <div className="relative">
-                <Search className="w-4 h-4 text-[#8c7b6c] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Search className="w-4 h-4 text-purple-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   placeholder="Search by filename or status..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="bg-[#fdfbf7] border border-[#e2d7c5] rounded-full pl-9 pr-4 py-2 text-xs text-[#1c1815] placeholder-[#8c7b6c] outline-none focus:border-[#1c1815] transition-all w-52 sm:w-72 font-medium"
+                  className="bg-purple-50/40 border border-purple-200/80 rounded-full pl-9 pr-4 py-2 text-xs text-slate-800 placeholder-purple-300 outline-none focus:border-purple-400 focus:bg-white focus:ring-2 focus:ring-purple-200 transition-all w-52 sm:w-72 font-medium"
                 />
               </div>
 
               <button
                 onClick={loadDashboardData}
-                className="p-2.5 text-[#1c1815] bg-[#f4efe6] hover:bg-[#e2d7c5] rounded-full transition-all"
+                title="Refresh Table Data"
+                className="p-2.5 text-purple-600 hover:text-purple-900 bg-purple-50 border border-purple-200/80 hover:bg-purple-100 rounded-full transition-all shadow-xs"
               >
                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               </button>
 
               <Link
                 to="/documents"
-                className="pill-button-light flex items-center gap-1.5 text-xs px-4 py-2"
+                className="flex items-center gap-1.5 text-xs font-extrabold text-purple-700 bg-purple-50 hover:bg-purple-100 px-4 py-2.5 rounded-full border border-purple-200 transition-all shadow-xs"
               >
-                View All <ArrowRight className="w-3.5 h-3.5" />
+                View Repository <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
           </div>
 
+          {/* Table Container */}
           {loading ? (
-            <div className="py-16 text-center text-[#8c7b6c] text-xs space-y-2">
-              <RefreshCw className="w-5 h-5 animate-spin mx-auto text-[#1c1815]" />
-              <p className="font-mono text-xs">Synchronizing database records...</p>
+            <div className="py-20 text-center text-slate-400 text-sm space-y-3">
+              <RefreshCw className="w-6 h-6 animate-spin mx-auto text-purple-600" />
+              <p className="font-mono text-xs text-slate-500">Synchronizing database records...</p>
             </div>
           ) : filteredDocs.length === 0 ? (
-            <div className="py-12 text-center text-[#8c7b6c] text-xs border-2 border-dashed border-[#e2d7c5] rounded-2xl bg-[#f4efe6]/30 p-8 space-y-3">
-              <UploadCloud className="w-8 h-8 text-[#8c7b6c] mx-auto" />
-              <p className="font-bold text-[#1c1815]">No parcel labels found</p>
-              <Link to="/upload" className="pill-button-dark inline-flex items-center gap-2 px-5 py-2 text-xs">
+            <div className="py-16 text-center text-slate-500 text-sm border-2 border-dashed border-purple-200/70 rounded-3xl bg-purple-50/20 p-8 space-y-3">
+              <UploadCloud className="w-10 h-10 text-purple-300 mx-auto" />
+              <h4 className="font-bold text-slate-800">No parcel labels found</h4>
+              <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                Upload your first parcel label or invoice to extract shipping details automatically.
+              </p>
+              <Link
+                to="/upload"
+                className="pill-button-dark inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold"
+              >
                 Upload Document Now
               </Link>
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-[#e2d7c5]">
+            <div className="overflow-x-auto rounded-2xl border border-purple-100 bg-white">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="border-b border-[#e2d7c5] bg-[#f4efe6] text-[#574b40] uppercase tracking-wider font-extrabold text-[10px]">
-                    <th className="py-3 px-4">Document Title</th>
-                    <th className="py-3 px-4">Status</th>
-                    <th className="py-3 px-4 text-center">Confidence</th>
-                    <th className="py-3 px-4 text-center">Speed</th>
-                    <th className="py-3 px-4">Created Date</th>
-                    <th className="py-3 px-4 text-right">Action</th>
+                  <tr className="border-b border-purple-100 bg-purple-50/40 text-slate-500 uppercase tracking-wider font-extrabold text-[11px]">
+                    <th className="py-3.5 px-4">Document Title</th>
+                    <th className="py-3.5 px-4">Status</th>
+                    <th className="py-3.5 px-4 text-center">Confidence Score</th>
+                    <th className="py-3.5 px-4 text-center">Processing Speed</th>
+                    <th className="py-3.5 px-4">Created Date</th>
+                    <th className="py-3.5 px-4 text-right">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#e2d7c5]/60 bg-white">
+                <tbody className="divide-y divide-slate-100 font-sans">
                   {filteredDocs.slice(0, 8).map((doc) => {
                     const badge = getStatusBadgeConfig(doc.status);
                     const ext = doc.file_name?.split('.').pop()?.toUpperCase() || 'FILE';
 
                     return (
-                      <tr key={doc.id} className="hover:bg-[#fdfbf7] transition-colors">
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2.5">
-                            <span className="w-8 h-8 rounded-lg bg-[#f4efe6] flex items-center justify-center text-[#1c1815] font-extrabold text-[9px] font-mono shrink-0">
+                      <tr key={doc.id} className="hover:bg-purple-50/30 transition-colors group">
+                        <td className="py-3.5 px-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-2xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-700 font-extrabold text-[10px] shrink-0 font-mono">
                               {ext}
-                            </span>
-                            <span className="font-bold text-[#1c1815] truncate max-w-xs">
+                            </div>
+                            <span className="font-bold text-slate-800 group-hover:text-purple-700 transition-colors truncate max-w-sm">
                               {doc.file_name}
                             </span>
                           </div>
                         </td>
 
-                        <td className="py-3 px-4">
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${badge.bgClass}`}>
+                        <td className="py-3.5 px-4">
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border ${badge.bgClass}`}>
                             <span className={`w-1.5 h-1.5 rounded-full ${badge.dotClass}`} />
                             {badge.label}
                           </span>
                         </td>
 
-                        <td className="py-3 px-4 text-center font-mono font-bold text-[#574b40]">
-                          {formatConfidence(doc.overall_confidence)}
+                        <td className="py-3.5 px-4 text-center">
+                          <span className="font-mono font-bold text-slate-700">
+                            {formatConfidence(doc.overall_confidence)}
+                          </span>
                         </td>
 
-                        <td className="py-3 px-4 text-center font-mono text-[#8c7b6c]">
+                        <td className="py-3.5 px-4 text-center font-mono text-slate-500">
                           {doc.processing_time ? `${doc.processing_time} ms` : '-'}
                         </td>
 
-                        <td className="py-3 px-4 text-[#8c7b6c] font-medium">
+                        <td className="py-3.5 px-4 text-slate-500 font-medium">
                           {formatDate(doc.created_at)}
                         </td>
 
-                        <td className="py-3 px-4 text-right">
+                        <td className="py-3.5 px-4 text-right">
                           <Link
                             to={`/document/${doc.id}`}
-                            className="inline-flex items-center gap-1 px-3 py-1 bg-[#f4efe6] hover:bg-[#e2d7c5] text-[#1c1815] rounded-full text-xs font-bold transition-all"
+                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 hover:text-purple-900 border border-purple-200/80 rounded-full text-xs font-bold transition-all shadow-xs"
                           >
-                            Inspect <ExternalLink className="w-3 h-3" />
+                            Inspect <ExternalLink className="w-3.5 h-3.5" />
                           </Link>
                         </td>
                       </tr>
@@ -626,73 +470,13 @@ export default function Dashboard() {
               </table>
             </div>
           )}
-        </section>
-
-
-        {/* ================= 6. EDITORIAL FOOTER ================= */}
-        <footer className="border-t border-[#e2d7c5] pt-12 space-y-10">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-            
-            {/* Logo & Info */}
-            <div className="md:col-span-5 space-y-4">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-full bg-[#1c1815] flex items-center justify-center text-[#fdfbf7] font-bold text-xs">
-                  S
-                </div>
-                <span className="font-extrabold text-base text-[#1c1815] tracking-tight">SarvaaOne / ParcelAI</span>
-              </div>
-
-              <p className="text-xs text-[#574b40] leading-relaxed max-w-sm font-medium">
-                Insurance CRM built for Indian agents. IRDAI compliant, made in India. Parcel Intelligence OS built for Indian logistics.
-              </p>
-
-              <div className="flex items-center gap-2 pt-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
-                <span className="text-[11px] font-bold text-[#574b40]">All systems operational</span>
-              </div>
-            </div>
-
-            {/* Links Columns */}
-            <div className="md:col-span-7 grid grid-cols-3 gap-6 text-xs font-medium text-[#574b40]">
-              <div className="space-y-3">
-                <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#1c1815]">PLATFORM</p>
-                <ul className="space-y-2">
-                  <li><Link to="/" className="hover:text-[#1c1815]">Features</Link></li>
-                  <li><Link to="/stock" className="hover:text-[#1c1815]">Pricing</Link></li>
-                  <li><Link to="/upload" className="hover:text-[#1c1815]">How it works</Link></li>
-                  <li><Link to="/orders" className="hover:text-[#1c1815]">Security</Link></li>
-                </ul>
-              </div>
-
-              <div className="space-y-3">
-                <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#1c1815]">ACCOUNT</p>
-                <ul className="space-y-2">
-                  <li><Link to="/upload" className="hover:text-[#1c1815]">Create free account</Link></li>
-                  <li><Link to="/" className="hover:text-[#1c1815]">Sign in</Link></li>
-                  <li><Link to="/documents" className="hover:text-[#1c1815]">Setup guide</Link></li>
-                </ul>
-              </div>
-
-              <div className="space-y-3">
-                <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#1c1815]">COMPANY</p>
-                <ul className="space-y-2">
-                  <li><span className="cursor-pointer hover:text-[#1c1815]">About & founders</span></li>
-                  <li><span className="cursor-pointer hover:text-[#1c1815]">Careers</span></li>
-                  <li><span className="cursor-pointer hover:text-[#1c1815]">Partner with us</span></li>
-                  <li><span className="cursor-pointer hover:text-[#1c1815]">The house</span></li>
-                  <li><span className="cursor-pointer hover:text-[#1c1815]">FAQ</span></li>
-                  <li><span className="cursor-pointer hover:text-[#1c1815]">Resources</span></li>
-                  <li><span className="cursor-pointer hover:text-[#1c1815]">Contact us</span></li>
-                  <li><span className="cursor-pointer hover:text-[#1c1815]">Privacy Policy</span></li>
-                  <li><span className="cursor-pointer hover:text-[#1c1815]">Terms of Use</span></li>
-                </ul>
-              </div>
-            </div>
-
-          </div>
-        </footer>
+        </div>
 
       </div>
     </Layout>
   );
 }
+
+
+
+
