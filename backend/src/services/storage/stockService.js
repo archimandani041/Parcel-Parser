@@ -103,11 +103,93 @@ export function cleanProductName(skuId, productName) {
   return 'Product';
 }
 
+export async function cleanOrphanedStock() {
+  const supabase = getSupabaseClient();
+  if (!supabase) return;
+
+  try {
+    // Fetch all active order records from Supabase
+    const { data: validOrders, error: orderErr } = await supabase
+      .from('order_records')
+      .select('order_id, sku_id, product_name, is_returned');
+
+    if (orderErr) {
+      console.error('[StockService] cleanOrphanedStock error fetching orders:', orderErr.message);
+      return;
+    }
+
+    const activeOrderIds = new Set((validOrders || []).map(o => o.order_id).filter(Boolean));
+    const activeReturnedOrderIds = new Set((validOrders || []).filter(o => o.is_returned).map(o => o.order_id).filter(Boolean));
+
+    const activeSkus = new Set();
+    (validOrders || []).forEach(o => {
+      const sku = normalizeSku(o.sku_id, o.product_name);
+      if (sku && sku !== 'UNSPECIFIED') activeSkus.add(sku.toUpperCase());
+    });
+
+    // 1. Clean stock_returns for non-existent or un-returned orders
+    const { data: currentReturns } = await supabase.from('stock_returns').select('order_id');
+    if (currentReturns && currentReturns.length > 0) {
+      const orphanReturnOrderIds = currentReturns
+        .filter(r => !r.order_id || !activeReturnedOrderIds.has(r.order_id))
+        .map(r => r.order_id);
+
+      for (const oid of orphanReturnOrderIds) {
+        if (!oid) {
+          await supabase.from('stock_returns').delete().is('order_id', null);
+        } else {
+          await supabase.from('stock_returns').delete().eq('order_id', oid);
+        }
+        console.log(`[StockService] Purged orphaned stock_return: ${oid}`);
+      }
+    }
+
+    // 2. Clean stock_products for SKUs with no active orders
+    const { data: currentProducts } = await supabase.from('stock_products').select('sku_id');
+    if (currentProducts && currentProducts.length > 0) {
+      const orphanProductSkus = currentProducts
+        .filter(p => !p.sku_id || !activeSkus.has(p.sku_id.toUpperCase()))
+        .map(p => p.sku_id);
+
+      for (const sku of orphanProductSkus) {
+        if (!sku) {
+          await supabase.from('stock_products').delete().is('sku_id', null);
+        } else {
+          await supabase.from('stock_products').delete().ilike('sku_id', sku);
+        }
+        console.log(`[StockService] Purged orphaned stock_product: ${sku}`);
+      }
+    }
+
+    // 3. Clean local file fallbacks
+    try {
+      const pDbPath = getProductsDbPath();
+      if (fs.existsSync(pDbPath)) {
+        let pDb = JSON.parse(fs.readFileSync(pDbPath, 'utf-8'));
+        pDb = pDb.filter(p => p.sku_id && activeSkus.has(p.sku_id.toUpperCase()));
+        fs.writeFileSync(pDbPath, JSON.stringify(pDb, null, 2));
+      }
+
+      const rDbPath = getReturnsDbPath();
+      if (fs.existsSync(rDbPath)) {
+        let rDb = JSON.parse(fs.readFileSync(rDbPath, 'utf-8'));
+        rDb = rDb.filter(r => r.order_id && activeReturnedOrderIds.has(r.order_id));
+        fs.writeFileSync(rDbPath, JSON.stringify(rDb, null, 2));
+      }
+    } catch (e) {}
+
+  } catch (err) {
+    console.error('[StockService] Exception in cleanOrphanedStock:', err.message);
+  }
+}
+
 export async function autoSyncLocalFilesToSupabase() {
   const supabase = getSupabaseClient();
   if (!supabase) return;
 
   try {
+    await cleanOrphanedStock();
+
     const returnsLocal = loadReturnsDb();
     for (const r of returnsLocal) {
       if (r.order_id) {
@@ -155,7 +237,8 @@ export async function autoSyncLocalFilesToSupabase() {
   }
 }
 
-// Automatically sync local DB JSON files into Supabase on startup
+// Automatically purge orphaned records and sync on startup
+cleanOrphanedStock().catch(() => {});
 autoSyncLocalFilesToSupabase().catch(() => {});
 
 // ===== SERVICE DEFINITION =====

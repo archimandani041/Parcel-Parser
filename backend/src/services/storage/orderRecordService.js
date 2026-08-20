@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
+import { cleanOrphanedStock } from './stockService.js';
 
 // Load .env from backend folder or root folder
 dotenv.config({ path: path.resolve(process.cwd(), 'backend/.env') });
@@ -330,6 +331,10 @@ export const orderRecordService = {
         console.error('[OrderRecords] Supabase delete error:', error.message);
         throw error;
       }
+
+      // Automatically purge orphaned stock products or returns
+      cleanOrphanedStock().catch(() => {});
+
       return { success: true };
     } catch (e) {
       console.error('[OrderRecords] Supabase delete exception:', e.message);

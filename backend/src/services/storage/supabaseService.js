@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import path from 'path';
 import { sanitizeExtractedJson } from '../gemini/geminiParser.js';
+import { cleanOrphanedStock } from './stockService.js';
 
 dotenv.config({ path: path.resolve(process.cwd(), 'backend/.env') });
 dotenv.config();
@@ -348,6 +349,14 @@ export const dbService = {
     try {
       await supabase.from('documents').delete().eq('id', id);
       await supabase.from('order_records').delete().or(`id.eq.${id},document_id.eq.${id}`);
+      await supabase.from('extracted_fields').delete().eq('document_id', id);
+      await supabase.from('extracted_items').delete().eq('document_id', id);
+      await supabase.from('extraction_results').delete().eq('document_id', id);
+      await supabase.from('corrections').delete().eq('document_id', id);
+
+      // Trigger automatic stock & return cleanup to purge orphaned rows
+      cleanOrphanedStock().catch(() => {});
+
       return true;
     } catch (err) {
       console.error('[Supabase DB] deleteDocument exception:', err.message);
