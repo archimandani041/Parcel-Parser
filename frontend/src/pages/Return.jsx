@@ -237,7 +237,7 @@ export default function Return() {
             </div>
 
             {/* Search Input */}
-            <div className="relative">
+            <div className="relative flex-1 min-w-[180px] sm:w-60">
               <Search className="w-4 h-4 text-purple-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 id="search-return-input"
@@ -245,7 +245,7 @@ export default function Return() {
                 placeholder="Search Order ID, SKU or Customer..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-purple-50/40 border border-purple-200/80 rounded-full pl-9 pr-4 py-2.5 text-xs text-slate-800 placeholder-purple-300 outline-none focus:border-purple-400 focus:bg-white focus:ring-2 focus:ring-purple-200 transition-all w-60 shadow-xs font-medium"
+                className="w-full bg-purple-50/40 border border-purple-200/80 rounded-full pl-9 pr-4 py-2.5 text-xs text-slate-800 placeholder-purple-300 outline-none focus:border-purple-400 focus:bg-white focus:ring-2 focus:ring-purple-200 transition-all font-medium shadow-xs"
               />
             </div>
 
@@ -385,7 +385,7 @@ export default function Return() {
               </div>
             ) : (
               <div className="overflow-x-auto bg-white">
-                <table className="w-full text-left border-collapse text-xs" id="customer-returns-table">
+                <table className="w-full text-left border-collapse text-xs min-w-[950px]" id="customer-returns-table">
                   <thead>
                     <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-semibold text-[11px]">
                       <th className="py-4 px-3 border-r border-slate-100">Order ID</th>
@@ -529,7 +529,7 @@ export default function Return() {
               </div>
             ) : (
               <div className="overflow-x-auto bg-white">
-                <table className="w-full text-left border-collapse text-xs" id="rto-returns-table">
+                <table className="w-full text-left border-collapse text-xs min-w-[950px]" id="rto-returns-table">
                   <thead>
                     <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-semibold text-[11px]">
                       <th className="py-4 px-3 border-r border-slate-100">Order ID</th>

@@ -154,17 +154,17 @@ export default function Stock() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2.5 flex-wrap w-full sm:w-auto">
             {/* Search Input */}
-            <div className="relative">
+            <div className="relative flex-1 min-w-[180px] sm:w-64">
               <Search className="w-4 h-4 text-purple-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
-                id="search-stock-input"
+                id="search-sku"
                 type="text"
-                placeholder="Search SKU or Product..."
+                placeholder="Search by SKU ID or product name..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-purple-50/40 border border-purple-200/80 rounded-full pl-9 pr-4 py-2.5 text-xs text-slate-800 placeholder-purple-300 outline-none focus:border-purple-400 focus:bg-white focus:ring-2 focus:ring-purple-200 transition-all w-64 shadow-xs font-medium"
+                className="w-full bg-purple-50/40 border border-purple-200/80 rounded-full pl-9 pr-4 py-2 text-xs text-slate-800 placeholder-purple-300 outline-none focus:border-purple-400 focus:bg-white focus:ring-2 focus:ring-purple-200 transition-all font-medium shadow-xs"
               />
             </div>
 
@@ -172,76 +172,62 @@ export default function Stock() {
             <button
               onClick={loadStockData}
               disabled={loading}
-              className="p-2.5 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-full border border-purple-200/80 transition-all shadow-xs disabled:opacity-50 cursor-pointer"
-              title="Refresh stock data"
+              className="p-2 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-full border border-purple-200/80 transition-all shadow-xs disabled:opacity-50 shrink-0 cursor-pointer"
+              title="Refresh Stock Data"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             </button>
           </div>
         </div>
 
-        {/* SUMMARY CARDS */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          {/* Total Products */}
-          <div className="ui-card p-4 space-y-1">
-            <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
-              <span>Total Products</span>
-              <Boxes className="w-4 h-4 text-sky-600" />
-            </div>
-            <p className="text-2xl font-bold text-slate-900 font-mono">
-              {stockSummary.total_products || 0}
-            </p>
-            <p className="text-[10px] text-slate-500 font-medium">Unique SKU records</p>
-          </div>
-
+        {/* SUMMARY METRICS (4 CARDS) */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {/* Total Quantity */}
           <div className="ui-card p-4 space-y-1">
             <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
-              <span>Total Quantity</span>
-              <Package className="w-4 h-4 text-sky-600" />
+              <span>Total Added Qty</span>
+              <Package className="w-4 h-4 text-purple-600" />
             </div>
-            <p className="text-2xl font-bold text-sky-700 font-mono">
+            <p className="text-2xl font-bold text-purple-900 font-mono">
               {stockSummary.total_quantity || 0}
             </p>
-            <p className="text-[10px] text-slate-500 font-medium">
-              Available: <span className="font-bold text-emerald-700">{stockSummary.total_available_quantity || 0}</span> | Returned: <span className="font-bold text-rose-600">{stockSummary.total_returned_quantity || 0}</span>
+            <p className="text-[10px] text-slate-500 font-medium">Initial stock logged</p>
+          </div>
+
+          {/* Current Available Stock */}
+          <div className="ui-card p-4 space-y-1">
+            <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
+              <span>selling q.</span>
+              <Boxes className="w-4 h-4 text-emerald-600" />
+            </div>
+            <p className="text-2xl font-bold text-emerald-700 font-mono">
+              {stockSummary.total_available_quantity != null ? stockSummary.total_available_quantity : stockSummary.total_available_stock || 0}
             </p>
+            <p className="text-[10px] text-slate-500 font-medium">Physical stock in hand</p>
+          </div>
+
+          {/* Total Customer Returned Qty */}
+          <div className="ui-card p-4 space-y-1">
+            <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
+              <span>Cust. Returned Qty</span>
+              <Inbox className="w-4 h-4 text-rose-600" />
+            </div>
+            <p className="text-2xl font-bold text-rose-600 font-mono">
+              {stockSummary.total_returned_quantity || 0}
+            </p>
+            <p className="text-[10px] text-slate-500 font-medium">Restored to available stock</p>
           </div>
 
           {/* Inventory Cost */}
           <div className="ui-card p-4 space-y-1">
             <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
               <span>Inventory Cost</span>
-              <Coins className="w-4 h-4 text-amber-600" />
+              <Coins className="w-4 h-4 text-purple-600" />
             </div>
-            <p className="text-2xl font-bold text-amber-700 font-mono">
-              {formatCurrency(stockSummary.total_inventory_cost != null ? stockSummary.total_inventory_cost : stockSummary.total_product_cost)}
+            <p className="text-2xl font-bold text-slate-900 font-mono">
+              {formatCurrency(stockSummary.total_inventory_cost != null ? stockSummary.total_inventory_cost : stockSummary.total_purchase_cost)}
             </p>
             <p className="text-[10px] text-slate-500 font-medium">Purchase cost of available stock</p>
-          </div>
-
-          {/* Inventory Value */}
-          <div className="ui-card p-4 space-y-1">
-            <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
-              <span>Inventory Value</span>
-              <TrendingUp className="w-4 h-4 text-emerald-600" />
-            </div>
-            <p className="text-2xl font-bold text-emerald-700 font-mono">
-              {formatCurrency(stockSummary.total_inventory_value != null ? stockSummary.total_inventory_value : stockSummary.total_selling_value)}
-            </p>
-            <p className="text-[10px] text-slate-500 font-medium">Selling value of available stock</p>
-          </div>
-
-          {/* Net Profit */}
-          <div className="ui-card p-4 space-y-1 col-span-2 md:col-span-1">
-            <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
-              <span>Net Profit</span>
-              <TrendingUp className={`w-4 h-4 ${(stockSummary.total_net_profit != null ? stockSummary.total_net_profit : stockSummary.total_profit) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`} />
-            </div>
-            <p className={`text-2xl font-bold font-mono ${(stockSummary.total_net_profit != null ? stockSummary.total_net_profit : stockSummary.total_profit) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-              {formatCurrency(stockSummary.total_net_profit != null ? stockSummary.total_net_profit : stockSummary.total_profit)}
-            </p>
-            <p className="text-[10px] text-slate-500 font-medium">Realized profit - Customer return loss</p>
           </div>
         </div>
 
@@ -264,7 +250,7 @@ export default function Stock() {
             </div>
           ) : (
             <div className="overflow-x-auto bg-white">
-              <table className="w-full text-left border-collapse text-xs" id="stock-table">
+              <table className="w-full text-left border-collapse text-xs min-w-[1200px]" id="stock-table">
                 <thead>
                   <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-semibold text-[11px]">
                     <th className="py-4 px-3 border-r border-slate-100">SKU ID</th>

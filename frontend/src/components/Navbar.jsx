@@ -39,8 +39,8 @@ export default function Navbar({ title = 'Parcel Information Extractor', healthI
             </div>
           </NavLink>
 
-          {/* Center: Desktop Floating Navigation Pills (hidden on mobile) */}
-          <nav className="hidden md:flex items-center gap-1 bg-purple-100/50 p-1.5 rounded-full border border-purple-200/80 shadow-inner">
+          {/* Center: Desktop Floating Navigation Pills (hidden on mobile and tablet) */}
+          <nav className="hidden lg:flex items-center gap-1 bg-purple-100/50 p-1.5 rounded-full border border-purple-200/80 shadow-inner">
             {navItems.map((item) => {
               const Icon = item.icon;
               return (
@@ -77,7 +77,7 @@ export default function Navbar({ title = 'Parcel Information Extractor', healthI
           <div className="flex items-center gap-2">
             <NavLink
               to="/upload"
-              className="flex items-center gap-1.5 bg-gradient-to-r from-purple-500 via-violet-600 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white text-xs font-extrabold px-4 py-2 rounded-full shadow-md shadow-purple-300/40 transition-all hover:scale-105"
+              className="flex items-center gap-1.5 bg-gradient-to-r from-purple-500 via-violet-600 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white text-xs font-extrabold px-4 py-2 rounded-full shadow-md shadow-purple-300/40 transition-all hover:scale-105 shrink-0"
             >
               <UploadCloud className="w-3.5 h-3.5" />
               <span>Parse Label</span>
@@ -87,8 +87,8 @@ export default function Navbar({ title = 'Parcel Information Extractor', healthI
         </div>
       </header>
 
-      {/* ===== FIXED MOBILE BOTTOM NAVIGATION BAR ===== */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-2xl border-t border-purple-200/90 shadow-[0_-8px_25px_-5px_rgba(147,112,219,0.2)] px-2 py-1.5 flex items-center justify-around">
+      {/* ===== FIXED MOBILE & TABLET BOTTOM NAVIGATION BAR ===== */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-2xl border-t border-purple-200/90 shadow-[0_-8px_25px_-5px_rgba(147,112,219,0.2)] px-2 py-1.5 flex items-center justify-around">
         {navItems.map((item) => {
           const Icon = item.icon;
           return (

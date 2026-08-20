@@ -120,10 +120,10 @@ export default function Orders() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2.5 flex-wrap w-full sm:w-auto">
             {/* Search Form */}
-            <form onSubmit={handleSearch} className="flex items-center gap-2">
-              <div className="relative">
+            <form onSubmit={handleSearch} className="flex items-center gap-2 flex-1 w-full sm:w-auto">
+              <div className="relative flex-1 min-w-[180px] sm:w-64">
                 <Search className="w-4 h-4 text-purple-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   id="search-order-id"
@@ -131,12 +131,12 @@ export default function Orders() {
                   placeholder="Search Order ID, SKU or Customer..."
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
-                  className="bg-purple-50/40 border border-purple-200/80 rounded-full pl-9 pr-4 py-2 text-xs text-slate-800 placeholder-purple-300 outline-none focus:border-purple-400 focus:bg-white focus:ring-2 focus:ring-purple-200 transition-all w-64 shadow-xs font-medium"
+                  className="bg-purple-50/40 border border-purple-200/80 rounded-full pl-9 pr-4 py-2 text-xs text-slate-800 placeholder-purple-300 outline-none focus:border-purple-400 focus:bg-white focus:ring-2 focus:ring-purple-200 transition-all w-full shadow-xs font-medium"
                 />
               </div>
               <button
                 type="submit"
-                className="px-4 py-2 bg-purple-100 hover:bg-purple-200 text-purple-800 text-xs font-semibold rounded-full border border-purple-200 transition-all shadow-xs cursor-pointer"
+                className="px-4 py-2 bg-purple-100 hover:bg-purple-200 text-purple-800 text-xs font-semibold rounded-full border border-purple-200 transition-all shadow-xs shrink-0 cursor-pointer"
               >
                 Search
               </button>
@@ -146,7 +146,7 @@ export default function Orders() {
             <button
               onClick={loadRecords}
               disabled={loading}
-              className="p-2 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-full border border-purple-200/80 transition-all shadow-xs disabled:opacity-50 cursor-pointer"
+              className="p-2 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-full border border-purple-200/80 transition-all shadow-xs disabled:opacity-50 shrink-0 cursor-pointer"
               title="Refresh order records"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -173,7 +173,7 @@ export default function Orders() {
             </div>
           ) : (
             <div className="overflow-x-auto bg-white">
-              <table className="w-full text-left border-collapse text-xs" id="orders-table">
+              <table className="w-full text-left border-collapse text-xs min-w-[750px]" id="orders-table">
                 <thead>
                   <tr className="bg-purple-50/50 border-b border-purple-100 text-slate-500 uppercase tracking-wider font-semibold text-[11px]">
                     <th className="py-4 px-4 border-r border-purple-50">Order ID</th>

@@ -23,7 +23,7 @@ export default function Layout({ children, title }) {
       <Navbar title={title} healthInfo={healthInfo} />
 
       {/* Main Content Viewport with minor light background wrapper */}
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-24 md:pb-16">
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-24 lg:pb-16">
         <div className="page-pastel-bg p-3.5 sm:p-7 relative overflow-hidden transition-all duration-300">
           {children}
         </div>

@@ -141,8 +141,8 @@ export default function DocumentsList() {
             </div>
 
             {/* Search and Bulk Controls */}
-            <div className="flex items-center gap-3">
-              <div className="relative flex-1 sm:w-64">
+            <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+              <div className="relative flex-1 min-w-[180px] sm:w-64">
                 <Search className="w-4 h-4 text-purple-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   id="search-input"
@@ -155,28 +155,29 @@ export default function DocumentsList() {
               </div>
 
               {selectedIds.length > 0 && (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <button
                     id="master-export-btn"
                     onClick={() => setIsExportModalOpen(true)}
-                    className="flex items-center gap-1.5 px-4 py-2.5 bg-emerald-100/90 hover:bg-emerald-200 text-emerald-950 text-xs font-extrabold rounded-full border border-emerald-300 shadow-xs transition-all"
+                    className="pill-button-dark flex items-center gap-1.5 px-4 py-2 text-xs font-bold shadow-sm"
                   >
-                    <Download className="w-3.5 h-3.5 text-emerald-700" /> Export ({selectedIds.length})
+                    <Download className="w-3.5 h-3.5 text-purple-300" /> Export ({selectedIds.length})
                   </button>
+
                   <button
                     onClick={handleBulkDelete}
-                    className="p-2.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 rounded-full transition-colors"
-                    title="Delete Selected Documents"
+                    disabled={bulkDeleting}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 border border-rose-200 rounded-full text-xs font-bold transition-colors shadow-xs"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-3.5 h-3.5" /> {bulkDeleting ? 'Deleting...' : `Delete (${selectedIds.length})`}
                   </button>
                 </div>
               )}
 
               <button
                 onClick={loadDocs}
-                title="Refresh Catalog"
-                className="p-2.5 text-purple-600 hover:text-purple-900 bg-purple-50 border border-purple-200/80 rounded-full hover:bg-purple-100 transition-colors shadow-xs"
+                title="Refresh Documents"
+                className="p-2.5 text-purple-600 hover:text-purple-900 bg-purple-50 border border-purple-200/80 hover:bg-purple-100 rounded-full transition-all shadow-xs shrink-0 cursor-pointer"
               >
                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               </button>
@@ -198,7 +199,7 @@ export default function DocumentsList() {
             </div>
           ) : (
             <div className="overflow-x-auto bg-white">
-              <table className="w-full text-left text-xs border-collapse" id="documents-table">
+              <table className="w-full text-left text-xs border-collapse min-w-[700px]" id="documents-table">
                 <thead>
                   <tr className="bg-purple-50/50 border-b border-purple-100 text-slate-500 uppercase tracking-wider font-extrabold text-[11px]">
                     <th className="py-4 px-4 w-10 border-r border-purple-100/60">
