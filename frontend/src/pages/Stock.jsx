@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Layout from '../components/Layout';
 import {
   getStockOverview,
-  exportStockExcel,
   updateStockProductPrice,
   deleteStockProduct
 } from '../services/api';
@@ -16,14 +15,12 @@ import {
   TrendingUp,
   Coins,
   Inbox,
-  Trash2,
-  Download
+  Trash2
 } from 'lucide-react';
 
 export default function Stock() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [exportingStock, setExportingStock] = useState(false);
 
   // Stock State
   const [products, setProducts] = useState([]);
@@ -108,24 +105,6 @@ export default function Stock() {
     }
   };
 
-  const handleExportStock = async () => {
-    setExportingStock(true);
-    try {
-      const response = await exportStockExcel();
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `stock_report_${Date.now()}.xlsx`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (err) {
-      alert('Export failed: ' + (err.response?.data?.error || err.message));
-    } finally {
-      setExportingStock(false);
-    }
-  };
-
   const handleDeleteStockProduct = async (skuId) => {
     if (!window.confirm(`Are you sure you want to delete stock product SKU "${skuId}"? This will permanently remove it and all associated order records from the database.`)) {
       return;
@@ -140,7 +119,11 @@ export default function Stock() {
 
   const formatCurrency = (val) => {
     if (val == null || isNaN(val)) return '₹0';
-    return `₹${Number(val).toLocaleString('en-IN')}`;
+    const num = Number(val);
+    if (num < 0) {
+      return `-₹${Math.abs(num).toLocaleString('en-IN')}`;
+    }
+    return `₹${num.toLocaleString('en-IN')}`;
   };
 
   // Filter products based on search query
@@ -193,17 +176,6 @@ export default function Stock() {
               title="Refresh stock data"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            </button>
-
-            {/* Export Stock Excel Button */}
-            <button
-              id="export-stock-excel-btn"
-              onClick={handleExportStock}
-              disabled={exportingStock}
-              className="flex items-center gap-2 px-5 py-2.5 bg-emerald-100/90 hover:bg-emerald-200 text-emerald-950 font-extrabold text-xs rounded-full border border-emerald-300 shadow-xs transition-all disabled:opacity-50 cursor-pointer"
-            >
-              <Download className="w-3.5 h-3.5 text-emerald-700" />
-              {exportingStock ? 'Exporting...' : 'Export Stock Excel'}
             </button>
           </div>
         </div>
@@ -297,16 +269,18 @@ export default function Stock() {
                   <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-extrabold text-[11px]">
                     <th className="py-4 px-3 border-r border-slate-100">SKU ID</th>
                     <th className="py-4 px-3 border-r border-slate-100">Product Name</th>
-                    <th className="py-4 px-2 border-r border-slate-100 text-center">Total Qty</th>
-                    <th className="py-4 px-2 border-r border-slate-100 text-center">Returned Qty</th>
-                    <th className="py-4 px-2 border-r border-slate-100 text-center">selling QTY.</th>
+                    <th className="py-4 px-2 border-r border-slate-100 text-center" title="Initial/Total Stock Added">Total Qty</th>
+                    <th className="py-4 px-2 border-r border-slate-100 text-center" title="Successfully Sold & Kept Quantity">Sold Qty.</th>
+                    <th className="py-4 px-2 border-r border-slate-100 text-center" title="Customer Returned Quantity">Cust. Return</th>
+                    <th className="py-4 px-2 border-r border-slate-100 text-center" title="Current Physical Available Stock in Hand">Current Stock</th>
                     <th className="py-4 px-2 border-r border-slate-100 text-center">Purchase Price</th>
                     <th className="py-4 px-2 border-r border-slate-100 text-center">Selling Price</th>
                     <th className="py-4 px-3 border-r border-slate-100 text-right">Inventory Cost</th>
                     <th className="py-4 px-3 border-r border-slate-100 text-right">Inventory Value</th>
-                    <th className="py-4 px-3 border-r border-slate-100 text-right">Realized Profit</th>
-                    <th className="py-4 px-3 border-r border-slate-100 text-right">Return Loss</th>
-                    <th className="py-4 px-3 border-r border-slate-100 text-right">Net Profit</th>
+                    <th className="py-4 px-3 border-r border-slate-100 text-right" title="Profit from sold items (Selling Price > Purchase Price)">Realized Profit</th>
+                    <th className="py-4 px-3 border-r border-slate-100 text-right" title="Loss from sold items (Purchase Price > Selling Price)">Sales Loss</th>
+                    <th className="py-4 px-3 border-r border-slate-100 text-right" title="Loss from Customer Return delivery charges">Return Loss</th>
+                    <th className="py-4 px-3 border-r border-slate-100 text-right" title="Net Profit = Realized Profit - Sales Loss - Return Loss">Net Profit</th>
                     <th className="py-4 px-3 text-center">Action</th>
                   </tr>
                 </thead>
@@ -319,7 +293,9 @@ export default function Stock() {
                       saved: false
                     };
 
-                    const netProfitVal = p.net_profit != null ? p.net_profit : p.profit;
+                    const rawNet = p.net_profit != null ? p.net_profit : p.profit;
+                    const netProfitVal = (rawNet != null && rawNet < 0) ? 0 : rawNet;
+                    const soldQty = p.successfully_sold_quantity != null ? p.successfully_sold_quantity : (p.realized_sales_quantity || 0);
 
                     return (
                       <tr
@@ -347,17 +323,24 @@ export default function Stock() {
                           </span>
                         </td>
 
-                        {/* Returned Quantity */}
+                        {/* Successfully Sold Quantity */}
                         <td className="py-3.5 px-2 border-r border-slate-100 text-center">
-                          <span className="font-mono text-xs text-rose-600 font-extrabold">
-                            {p.returned_quantity}
+                          <span className="font-mono text-xs text-blue-700 font-extrabold">
+                            {soldQty}
                           </span>
                         </td>
 
-                        {/* Available Quantity */}
+                        {/* Customer Return Quantity */}
                         <td className="py-3.5 px-2 border-r border-slate-100 text-center">
-                          <span className="font-mono text-xs text-emerald-700 font-extrabold">
-                            {p.available_quantity}
+                          <span className="font-mono text-xs text-rose-600 font-extrabold">
+                            {p.customer_returned_quantity || 0}
+                          </span>
+                        </td>
+
+                        {/* Current Available Stock */}
+                        <td className="py-3.5 px-2 border-r border-slate-100 text-center">
+                          <span className="font-mono text-xs text-emerald-700 font-extrabold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                            {p.available_quantity != null ? p.available_quantity : p.current_available_stock}
                           </span>
                         </td>
 
@@ -435,17 +418,24 @@ export default function Stock() {
                           </span>
                         </td>
 
-                        {/* Realized Sales Profit */}
+                        {/* Realized Sales Profit (Always >= 0) */}
                         <td className="py-3.5 px-3 border-r border-slate-100 text-right">
-                          <span className="font-mono text-xs text-sky-700 font-extrabold">
+                          <span className="font-mono text-xs font-extrabold text-sky-700">
                             {formatCurrency(p.realized_sales_profit)}
                           </span>
                         </td>
 
-                        {/* Return Loss */}
+                        {/* Sales Loss (Always >= 0, displayed in rose red if > 0) */}
                         <td className="py-3.5 px-3 border-r border-slate-100 text-right">
-                          <span className="font-mono text-xs text-rose-700 font-extrabold">
-                            {p.return_loss > 0 ? `-${formatCurrency(p.return_loss)}` : '₹0'}
+                          <span className={`font-mono text-xs font-extrabold ${p.sales_loss > 0 ? 'text-rose-600' : 'text-slate-400'}`}>
+                            {formatCurrency(p.sales_loss)}
+                          </span>
+                        </td>
+
+                        {/* Return Loss (Always >= 0, displayed in rose red if > 0) */}
+                        <td className="py-3.5 px-3 border-r border-slate-100 text-right">
+                          <span className={`font-mono text-xs font-extrabold ${p.return_loss > 0 ? 'text-rose-600' : 'text-slate-400'}`}>
+                            {formatCurrency(p.customer_return_loss || p.return_loss)}
                           </span>
                         </td>
 

@@ -1,6 +1,7 @@
+import fs from 'fs';
+import path from 'path';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
-import path from 'path';
 
 // Load .env from backend folder or root folder
 dotenv.config({ path: path.resolve(process.cwd(), 'backend/.env') });
@@ -194,11 +195,36 @@ export const orderRecordService = {
         console.log(`[OrderRecords] Supabase marked returned: ${orderId} (${cleanReturnType})`);
       }
 
-      // Upsert stock_returns entry in Supabase if table is present
+      // Upsert stock_returns entry in local fallback file and Supabase if present
       if (orderId) {
+        try {
+          const rootDir = (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME)
+            ? '/tmp'
+            : (fs.existsSync(path.join(process.cwd(), '..', 'package.json')) ? path.resolve(process.cwd(), '..') : process.cwd());
+          const returnsDbPath = path.join(rootDir, 'stock_returns.json');
+          let retDb = [];
+          if (fs.existsSync(returnsDbPath)) {
+            try { retDb = JSON.parse(fs.readFileSync(returnsDbPath, 'utf-8')); } catch {}
+          }
+          const existingIdx = retDb.findIndex(r => r.order_id === orderId);
+          if (existingIdx >= 0) {
+            retDb[existingIdx].return_type = cleanReturnType;
+          } else {
+            retDb.push({
+              id: `sr_${Date.now()}`,
+              order_id: orderId,
+              return_type: cleanReturnType,
+              delivery_boy_charge: 0,
+              returned_at: new Date().toISOString()
+            });
+          }
+          fs.writeFileSync(returnsDbPath, JSON.stringify(retDb, null, 2));
+        } catch (e) {}
+
         try {
           await supabase.from('stock_returns').upsert({
             order_id: orderId,
+            return_type: cleanReturnType,
             delivery_boy_charge: 0,
             updated_at: new Date().toISOString()
           }, { onConflict: 'order_id' });
@@ -250,6 +276,18 @@ export const orderRecordService = {
       }
 
       if (orderId) {
+        try {
+          const rootDir = (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME)
+            ? '/tmp'
+            : (fs.existsSync(path.join(process.cwd(), '..', 'package.json')) ? path.resolve(process.cwd(), '..') : process.cwd());
+          const returnsDbPath = path.join(rootDir, 'stock_returns.json');
+          if (fs.existsSync(returnsDbPath)) {
+            let retDb = JSON.parse(fs.readFileSync(returnsDbPath, 'utf-8'));
+            retDb = retDb.filter(r => r.order_id !== orderId);
+            fs.writeFileSync(returnsDbPath, JSON.stringify(retDb, null, 2));
+          }
+        } catch (e) {}
+
         try {
           await supabase.from('stock_returns').delete().eq('order_id', orderId);
         } catch (e) {}

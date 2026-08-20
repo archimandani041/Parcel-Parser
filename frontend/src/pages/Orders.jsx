@@ -1,16 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Layout from '../components/Layout';
-import { getOrderRecords, returnOrderRecord, undoReturnOrderRecord, deleteOrderRecord, exportOrdersExcel, syncOrdersToSupabase } from '../services/api';
+import { getOrderRecords, returnOrderRecord, undoReturnOrderRecord, deleteOrderRecord } from '../services/api';
 import {
   Search,
   RefreshCw,
-  Download,
   RotateCcw,
   Package,
   Inbox,
   Trash2,
-  Database,
-  Sparkles,
   AlertTriangle
 } from 'lucide-react';
 
@@ -21,8 +18,6 @@ export default function Orders() {
   const [searchInput, setSearchInput] = useState('');
   const [returningId, setReturningId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
-  const [exporting, setExporting] = useState(false);
-  const [syncing, setSyncing] = useState(false);
 
   // Return modal state
   const [returnModalOrder, setReturnModalOrder] = useState(null);
@@ -107,41 +102,6 @@ export default function Orders() {
     }
   };
 
-  const handleSync = async () => {
-    setSyncing(true);
-    try {
-      const res = await syncOrdersToSupabase();
-      alert(`Successfully synced ${res.synced_count} record(s) to Supabase database!`);
-      loadRecords();
-    } catch (err) {
-      alert('Supabase Sync Failed: ' + (err.response?.data?.error || err.message || 'Make sure SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set in backend/.env'));
-    } finally {
-      setSyncing(false);
-    }
-  };
-
-  const handleExport = async () => {
-    setExporting(true);
-    try {
-      const response = await exportOrdersExcel();
-      const blob = new Blob([response.data], {
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-      });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `orders_${new Date().toISOString().split('T')[0]}.xlsx`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      alert('Export failed: ' + (err.response?.data?.error || err.message));
-    } finally {
-      setExporting(false);
-    }
-  };
-
   return (
     <Layout title="Orders">
       <div className="space-y-6 pb-10">
@@ -181,28 +141,6 @@ export default function Orders() {
                 Search
               </button>
             </form>
-
-            {/* Sync to Supabase */}
-            <button
-              onClick={handleSync}
-              disabled={syncing}
-              title="Sync local data to Supabase PostgreSQL"
-              className="flex items-center gap-2 px-5 py-2.5 bg-purple-200/90 hover:bg-purple-300 text-purple-950 font-extrabold text-xs rounded-full transition-all border border-purple-300 shadow-xs cursor-pointer disabled:opacity-50"
-            >
-              <Database className={`w-3.5 h-3.5 text-purple-700 ${syncing ? 'animate-spin' : ''}`} />
-              {syncing ? 'Syncing...' : 'Sync Supabase'}
-            </button>
-
-            {/* Export Excel */}
-            <button
-              id="export-excel-btn"
-              onClick={handleExport}
-              disabled={exporting}
-              className="flex items-center gap-2 px-5 py-2.5 bg-emerald-100/90 hover:bg-emerald-200 text-emerald-950 font-extrabold text-xs rounded-full transition-all border border-emerald-300 shadow-xs cursor-pointer disabled:opacity-50"
-            >
-              <Download className="w-3.5 h-3.5 text-emerald-700" />
-              {exporting ? 'Exporting...' : 'Export Excel'}
-            </button>
           </div>
         </div>
 

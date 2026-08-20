@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Layout from '../components/Layout';
 import {
   getReturnsOverview,
-  exportReturnsExcel,
   updateReturnDeliveryCharge,
   undoReturnOrderRecord
 } from '../services/api';
@@ -16,15 +15,13 @@ import {
   TrendingDown,
   Truck,
   Inbox,
-  AlertTriangle,
-  Download
+  AlertTriangle
 } from 'lucide-react';
 
 export default function Return() {
   const [activeCategory, setActiveCategory] = useState('customer'); // 'customer' | 'rto'
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [exportingReturns, setExportingReturns] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
 
   // Data states
@@ -125,25 +122,6 @@ export default function Return() {
     }
   };
 
-  const handleExportReturns = async () => {
-    setExportingReturns(true);
-    try {
-      const response = await exportReturnsExcel();
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `returns_report_${Date.now()}.xlsx`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      showToast("Return Excel report downloaded successfully.");
-    } catch (err) {
-      alert('Export failed: ' + (err.response?.data?.error || err.message));
-    } finally {
-      setExportingReturns(false);
-    }
-  };
-
   const handleConfirmUndoReturn = async () => {
     if (!confirmUndoOrder) return;
     const targetId = confirmUndoOrder.id || confirmUndoOrder.order_id;
@@ -162,7 +140,11 @@ export default function Return() {
 
   const formatCurrency = (val) => {
     if (val == null || isNaN(val)) return '₹0';
-    return `₹${Number(val).toLocaleString('en-IN')}`;
+    const num = Number(val);
+    if (num < 0) {
+      return `-₹${Math.abs(num).toLocaleString('en-IN')}`;
+    }
+    return `₹${num.toLocaleString('en-IN')}`;
   };
 
   const formatDate = (isoString) => {
@@ -211,7 +193,7 @@ export default function Return() {
         )}
 
         {/* HEADER & CONTROLS */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/70 backdrop-blur-md p-6 rounded-3xl border border-purple-100/80 shadow-sm">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 bg-white/70 backdrop-blur-md p-6 rounded-3xl border border-purple-100/80 shadow-sm">
           <div className="flex items-center gap-3.5">
             <div className="w-11 h-11 rounded-2xl bg-amber-100 border border-amber-200 flex items-center justify-center text-amber-700 shadow-sm shrink-0">
               <RotateCcw className="w-5 h-5" />
@@ -224,47 +206,13 @@ export default function Return() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 flex-wrap">
-            {/* Search Input */}
-            <div className="relative">
-              <Search className="w-4 h-4 text-purple-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                id="search-return-input"
-                type="text"
-                placeholder="Search Order ID, SKU or Customer..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-purple-50/40 border border-purple-200/80 rounded-full pl-9 pr-4 py-2.5 text-xs text-slate-800 placeholder-purple-300 outline-none focus:border-purple-400 focus:bg-white focus:ring-2 focus:ring-purple-200 transition-all w-64 shadow-xs font-medium"
-              />
-            </div>
-
-            {/* Refresh Button */}
-            <button
-              onClick={loadReturnData}
-              disabled={loading}
-              className="p-2.5 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-full border border-purple-200/80 transition-all shadow-xs disabled:opacity-50 cursor-pointer"
-              title="Refresh return data"
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            </button>
-
-            {/* Export Excel Button */}
-            <button
-              id="export-return-excel-btn"
-              onClick={handleExportReturns}
-              disabled={exportingReturns}
-              className="flex items-center gap-2 px-5 py-2.5 bg-amber-100/90 hover:bg-amber-200 text-amber-950 font-extrabold text-xs rounded-full border border-amber-300 shadow-xs transition-all disabled:opacity-50 cursor-pointer"
-            >
-              <Download className="w-3.5 h-3.5 text-amber-700" />
-              {exportingReturns ? 'Exporting...' : 'Export Return Excel'}
-            </button>
-
+          <div className="flex items-center gap-3 flex-wrap xl:flex-nowrap shrink-0">
             {/* Category Switcher Pill [ Customer Return ] [ RTO Return ] */}
-            <div className="bg-purple-100/60 p-1 rounded-full border border-purple-200/80 flex items-center gap-1 shadow-inner">
+            <div className="bg-purple-100/60 p-1 rounded-full border border-purple-200/80 flex items-center gap-1 shadow-inner shrink-0">
               <button
                 id="customer-return-tab-btn"
                 onClick={() => setActiveCategory('customer')}
-                className={`flex items-center gap-2 px-5 py-2 rounded-full text-xs font-bold transition-all duration-200 cursor-pointer ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 cursor-pointer ${
                   activeCategory === 'customer'
                     ? 'bg-amber-200/90 text-amber-950 border border-amber-300 shadow-xs'
                     : 'text-purple-800/80 hover:text-purple-950 hover:bg-white/60'
@@ -277,7 +225,7 @@ export default function Return() {
               <button
                 id="rto-return-tab-btn"
                 onClick={() => setActiveCategory('rto')}
-                className={`flex items-center gap-2 px-5 py-2 rounded-full text-xs font-bold transition-all duration-200 cursor-pointer ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 cursor-pointer ${
                   activeCategory === 'rto'
                     ? 'bg-purple-200/90 text-purple-950 border border-purple-300 shadow-xs'
                     : 'text-purple-800/80 hover:text-purple-950 hover:bg-white/60'
@@ -287,6 +235,29 @@ export default function Return() {
                 RTO Return
               </button>
             </div>
+
+            {/* Search Input */}
+            <div className="relative">
+              <Search className="w-4 h-4 text-purple-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                id="search-return-input"
+                type="text"
+                placeholder="Search Order ID, SKU or Customer..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="bg-purple-50/40 border border-purple-200/80 rounded-full pl-9 pr-4 py-2.5 text-xs text-slate-800 placeholder-purple-300 outline-none focus:border-purple-400 focus:bg-white focus:ring-2 focus:ring-purple-200 transition-all w-60 shadow-xs font-medium"
+              />
+            </div>
+
+            {/* Refresh Button */}
+            <button
+              onClick={loadReturnData}
+              disabled={loading}
+              className="p-2.5 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-full border border-purple-200/80 transition-all shadow-xs disabled:opacity-50 cursor-pointer shrink-0"
+              title="Refresh return data"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            </button>
           </div>
         </div>
 
@@ -336,7 +307,7 @@ export default function Return() {
                 <TrendingDown className="w-4 h-4 text-rose-600" />
               </div>
               <p className="text-2xl font-extrabold text-rose-600 font-mono">
-                -{formatCurrency(summary.total_customer_return_loss)}
+                {formatCurrency(summary.total_customer_return_loss)}
               </p>
               <p className="text-[10px] text-slate-500 font-medium">Deducted from realized profit</p>
             </div>
@@ -510,7 +481,7 @@ export default function Return() {
                           {/* Return Loss */}
                           <td className="py-3.5 px-3 border-r border-slate-100 text-right">
                             <span className="font-mono text-xs font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
-                              -{formatCurrency(r.return_loss)}
+                              {formatCurrency(r.return_loss)}
                             </span>
                           </td>
 
