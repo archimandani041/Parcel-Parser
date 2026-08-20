@@ -145,7 +145,7 @@ export default function DocumentDetail() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           
           {/* Left Screen: Original Document Preview */}
-          <div className="lg:col-span-5 h-[720px] sticky top-24 ui-card p-4 shadow-xl border border-slate-200/80 rounded-3xl">
+          <div className="lg:col-span-5 h-[480px] sm:h-[560px] lg:h-[720px] lg:sticky lg:top-24 ui-card p-4 shadow-xl border border-slate-200/80 rounded-3xl">
             <DocumentViewer
               fileUrl={documentData.file_url}
               fileName={documentData.file_name}
