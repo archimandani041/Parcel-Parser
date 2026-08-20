@@ -103,6 +103,61 @@ export function cleanProductName(skuId, productName) {
   return 'Product';
 }
 
+export async function autoSyncLocalFilesToSupabase() {
+  const supabase = getSupabaseClient();
+  if (!supabase) return;
+
+  try {
+    const returnsLocal = loadReturnsDb();
+    for (const r of returnsLocal) {
+      if (r.order_id) {
+        const updateObj = { updated_at: new Date().toISOString() };
+        if (r.delivery_boy_charge != null) updateObj.delivery_boy_charge = Number(r.delivery_boy_charge);
+        if (r.return_type) updateObj.return_type = r.return_type;
+
+        await supabase.from('order_records').update(updateObj).eq('order_id', r.order_id);
+
+        try {
+          await supabase.from('stock_returns').upsert({
+            order_id: r.order_id,
+            delivery_boy_charge: Number(r.delivery_boy_charge || 0),
+            return_type: r.return_type || 'CUSTOMER_RETURN',
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'order_id' });
+        } catch (e) {}
+      }
+    }
+
+    const productsLocal = loadProductsDb();
+    for (const p of productsLocal) {
+      if (p.sku_id) {
+        const cleanSku = p.sku_id.trim().toUpperCase();
+        const updateObj = { updated_at: new Date().toISOString() };
+        if (p.purchase_price != null) updateObj.purchase_price = Number(p.purchase_price);
+        if (p.selling_price != null) updateObj.selling_price = Number(p.selling_price);
+        if (p.product_name) updateObj.product_name = p.product_name;
+
+        await supabase.from('order_records').update(updateObj).ilike('sku_id', `%${cleanSku}%`);
+
+        try {
+          await supabase.from('stock_products').upsert({
+            sku_id: cleanSku,
+            purchase_price: p.purchase_price != null ? Number(p.purchase_price) : null,
+            selling_price: p.selling_price != null ? Number(p.selling_price) : null,
+            product_name: p.product_name || null,
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'sku_id' });
+        } catch (e) {}
+      }
+    }
+  } catch (err) {
+    console.error('[StockService] autoSync error:', err.message);
+  }
+}
+
+// Automatically sync local DB JSON files into Supabase on startup
+autoSyncLocalFilesToSupabase().catch(() => {});
+
 // ===== SERVICE DEFINITION =====
 
 export const stockService = {
@@ -198,7 +253,9 @@ export const stockService = {
             if (r.order_id) {
               const existing = map.get(r.order_id) || {};
               const updated = { ...existing };
-              if (updated.delivery_boy_charge == null && r.delivery_boy_charge != null) {
+              if ((updated.delivery_boy_charge == null || updated.delivery_boy_charge === 0) && r.delivery_boy_charge != null && r.delivery_boy_charge > 0) {
+                updated.delivery_boy_charge = r.delivery_boy_charge;
+              } else if (updated.delivery_boy_charge == null && r.delivery_boy_charge != null) {
                 updated.delivery_boy_charge = r.delivery_boy_charge;
               }
               if (!updated.return_type && r.return_type) {
@@ -219,11 +276,8 @@ export const stockService = {
           map.set(r.order_id, r);
         } else {
           const existing = map.get(r.order_id);
-          if (existing.delivery_boy_charge == null && r.delivery_boy_charge != null) {
+          if ((existing.delivery_boy_charge == null || existing.delivery_boy_charge === 0) && r.delivery_boy_charge != null && r.delivery_boy_charge > 0) {
             existing.delivery_boy_charge = r.delivery_boy_charge;
-          }
-          if (!existing.return_type && r.return_type) {
-            existing.return_type = r.return_type;
           }
         }
       }
