@@ -183,12 +183,72 @@ export async function cleanOrphanedStock() {
   }
 }
 
+export async function ensureStockProductsSynced() {
+  const supabase = getSupabaseClient();
+  if (!supabase) return;
+
+  try {
+    const { data: validOrders, error } = await supabase
+      .from('order_records')
+      .select('sku_id, product_name, purchase_price, selling_price');
+
+    if (error || !validOrders || validOrders.length === 0) return;
+
+    const skuMap = new Map();
+    validOrders.forEach(o => {
+      const sku = normalizeSku(o.sku_id, o.product_name);
+      if (sku && sku !== 'UNSPECIFIED') {
+        const cleanSku = sku.toUpperCase();
+        if (!skuMap.has(cleanSku)) {
+          skuMap.set(cleanSku, {
+            sku_id: cleanSku,
+            product_name: cleanProductName(o.sku_id, o.product_name),
+            purchase_price: o.purchase_price != null ? Number(o.purchase_price) : null,
+            selling_price: o.selling_price != null ? Number(o.selling_price) : null
+          });
+        } else {
+          const existing = skuMap.get(cleanSku);
+          if (existing.purchase_price == null && o.purchase_price != null) {
+            existing.purchase_price = Number(o.purchase_price);
+          }
+          if (existing.selling_price == null && o.selling_price != null) {
+            existing.selling_price = Number(o.selling_price);
+          }
+        }
+      }
+    });
+
+    const { data: currentProducts } = await supabase.from('stock_products').select('*');
+    const existingProductsMap = new Map();
+    (currentProducts || []).forEach(p => {
+      if (p.sku_id) existingProductsMap.set(p.sku_id.toUpperCase(), p);
+    });
+
+    for (const [sku, prod] of skuMap.entries()) {
+      const existing = existingProductsMap.get(sku);
+      if (!existing) {
+        await supabase.from('stock_products').upsert({
+          sku_id: sku,
+          product_name: prod.product_name,
+          purchase_price: prod.purchase_price,
+          selling_price: prod.selling_price,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'sku_id' });
+        console.log(`[StockService] Synced product SKU into stock_products table: ${sku}`);
+      }
+    }
+  } catch (err) {
+    console.error('[StockService] ensureStockProductsSynced exception:', err.message);
+  }
+}
+
 export async function autoSyncLocalFilesToSupabase() {
   const supabase = getSupabaseClient();
   if (!supabase) return;
 
   try {
     await cleanOrphanedStock();
+    await ensureStockProductsSynced();
 
     const returnsLocal = loadReturnsDb();
     for (const r of returnsLocal) {
@@ -238,7 +298,7 @@ export async function autoSyncLocalFilesToSupabase() {
 }
 
 // Automatically purge orphaned records and sync on startup
-cleanOrphanedStock().catch(() => {});
+cleanOrphanedStock().then(() => ensureStockProductsSynced()).catch(() => {});
 autoSyncLocalFilesToSupabase().catch(() => {});
 
 // ===== SERVICE DEFINITION =====
