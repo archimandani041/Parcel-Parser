@@ -110,27 +110,60 @@ export const stockService = {
   /** Fetch all SKU stock product settings from Supabase or local DB */
   async getStockProductsMap() {
     const map = new Map();
-    const localRecords = loadProductsDb();
-    localRecords.forEach(r => {
-      if (r.sku_id) map.set(r.sku_id.toUpperCase(), r);
-    });
-
     const supabase = getSupabaseClient();
+
+    // 1. Primary: Fetch from Supabase stock_products table
     if (supabase) {
       try {
         const { data, error } = await supabase.from('stock_products').select('*');
         if (!error && data) {
           data.forEach(r => {
             if (r.sku_id) {
-              const existing = map.get(r.sku_id.toUpperCase()) || {};
-              map.set(r.sku_id.toUpperCase(), { ...existing, ...r });
+              map.set(r.sku_id.toUpperCase(), r);
             }
           });
         }
       } catch (e) {
         console.error('[StockService] Supabase stock_products fetch error:', e.message);
       }
+
+      // 2. Also populate prices saved directly on order_records table in Supabase
+      try {
+        const { data } = await supabase
+          .from('order_records')
+          .select('sku_id, product_name, purchase_price, selling_price')
+          .not('sku_id', 'is', null);
+
+        if (data) {
+          data.forEach(r => {
+            if (r.sku_id) {
+              const sku = r.sku_id.toUpperCase();
+              const existing = map.get(sku) || {};
+              const updated = { ...existing };
+              if (updated.purchase_price == null && r.purchase_price != null) updated.purchase_price = r.purchase_price;
+              if (updated.selling_price == null && r.selling_price != null) updated.selling_price = r.selling_price;
+              if (!updated.product_name && r.product_name) updated.product_name = r.product_name;
+              map.set(sku, updated);
+            }
+          });
+        }
+      } catch (e) {}
     }
+
+    // 3. Fallback: Merge local file records
+    const localRecords = loadProductsDb();
+    localRecords.forEach(r => {
+      if (r.sku_id) {
+        const sku = r.sku_id.toUpperCase();
+        if (!map.has(sku)) {
+          map.set(sku, r);
+        } else {
+          const existing = map.get(sku);
+          if (existing.purchase_price == null && r.purchase_price != null) existing.purchase_price = r.purchase_price;
+          if (existing.selling_price == null && r.selling_price != null) existing.selling_price = r.selling_price;
+        }
+      }
+    });
 
     return map;
   },
@@ -138,27 +171,63 @@ export const stockService = {
   /** Fetch all return delivery charges from Supabase or local DB */
   async getStockReturnsMap() {
     const map = new Map();
-    const localRecords = loadReturnsDb();
-    localRecords.forEach(r => {
-      if (r.order_id) map.set(r.order_id, r);
-    });
-
     const supabase = getSupabaseClient();
+
+    // 1. Primary: Fetch from Supabase stock_returns table
     if (supabase) {
       try {
         const { data, error } = await supabase.from('stock_returns').select('*');
         if (!error && data) {
           data.forEach(r => {
-            if (r.order_id) {
-              const existing = map.get(r.order_id) || {};
-              map.set(r.order_id, { ...existing, ...r });
-            }
+            if (r.order_id) map.set(r.order_id, r);
           });
         }
       } catch (e) {
         console.error('[StockService] Supabase stock_returns fetch error:', e.message);
       }
+
+      // 2. Also populate return charges stored directly on order_records table in Supabase
+      try {
+        const { data } = await supabase
+          .from('order_records')
+          .select('order_id, return_type, delivery_boy_charge')
+          .eq('is_returned', true);
+
+        if (data) {
+          data.forEach(r => {
+            if (r.order_id) {
+              const existing = map.get(r.order_id) || {};
+              const updated = { ...existing };
+              if (updated.delivery_boy_charge == null && r.delivery_boy_charge != null) {
+                updated.delivery_boy_charge = r.delivery_boy_charge;
+              }
+              if (!updated.return_type && r.return_type) {
+                updated.return_type = r.return_type;
+              }
+              map.set(r.order_id, updated);
+            }
+          });
+        }
+      } catch (e) {}
     }
+
+    // 3. Fallback: Merge local file records
+    const localRecords = loadReturnsDb();
+    localRecords.forEach(r => {
+      if (r.order_id) {
+        if (!map.has(r.order_id)) {
+          map.set(r.order_id, r);
+        } else {
+          const existing = map.get(r.order_id);
+          if (existing.delivery_boy_charge == null && r.delivery_boy_charge != null) {
+            existing.delivery_boy_charge = r.delivery_boy_charge;
+          }
+          if (!existing.return_type && r.return_type) {
+            existing.return_type = r.return_type;
+          }
+        }
+      }
+    });
 
     return map;
   },
@@ -494,7 +563,36 @@ export const stockService = {
     };
     if (return_type) payload.return_type = return_type;
 
-    // 1. Always save to local DB fallback
+    const supabase = getSupabaseClient();
+    let supabaseResult = null;
+
+    if (supabase) {
+      try {
+        // Update core order_records table in Supabase directly
+        const orderUpdate = { delivery_boy_charge: chargeNum, updated_at: new Date().toISOString() };
+        if (return_type) orderUpdate.return_type = return_type;
+
+        await supabase
+          .from('order_records')
+          .update(orderUpdate)
+          .eq('order_id', order_id);
+
+        // Upsert stock_returns table in Supabase
+        const { data, error } = await supabase
+          .from('stock_returns')
+          .upsert(payload, { onConflict: 'order_id' })
+          .select()
+          .single();
+
+        if (!error && data) {
+          supabaseResult = data;
+        }
+      } catch (e) {
+        console.error('[StockService] Supabase stock_returns exception:', e.message);
+      }
+    }
+
+    // Always keep local file fallback in sync
     const db = loadReturnsDb();
     const idx = db.findIndex(r => r.order_id === order_id);
     let saved;
@@ -507,25 +605,7 @@ export const stockService = {
     }
     saveReturnsDb(db);
 
-    // 2. Save to Supabase if table exists
-    const supabase = getSupabaseClient();
-    if (supabase) {
-      try {
-        const { data, error } = await supabase
-          .from('stock_returns')
-          .upsert(payload, { onConflict: 'order_id' })
-          .select()
-          .single();
-
-        if (!error && data) {
-          return data;
-        }
-      } catch (e) {
-        console.error('[StockService] Supabase stock_returns exception:', e.message);
-      }
-    }
-
-    return saved;
+    return supabaseResult || saved;
   },
 
   /** Delete a stock product SKU and all associated order records */
