@@ -27,6 +27,7 @@ export default function DocumentsList() {
   const [selectedIds, setSelectedIds] = useState([]);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const loadDocs = () => {
     setLoading(true);
@@ -73,11 +74,18 @@ export default function DocumentsList() {
   const handleBulkDelete = async () => {
     if (selectedIds.length === 0) return;
     if (window.confirm(`Are you sure you want to delete ${selectedIds.length} selected document(s)?`)) {
-      for (const id of selectedIds) {
-        await deleteDocument(id);
+      setBulkDeleting(true);
+      try {
+        for (const id of selectedIds) {
+          await deleteDocument(id);
+        }
+        setSelectedIds([]);
+        loadDocs();
+      } catch (err) {
+        alert('Failed to delete selected documents: ' + (err.response?.data?.error || err.message));
+      } finally {
+        setBulkDeleting(false);
       }
-      setSelectedIds([]);
-      loadDocs();
     }
   };
 
