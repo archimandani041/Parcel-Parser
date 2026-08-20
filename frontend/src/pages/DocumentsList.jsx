@@ -102,8 +102,8 @@ export default function DocumentsList() {
                 <Layers className="w-5 h-5" />
               </div>
               <div>
-                <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-                  Parsed label <span className="font-serif-italic font-normal text-purple-700">repository</span>
+                <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+                  Parsed label <span className="font-normal text-purple-700">repository</span>
                 </h1>
                 <p className="text-xs text-slate-500 font-medium mt-0.5">Search, filter, batch export, or manage structured document extractions</p>
               </div>

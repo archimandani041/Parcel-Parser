@@ -33,6 +33,7 @@ import {
 export default function Dashboard() {
   const [stats, setStats] = useState({
     total_profit: 0,
+    total_loss: 0,
     total_selling: 0,
     total_return: 0,
     total_stock_items: 0,
@@ -127,7 +128,7 @@ export default function Dashboard() {
     ...graphData.flatMap(d => [d.profit || 0, d.loss || 0]),
     100
   ) * 1.25;
-  const hasGraphData = graphData.some(d => (d.profit || 0) > 0 || (d.loss || 0) > 0);
+  const hasGraphData = graphData.length > 0;
 
   return (
     <Layout title="Business Intelligence Dashboard">
@@ -136,7 +137,7 @@ export default function Dashboard() {
         {/* Action Header Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/80 border border-purple-100 p-5 rounded-2xl shadow-xs">
           <div>
-            <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
               Real-Time Business Intelligence
             </h1>
             <p className="text-xs text-slate-500 font-medium mt-0.5">
@@ -149,7 +150,7 @@ export default function Dashboard() {
               id="download-all-3-excels-btn"
               onClick={handleDownloadAllThree}
               disabled={exportingAll}
-              className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-700 hover:to-teal-800 text-white font-extrabold text-xs px-5 py-2.5 rounded-full shadow-md shadow-emerald-500/15 transition-all duration-200 hover:scale-[1.02] disabled:opacity-50 cursor-pointer"
+              className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-700 hover:to-teal-800 text-white font-semibold text-xs px-5 py-2.5 rounded-full shadow-md shadow-emerald-500/15 transition-all duration-200 hover:scale-[1.02] disabled:opacity-50 cursor-pointer"
               title="Download 1. Orders, 2. Stock, and 3. Return Excel files"
             >
               <Download className={`w-3.5 h-3.5 text-white ${exportingAll ? 'animate-bounce' : ''}`} />
@@ -158,7 +159,7 @@ export default function Dashboard() {
 
             <Link
               to="/upload"
-              className="pill-button-dark flex items-center gap-2 px-5 py-2.5 text-xs font-extrabold shadow-xs"
+              className="pill-button-dark flex items-center gap-2 px-5 py-2.5 text-xs font-semibold shadow-xs"
             >
               <UploadCloud className="w-3.5 h-3.5 text-purple-400" />
               Upload New Label
@@ -166,18 +167,18 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* TOP STATISTICS CARDS (6 CARDS) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+        {/* TOP STATISTICS CARDS (7 CARDS) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-7 gap-3 sm:gap-4">
 
           {/* 1. Total Profit Card */}
-          <div className="ui-card ui-card-hover p-5 space-y-2 bg-gradient-to-br from-emerald-50/80 via-teal-50/30 to-white border border-emerald-200/90 shadow-xs">
+          <div className="ui-card ui-card-hover p-4 sm:p-5 space-y-2 bg-gradient-to-br from-emerald-50/80 via-teal-50/30 to-white border border-emerald-200/90 shadow-xs">
             <div className="flex items-center justify-between text-slate-500">
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-800">Total Profit</span>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-800">Total Profit</span>
               <div className="w-8 h-8 rounded-xl bg-emerald-100 border border-emerald-200 flex items-center justify-center text-emerald-700 shadow-xs">
                 <Coins className="w-4 h-4" />
               </div>
             </div>
-            <p className={`text-2xl font-extrabold font-mono tracking-tight ${stats.total_profit >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
+            <p className={`text-2xl font-bold font-mono tracking-tight ${stats.total_profit >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
               {formatCurrency(stats.total_profit)}
             </p>
             <div className="flex items-center gap-1 text-[10px] text-emerald-700 font-semibold">
@@ -185,15 +186,31 @@ export default function Dashboard() {
             </div>
           </div>
 
+          {/* 2. Total Loss Card */}
+          <div className="ui-card ui-card-hover p-4 sm:p-5 space-y-2 bg-gradient-to-br from-rose-50/80 via-pink-50/30 to-white border border-rose-200/90 shadow-xs">
+            <div className="flex items-center justify-between text-slate-500">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-rose-800">Total Loss</span>
+              <div className="w-8 h-8 rounded-xl bg-rose-100 border border-rose-200 flex items-center justify-center text-rose-600 shadow-xs">
+                <TrendingDown className="w-4 h-4" />
+              </div>
+            </div>
+            <p className="text-2xl font-bold text-rose-700 font-mono tracking-tight">
+              {formatCurrency(stats.total_loss || 0)}
+            </p>
+            <div className="flex items-center gap-1 text-[10px] text-rose-600 font-semibold">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" /> Sales & Return Losses
+            </div>
+          </div>
+
           {/* 2. Total Selling Card */}
           <div className="ui-card ui-card-hover p-5 space-y-2 bg-gradient-to-br from-purple-50/60 via-violet-50/20 to-white border border-purple-200/80 shadow-xs">
             <div className="flex items-center justify-between text-slate-500">
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-purple-800">Total Selling</span>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-purple-800">Total Selling</span>
               <div className="w-8 h-8 rounded-xl bg-purple-100 border border-purple-200 flex items-center justify-center text-purple-700 shadow-xs">
                 <IndianRupee className="w-4 h-4" />
               </div>
             </div>
-            <p className="text-2xl font-extrabold text-purple-900 font-mono tracking-tight">
+            <p className="text-2xl font-bold text-purple-900 font-mono tracking-tight">
               {formatCurrency(stats.total_selling)}
             </p>
             <div className="flex items-center gap-1 text-[10px] text-purple-700 font-semibold">
@@ -204,12 +221,12 @@ export default function Dashboard() {
           {/* 3. Total Return Card */}
           <div className="ui-card ui-card-hover p-5 space-y-2 bg-gradient-to-br from-rose-50/60 via-amber-50/20 to-white border border-rose-200/80 shadow-xs">
             <div className="flex items-center justify-between text-slate-500">
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-rose-800">Total Return</span>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-rose-800">Total Return</span>
               <div className="w-8 h-8 rounded-xl bg-rose-100 border border-rose-200 flex items-center justify-center text-rose-600 shadow-xs">
                 <RotateCcw className="w-4 h-4" />
               </div>
             </div>
-            <p className="text-2xl font-extrabold text-rose-700 font-mono tracking-tight">
+            <p className="text-2xl font-bold text-rose-700 font-mono tracking-tight">
               {stats.total_return || 0}
             </p>
             <div className="flex items-center gap-1 text-[10px] text-rose-600 font-semibold">
@@ -220,12 +237,12 @@ export default function Dashboard() {
           {/* 4. Total Stock Items Card */}
           <div className="ui-card ui-card-hover p-5 space-y-2 bg-gradient-to-br from-blue-50/60 via-sky-50/20 to-white border border-blue-200/80 shadow-xs">
             <div className="flex items-center justify-between text-slate-500">
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-blue-800">Total Stock Items</span>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-blue-800">Total Stock Items</span>
               <div className="w-8 h-8 rounded-xl bg-blue-100 border border-blue-200 flex items-center justify-center text-blue-700 shadow-xs">
                 <Boxes className="w-4 h-4" />
               </div>
             </div>
-            <p className="text-2xl font-extrabold text-blue-900 font-mono tracking-tight">
+            <p className="text-2xl font-bold text-blue-900 font-mono tracking-tight">
               {stats.total_stock_items || 0}
             </p>
             <div className="flex items-center gap-1 text-[10px] text-blue-700 font-semibold">
@@ -236,12 +253,12 @@ export default function Dashboard() {
           {/* 5. Total Labels Card */}
           <div className="ui-card ui-card-hover p-5 space-y-2 bg-gradient-to-br from-violet-50/60 via-indigo-50/20 to-white border border-violet-200/80 shadow-xs">
             <div className="flex items-center justify-between text-slate-500">
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-violet-800">Total Labels</span>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-violet-800">Total Labels</span>
               <div className="w-8 h-8 rounded-xl bg-violet-100 border border-violet-200 flex items-center justify-center text-violet-700 shadow-xs">
                 <FileText className="w-4 h-4" />
               </div>
             </div>
-            <p className="text-2xl font-extrabold text-violet-900 font-mono tracking-tight">
+            <p className="text-2xl font-bold text-violet-900 font-mono tracking-tight">
               {stats.total_labels || 0}
             </p>
             <div className="flex items-center gap-1 text-[10px] text-violet-700 font-semibold">
@@ -252,12 +269,12 @@ export default function Dashboard() {
           {/* 6. Total Orders Card */}
           <div className="ui-card ui-card-hover p-5 space-y-2 bg-gradient-to-br from-amber-50/60 via-orange-50/20 to-white border border-amber-200/80 shadow-xs">
             <div className="flex items-center justify-between text-slate-500">
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-800">Total Orders</span>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-amber-800">Total Orders</span>
               <div className="w-8 h-8 rounded-xl bg-amber-100 border border-amber-200 flex items-center justify-center text-amber-700 shadow-xs">
                 <Layers className="w-4 h-4" />
               </div>
             </div>
-            <p className="text-2xl font-extrabold text-amber-900 font-mono tracking-tight">
+            <p className="text-2xl font-bold text-amber-900 font-mono tracking-tight">
               {stats.total_orders || 0}
             </p>
             <div className="flex items-center gap-1 text-[10px] text-amber-700 font-semibold">
@@ -273,7 +290,7 @@ export default function Dashboard() {
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-purple-100/80 pb-5">
             <div>
-              <h3 className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
+              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
                 <BarChart3 className="w-5 h-5 text-purple-600" />
                 Profit & Loss
               </h3>
@@ -358,7 +375,7 @@ export default function Dashboard() {
                 </div>
 
                 {/* Bars Container */}
-                <div className="relative z-10 h-full flex items-end justify-around gap-2 sm:gap-6 px-6">
+                <div className="relative z-10 h-full flex items-end justify-between gap-1 sm:gap-2 px-4 overflow-x-auto min-w-full">
                   {graphData.map((d, idx) => {
                     const profitHeightPercent = Math.max(Math.round(((d.profit || 0) / maxGraphVal) * 100), (d.profit > 0 ? 10 : 0));
                     const lossHeightPercent = Math.max(Math.round(((d.loss || 0) / maxGraphVal) * 100), (d.loss > 0 ? 10 : 0));
@@ -368,7 +385,7 @@ export default function Dashboard() {
                         key={idx}
                         onMouseEnter={() => setHoveredDataPoint(d)}
                         onMouseLeave={() => setHoveredDataPoint(null)}
-                        className="flex-1 flex flex-col items-center justify-end h-full group cursor-pointer max-w-[80px]"
+                        className="flex-1 min-w-[32px] max-w-[70px] flex flex-col items-center justify-end h-full group cursor-pointer"
                       >
                         {/* Bar Pair */}
                         <div className="w-full flex items-end justify-center gap-2 h-full">
@@ -426,9 +443,9 @@ export default function Dashboard() {
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-purple-100/80 pb-5">
             <div>
-              <h3 className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
+              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
                 <PackageCheck className="w-5 h-5 text-purple-600" />
-                Recent extracted parcel <span className="font-serif-italic font-normal text-purple-600">documents</span>
+                Recent extracted parcel <span className="font-normal text-purple-600">documents</span>
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">Live feed of parsed shipping labels and metadata</p>
             </div>

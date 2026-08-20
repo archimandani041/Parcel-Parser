@@ -113,8 +113,8 @@ export default function Orders() {
               <Package className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-                Parcel order <span className="font-serif-italic font-normal text-purple-600">records</span>
+              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+                Parcel order <span className="font-normal text-purple-600">records</span>
               </h1>
               <p className="text-xs text-slate-500 font-medium mt-0.5">Extracted parcel customer orders and SKU logistics</p>
             </div>
@@ -128,24 +128,34 @@ export default function Orders() {
                 <input
                   id="search-order-id"
                   type="text"
-                  placeholder="Search by Order ID..."
+                  placeholder="Search Order ID, SKU or Customer..."
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
-                  className="bg-white border border-purple-200/80 rounded-full pl-9 pr-4 py-2.5 text-xs text-slate-800 placeholder-purple-300 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-200 transition-all w-60 shadow-xs font-medium"
+                  className="bg-purple-50/40 border border-purple-200/80 rounded-full pl-9 pr-4 py-2 text-xs text-slate-800 placeholder-purple-300 outline-none focus:border-purple-400 focus:bg-white focus:ring-2 focus:ring-purple-200 transition-all w-64 shadow-xs font-medium"
                 />
               </div>
               <button
                 type="submit"
-                className="pill-button-pastel px-5 py-2.5 text-xs font-extrabold shadow-md"
+                className="px-4 py-2 bg-purple-100 hover:bg-purple-200 text-purple-800 text-xs font-semibold rounded-full border border-purple-200 transition-all shadow-xs cursor-pointer"
               >
                 Search
               </button>
             </form>
+
+            {/* Refresh Button */}
+            <button
+              onClick={loadRecords}
+              disabled={loading}
+              className="p-2 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-full border border-purple-200/80 transition-all shadow-xs disabled:opacity-50 cursor-pointer"
+              title="Refresh order records"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            </button>
           </div>
         </div>
 
-        {/* Table Container */}
-        <div className="ui-card overflow-hidden shadow-xl border border-purple-100 rounded-3xl">
+        {/* ORDERS TABLE */}
+        <div className="ui-card overflow-hidden shadow-xl border border-purple-100/80 rounded-3xl">
           {loading ? (
             <div className="py-20 text-center space-y-3">
               <RefreshCw className="w-6 h-6 animate-spin mx-auto text-purple-600" />
@@ -154,7 +164,7 @@ export default function Orders() {
           ) : records.length === 0 ? (
             <div className="py-20 text-center space-y-3 bg-purple-50/20">
               <Inbox className="w-12 h-12 text-purple-300 mx-auto" />
-              <h4 className="font-extrabold text-slate-800 text-base">No orders found</h4>
+              <h4 className="font-semibold text-slate-800 text-base">No orders found</h4>
               <p className="text-xs text-slate-500 max-w-sm mx-auto font-medium">
                 {searchQuery
                   ? `No orders match "${searchQuery}"`
@@ -165,7 +175,7 @@ export default function Orders() {
             <div className="overflow-x-auto bg-white">
               <table className="w-full text-left border-collapse text-xs" id="orders-table">
                 <thead>
-                  <tr className="bg-purple-50/50 border-b border-purple-100 text-slate-500 uppercase tracking-wider font-extrabold text-[11px]">
+                  <tr className="bg-purple-50/50 border-b border-purple-100 text-slate-500 uppercase tracking-wider font-semibold text-[11px]">
                     <th className="py-4 px-4 border-r border-purple-50">Order ID</th>
                     <th className="py-4 px-4 border-r border-purple-50">Customer Name</th>
                     <th className="py-4 px-4 border-r border-purple-50">SKU ID</th>
@@ -183,7 +193,7 @@ export default function Orders() {
                     >
                       {/* Order ID */}
                       <td className="py-3.5 px-4 border-r border-slate-100">
-                        <span className="font-mono text-xs font-extrabold text-purple-700 select-all">
+                        <span className="font-mono text-xs font-semibold text-purple-700 select-all">
                           {rec.order_id || '-'}
                         </span>
                       </td>
@@ -211,7 +221,7 @@ export default function Orders() {
 
                       {/* Quantity */}
                       <td className="py-3.5 px-4 border-r border-slate-100 text-center">
-                        <span className="font-mono text-xs text-slate-800 font-extrabold">
+                        <span className="font-mono text-xs text-slate-800 font-bold">
                           {rec.quantity || 1}
                         </span>
                       </td>
@@ -223,7 +233,7 @@ export default function Orders() {
                             onClick={() => handleOpenUndoModal(rec)}
                             disabled={undoingId === rec.id}
                             title="Click to undo return and restore stock"
-                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold bg-rose-100/90 text-rose-800 border border-rose-300 hover:bg-rose-200 hover:border-rose-400 shadow-xs transition-all cursor-pointer disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-rose-100/90 text-rose-800 border border-rose-300 hover:bg-rose-200 hover:border-rose-400 shadow-xs transition-all cursor-pointer disabled:opacity-50"
                           >
                             <RotateCcw className={`w-3 h-3 text-rose-700 ${undoingId === rec.id ? 'animate-spin' : ''}`} />
                             {undoingId === rec.id ? 'Undoing...' : 'Returned'}
@@ -283,7 +293,7 @@ export default function Orders() {
                   <RotateCcw className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-slate-900">Select Return Type</h3>
+                  <h3 className="text-base font-bold text-slate-900">Select Return Type</h3>
                   <p className="text-xs text-slate-500 font-medium mt-1">
                     Choose category for returned Order <span className="font-mono font-bold text-slate-800">#{returnModalOrder.order_id}</span>
                   </p>
@@ -307,7 +317,7 @@ export default function Orders() {
                   className="flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-950 transition-all group cursor-pointer"
                 >
                   <RotateCcw className="w-6 h-6 text-amber-700 mb-1.5 group-hover:scale-110 transition-transform" />
-                  <span className="text-xs font-extrabold">Customer Return</span>
+                  <span className="text-xs font-bold">Customer Return</span>
                   <span className="text-[10px] text-amber-800/80 font-medium text-center mt-0.5">Delivery charge applies</span>
                 </button>
 
@@ -316,7 +326,7 @@ export default function Orders() {
                   className="flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-950 transition-all group cursor-pointer"
                 >
                   <Package className="w-6 h-6 text-purple-700 mb-1.5 group-hover:scale-110 transition-transform" />
-                  <span className="text-xs font-extrabold">RTO Return</span>
+                  <span className="text-xs font-bold">RTO Return</span>
                   <span className="text-[10px] text-purple-800/80 font-medium text-center mt-0.5">Return to origin (₹0 loss)</span>
                 </button>
               </div>
@@ -342,7 +352,7 @@ export default function Orders() {
                   <AlertTriangle className="w-5 h-5" />
                 </div>
                 <div className="space-y-1">
-                  <h3 className="text-lg font-extrabold text-slate-900">Undo Return?</h3>
+                  <h3 className="text-lg font-bold text-slate-900">Undo Return?</h3>
                   <p className="text-xs text-slate-600 leading-relaxed font-medium">
                     This parcel is currently marked as returned. Do you want to undo the return and restore it to normal stock?
                   </p>
@@ -363,7 +373,7 @@ export default function Orders() {
                 </button>
                 <button
                   onClick={handleConfirmUndoReturn}
-                  className="px-5 py-2 rounded-full text-xs font-extrabold text-white bg-rose-600 hover:bg-rose-700 shadow-md shadow-rose-500/20 transition-all cursor-pointer flex items-center gap-1.5"
+                  className="px-5 py-2 rounded-full text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 shadow-md shadow-rose-500/20 transition-all cursor-pointer flex items-center gap-1.5"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   Undo Return
@@ -375,7 +385,7 @@ export default function Orders() {
 
         {/* Success Notification Toast */}
         {toastMessage && (
-          <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white text-xs font-extrabold px-4 py-3 rounded-2xl shadow-xl flex items-center gap-2.5 border border-slate-700 animate-in slide-in-from-bottom-4 duration-200">
+          <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white text-xs font-semibold px-4 py-3 rounded-2xl shadow-xl flex items-center gap-2.5 border border-slate-700 animate-in slide-in-from-bottom-4 duration-200">
             <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold">
               ✓
             </div>

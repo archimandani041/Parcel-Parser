@@ -595,6 +595,9 @@ export const stockService = {
     // 1. Total Profit: Matches Net Profit from Stock page
     const totalProfit = stockSummary.total_net_profit || 0;
 
+    // 1.5 Total Loss: Matches total loss from stock summary (Sales Loss + Return Loss)
+    const totalLoss = stockSummary.total_loss || 0;
+
     // 2. Total Selling: SUM(Selling Price * Successfully Sold Quantity)
     const totalSelling = products.reduce((acc, p) => {
       const price = p.selling_price != null ? Number(p.selling_price) : 0;
@@ -615,62 +618,96 @@ export const stockService = {
     const uniqueOrders = new Set(allOrders.map(o => o.order_id).filter(Boolean));
     const totalOrders = uniqueOrders.size;
 
-    // PROFIT & LOSS GRAPH DATA (Aggregated by Date)
+    // PROFIT & LOSS GRAPH DATA (Aggregated by Day)
     const now = new Date();
-    let cutoffDate = null;
-    if (range === '7') {
-      cutoffDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
-    } else if (range === '30') {
-      cutoffDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30);
-    } else if (range === '90') {
-      cutoffDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 90);
-    }
-
     const dateMap = new Map();
 
-    // Map order sales profit
+    const getLocalDateStr = (d) => {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    };
+
+    let daysCount = 30;
+    if (range === '7') daysCount = 7;
+    else if (range === '30') daysCount = 30;
+    else if (range === '90') daysCount = 90;
+    else if (range === 'all') daysCount = 30;
+
+    // Pre-populate continuous daily dates for the selected window
+    for (let i = daysCount - 1; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+      const dateStr = getLocalDateStr(d);
+      const displayDate = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      dateMap.set(dateStr, { date: dateStr, displayDate, profit: 0, loss: 0 });
+    }
+
+    const productPriceMap = new Map();
+    (products || []).forEach(p => {
+      if (p.sku_id) productPriceMap.set(p.sku_id, p);
+    });
+
+    // Aggregate order sales profit & sales loss by date
     allOrders.forEach(o => {
-      const rawDate = o.order_date || o.created_at || o.updated_at;
-      if (!rawDate) return;
+      const rawDate = o.order_date || o.created_at || o.updated_at || new Date().toISOString();
       const d = new Date(rawDate);
       if (isNaN(d.getTime())) return;
-      if (cutoffDate && d < cutoffDate) return;
 
-      const dateStr = d.toISOString().split('T')[0];
+      const dateStr = getLocalDateStr(d);
+
       if (!dateMap.has(dateStr)) {
-        const displayDate = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        dateMap.set(dateStr, { date: dateStr, displayDate, profit: 0, loss: 0 });
+        if (range === 'all') {
+          const displayDate = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          dateMap.set(dateStr, { date: dateStr, displayDate, profit: 0, loss: 0 });
+        } else {
+          return;
+        }
       }
+
       const entry = dateMap.get(dateStr);
       const isReturned = Boolean(o.is_returned);
 
       if (!isReturned) {
         const sku = normalizeSku(o.sku_id, o.product_name);
-        const storedConfig = productsMap.get(sku);
-        const pPrice = storedConfig?.purchase_price != null ? Number(storedConfig.purchase_price) : (o.purchase_price != null ? Number(o.purchase_price) : 0);
-        const sPrice = storedConfig?.selling_price != null ? Number(storedConfig.selling_price) : (o.selling_price != null ? Number(o.selling_price) : 0);
+        const prod = productPriceMap.get(sku);
+
+        const pPrice = prod?.purchase_price != null 
+          ? Number(prod.purchase_price) 
+          : (o.purchase_price != null ? Number(o.purchase_price) : null);
+
+        const sPrice = prod?.selling_price != null 
+          ? Number(prod.selling_price) 
+          : (o.selling_price != null ? Number(o.selling_price) : null);
+
         const qty = parseInt(o.quantity, 10) || 1;
-        if (sPrice > pPrice) {
-          entry.profit += (sPrice - pPrice) * qty;
-        } else if (pPrice > sPrice) {
-          entry.loss += (pPrice - sPrice) * qty;
+
+        if (sPrice != null && pPrice != null) {
+          if (sPrice > pPrice) {
+            entry.profit += (sPrice - pPrice) * qty;
+          } else if (pPrice > sPrice) {
+            entry.loss += (pPrice - sPrice) * qty;
+          }
         }
       }
     });
 
-    // Map return losses
+    // Aggregate customer return delivery charge loss by date
     (returns || []).forEach(r => {
-      const rawDate = r.return_date || r.returned_at || r.created_at;
-      if (!rawDate) return;
+      const rawDate = r.return_date || r.returned_at || r.created_at || r.updated_at || new Date().toISOString();
       const d = new Date(rawDate);
       if (isNaN(d.getTime())) return;
-      if (cutoffDate && d < cutoffDate) return;
 
-      const dateStr = d.toISOString().split('T')[0];
+      const dateStr = getLocalDateStr(d);
       if (!dateMap.has(dateStr)) {
-        const displayDate = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        dateMap.set(dateStr, { date: dateStr, displayDate, profit: 0, loss: 0 });
+        if (range === 'all') {
+          const displayDate = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          dateMap.set(dateStr, { date: dateStr, displayDate, profit: 0, loss: 0 });
+        } else {
+          return;
+        }
       }
+
       const entry = dateMap.get(dateStr);
       if (r.return_type === 'CUSTOMER_RETURN') {
         entry.loss += Number(r.delivery_boy_charge || 0);
@@ -682,6 +719,7 @@ export const stockService = {
     return {
       stats: {
         total_profit: totalProfit,
+        total_loss: totalLoss,
         total_selling: totalSelling,
         total_return: totalReturn,
         total_stock_items: totalStockItems,

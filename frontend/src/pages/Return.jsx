@@ -199,8 +199,8 @@ export default function Return() {
               <RotateCcw className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-                Return <span className="font-serif-italic font-normal text-amber-700">management</span>
+              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+                Return <span className="font-normal text-amber-700">management</span>
               </h1>
               <p className="text-xs text-slate-500 font-medium mt-0.5">Track Customer Returns and Logistics RTO Returns with distinct financial rules</p>
             </div>
@@ -212,7 +212,7 @@ export default function Return() {
               <button
                 id="customer-return-tab-btn"
                 onClick={() => setActiveCategory('customer')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 cursor-pointer ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold transition-all duration-200 cursor-pointer ${
                   activeCategory === 'customer'
                     ? 'bg-amber-200/90 text-amber-950 border border-amber-300 shadow-xs'
                     : 'text-purple-800/80 hover:text-purple-950 hover:bg-white/60'
@@ -225,7 +225,7 @@ export default function Return() {
               <button
                 id="rto-return-tab-btn"
                 onClick={() => setActiveCategory('rto')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 cursor-pointer ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold transition-all duration-200 cursor-pointer ${
                   activeCategory === 'rto'
                     ? 'bg-purple-200/90 text-purple-950 border border-purple-300 shadow-xs'
                     : 'text-purple-800/80 hover:text-purple-950 hover:bg-white/60'
@@ -266,11 +266,11 @@ export default function Return() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {/* Total Customer Returns */}
             <div className="ui-card p-4 space-y-1">
-              <div className="flex items-center justify-between text-slate-400 text-xs font-extrabold">
+              <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
                 <span>Total Customer Returns</span>
                 <RotateCcw className="w-4 h-4 text-amber-600" />
               </div>
-              <p className="text-2xl font-extrabold text-amber-700 font-mono">
+              <p className="text-2xl font-bold text-amber-700 font-mono">
                 {summary.total_customer_returns || customerReturns.length || 0}
               </p>
               <p className="text-[10px] text-slate-500 font-medium">Customer return parcels</p>
@@ -278,11 +278,11 @@ export default function Return() {
 
             {/* Total Returned Quantity */}
             <div className="ui-card p-4 space-y-1">
-              <div className="flex items-center justify-between text-slate-400 text-xs font-extrabold">
+              <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
                 <span>Total Returned Qty</span>
                 <Package className="w-4 h-4 text-amber-600" />
               </div>
-              <p className="text-2xl font-extrabold text-slate-900 font-mono">
+              <p className="text-2xl font-bold text-slate-900 font-mono">
                 {summary.total_customer_returned_quantity || customerReturns.reduce((acc, r) => acc + (r.quantity || 1), 0)}
               </p>
               <p className="text-[10px] text-slate-500 font-medium">Units added back to stock</p>
@@ -290,11 +290,11 @@ export default function Return() {
 
             {/* Total Customer Return Charges */}
             <div className="ui-card p-4 space-y-1">
-              <div className="flex items-center justify-between text-slate-400 text-xs font-extrabold">
+              <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
                 <span>Total Return Charges</span>
                 <Truck className="w-4 h-4 text-sky-600" />
               </div>
-              <p className="text-2xl font-extrabold text-sky-700 font-mono">
+              <p className="text-2xl font-bold text-sky-700 font-mono">
                 {formatCurrency(summary.total_customer_delivery_charges)}
               </p>
               <p className="text-[10px] text-slate-500 font-medium">Delivery charges incurred</p>
@@ -302,11 +302,11 @@ export default function Return() {
 
             {/* Total Customer Return Loss */}
             <div className="ui-card p-4 space-y-1">
-              <div className="flex items-center justify-between text-slate-400 text-xs font-extrabold">
+              <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
                 <span>Total Return Loss</span>
                 <TrendingDown className="w-4 h-4 text-rose-600" />
               </div>
-              <p className="text-2xl font-extrabold text-rose-600 font-mono">
+              <p className="text-2xl font-bold text-rose-600 font-mono">
                 {formatCurrency(summary.total_customer_return_loss)}
               </p>
               <p className="text-[10px] text-slate-500 font-medium">Deducted from realized profit</p>
@@ -316,11 +316,11 @@ export default function Return() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {/* Total RTO Returns */}
             <div className="ui-card p-4 space-y-1">
-              <div className="flex items-center justify-between text-slate-400 text-xs font-extrabold">
+              <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
                 <span>Total RTO Returns</span>
                 <Truck className="w-4 h-4 text-purple-600" />
               </div>
-              <p className="text-2xl font-extrabold text-purple-700 font-mono">
+              <p className="text-2xl font-bold text-purple-700 font-mono">
                 {summary.total_rto_returns || rtoReturns.length || 0}
               </p>
               <p className="text-[10px] text-slate-500 font-medium">Return To Origin parcels</p>
@@ -328,11 +328,11 @@ export default function Return() {
 
             {/* Total RTO Quantity */}
             <div className="ui-card p-4 space-y-1">
-              <div className="flex items-center justify-between text-slate-400 text-xs font-extrabold">
+              <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
                 <span>Total RTO Quantity</span>
                 <Package className="w-4 h-4 text-purple-600" />
               </div>
-              <p className="text-2xl font-extrabold text-slate-900 font-mono">
+              <p className="text-2xl font-bold text-slate-900 font-mono">
                 {summary.total_rto_returned_quantity || rtoReturns.reduce((acc, r) => acc + (r.quantity || 1), 0)}
               </p>
               <p className="text-[10px] text-slate-500 font-medium">Restored to available stock</p>
@@ -340,11 +340,11 @@ export default function Return() {
 
             {/* Total RTO Charges */}
             <div className="ui-card p-4 space-y-1">
-              <div className="flex items-center justify-between text-slate-400 text-xs font-extrabold">
+              <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
                 <span>Total RTO Charges</span>
                 <Truck className="w-4 h-4 text-emerald-600" />
               </div>
-              <p className="text-2xl font-extrabold text-emerald-700 font-mono">
+              <p className="text-2xl font-bold text-emerald-700 font-mono">
                 ₹0
               </p>
               <p className="text-[10px] text-slate-500 font-medium">Logistics neutral (No charge)</p>
@@ -352,11 +352,11 @@ export default function Return() {
 
             {/* Total RTO Return Loss */}
             <div className="ui-card p-4 space-y-1">
-              <div className="flex items-center justify-between text-slate-400 text-xs font-extrabold">
+              <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
                 <span>Total RTO Loss</span>
                 <TrendingDown className="w-4 h-4 text-emerald-600" />
               </div>
-              <p className="text-2xl font-extrabold text-emerald-600 font-mono">
+              <p className="text-2xl font-bold text-emerald-600 font-mono">
                 ₹0
               </p>
               <p className="text-[10px] text-slate-500 font-medium">Zero financial loss</p>
@@ -376,7 +376,7 @@ export default function Return() {
             ) : filteredCustomerReturns.length === 0 ? (
               <div className="py-20 text-center space-y-3 bg-slate-50/50">
                 <Inbox className="w-12 h-12 text-slate-400 mx-auto" />
-                <h4 className="font-extrabold text-slate-800 text-base">No customer returns found</h4>
+                <h4 className="font-semibold text-slate-800 text-base">No customer returns found</h4>
                 <p className="text-xs text-slate-500 max-w-sm mx-auto font-medium">
                   {searchQuery
                     ? `No customer returns match "${searchQuery}"`
@@ -387,7 +387,7 @@ export default function Return() {
               <div className="overflow-x-auto bg-white">
                 <table className="w-full text-left border-collapse text-xs" id="customer-returns-table">
                   <thead>
-                    <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-extrabold text-[11px]">
+                    <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-semibold text-[11px]">
                       <th className="py-4 px-3 border-r border-slate-100">Order ID</th>
                       <th className="py-4 px-3 border-r border-slate-100">SKU ID</th>
                       <th className="py-4 px-3 border-r border-slate-100">Product Name</th>
@@ -430,7 +430,7 @@ export default function Return() {
                           </td>
 
                           {/* Quantity */}
-                          <td className="py-3.5 px-2 border-r border-slate-100 text-center font-mono text-xs font-extrabold text-slate-800">
+                          <td className="py-3.5 px-2 border-r border-slate-100 text-center font-mono text-xs font-semibold text-slate-800">
                             {r.quantity}
                           </td>
 
@@ -495,7 +495,7 @@ export default function Return() {
                             <button
                               onClick={() => setConfirmUndoOrder(r)}
                               disabled={undoingId === (r.id || r.order_id)}
-                              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold bg-rose-100 text-rose-800 border border-rose-300 hover:bg-rose-200 transition-all cursor-pointer disabled:opacity-50"
+                              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800 border border-rose-300 hover:bg-rose-200 transition-all cursor-pointer disabled:opacity-50"
                             >
                               <RotateCcw className={`w-3 h-3 ${undoingId === (r.id || r.order_id) ? 'animate-spin' : ''}`} />
                               Undo Return
@@ -520,7 +520,7 @@ export default function Return() {
             ) : filteredRtoReturns.length === 0 ? (
               <div className="py-20 text-center space-y-3 bg-slate-50/50">
                 <Inbox className="w-12 h-12 text-slate-400 mx-auto" />
-                <h4 className="font-extrabold text-slate-800 text-base">No RTO returns found</h4>
+                <h4 className="font-semibold text-slate-800 text-base">No RTO returns found</h4>
                 <p className="text-xs text-slate-500 max-w-sm mx-auto font-medium">
                   {searchQuery
                     ? `No RTO returns match "${searchQuery}"`
@@ -531,7 +531,7 @@ export default function Return() {
               <div className="overflow-x-auto bg-white">
                 <table className="w-full text-left border-collapse text-xs" id="rto-returns-table">
                   <thead>
-                    <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-extrabold text-[11px]">
+                    <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-semibold text-[11px]">
                       <th className="py-4 px-3 border-r border-slate-100">Order ID</th>
                       <th className="py-4 px-3 border-r border-slate-100">SKU ID</th>
                       <th className="py-4 px-3 border-r border-slate-100">Product Name</th>
@@ -566,7 +566,7 @@ export default function Return() {
                         </td>
 
                         {/* Quantity */}
-                        <td className="py-3.5 px-2 border-r border-slate-100 text-center font-mono text-xs font-extrabold text-slate-800">
+                        <td className="py-3.5 px-2 border-r border-slate-100 text-center font-mono text-xs font-semibold text-slate-800">
                           {r.quantity}
                         </td>
 
@@ -582,7 +582,7 @@ export default function Return() {
 
                         {/* Return Type Badge */}
                         <td className="py-3.5 px-3 border-r border-slate-100 text-center">
-                          <span className="font-extrabold text-[10px] tracking-wider uppercase text-purple-800 bg-purple-100 px-3 py-1 rounded-full border border-purple-300">
+                          <span className="font-bold text-[10px] tracking-wider uppercase text-purple-800 bg-purple-100 px-3 py-1 rounded-full border border-purple-300">
                             RTO
                           </span>
                         </td>
@@ -597,7 +597,7 @@ export default function Return() {
                           <button
                             onClick={() => setConfirmUndoOrder(r)}
                             disabled={undoingId === (r.id || r.order_id)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold bg-rose-100 text-rose-800 border border-rose-300 hover:bg-rose-200 transition-all cursor-pointer disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800 border border-rose-300 hover:bg-rose-200 transition-all cursor-pointer disabled:opacity-50"
                           >
                             <RotateCcw className={`w-3 h-3 ${undoingId === (r.id || r.order_id) ? 'animate-spin' : ''}`} />
                             Undo Return
@@ -621,7 +621,7 @@ export default function Return() {
                   <AlertTriangle className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-slate-900">Undo Return Confirmation</h3>
+                  <h3 className="text-base font-bold text-slate-900">Undo Return Confirmation</h3>
                   <p className="text-xs text-slate-500 font-medium mt-1">
                     Are you sure you want to undo return for Order <span className="font-mono font-bold text-slate-800">#{confirmUndoOrder.order_id}</span>?
                   </p>

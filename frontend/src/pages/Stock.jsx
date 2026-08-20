@@ -147,8 +147,8 @@ export default function Stock() {
               <Boxes className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-                Inventory & stock <span className="font-serif-italic font-normal text-purple-700">auditing</span>
+              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+                Inventory & stock <span className="font-normal text-purple-700">auditing</span>
               </h1>
               <p className="text-xs text-slate-500 font-medium mt-0.5">Manage SKU valuation, unit prices, and realized stock profit</p>
             </div>
@@ -184,11 +184,11 @@ export default function Stock() {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {/* Total Products */}
           <div className="ui-card p-4 space-y-1">
-            <div className="flex items-center justify-between text-slate-400 text-xs font-extrabold">
+            <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
               <span>Total Products</span>
               <Boxes className="w-4 h-4 text-sky-600" />
             </div>
-            <p className="text-2xl font-extrabold text-slate-900 font-mono">
+            <p className="text-2xl font-bold text-slate-900 font-mono">
               {stockSummary.total_products || 0}
             </p>
             <p className="text-[10px] text-slate-500 font-medium">Unique SKU records</p>
@@ -196,11 +196,11 @@ export default function Stock() {
 
           {/* Total Quantity */}
           <div className="ui-card p-4 space-y-1">
-            <div className="flex items-center justify-between text-slate-400 text-xs font-extrabold">
+            <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
               <span>Total Quantity</span>
               <Package className="w-4 h-4 text-sky-600" />
             </div>
-            <p className="text-2xl font-extrabold text-sky-700 font-mono">
+            <p className="text-2xl font-bold text-sky-700 font-mono">
               {stockSummary.total_quantity || 0}
             </p>
             <p className="text-[10px] text-slate-500 font-medium">
@@ -210,11 +210,11 @@ export default function Stock() {
 
           {/* Inventory Cost */}
           <div className="ui-card p-4 space-y-1">
-            <div className="flex items-center justify-between text-slate-400 text-xs font-extrabold">
+            <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
               <span>Inventory Cost</span>
               <Coins className="w-4 h-4 text-amber-600" />
             </div>
-            <p className="text-2xl font-extrabold text-amber-700 font-mono">
+            <p className="text-2xl font-bold text-amber-700 font-mono">
               {formatCurrency(stockSummary.total_inventory_cost != null ? stockSummary.total_inventory_cost : stockSummary.total_product_cost)}
             </p>
             <p className="text-[10px] text-slate-500 font-medium">Purchase cost of available stock</p>
@@ -222,11 +222,11 @@ export default function Stock() {
 
           {/* Inventory Value */}
           <div className="ui-card p-4 space-y-1">
-            <div className="flex items-center justify-between text-slate-400 text-xs font-extrabold">
+            <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
               <span>Inventory Value</span>
               <TrendingUp className="w-4 h-4 text-emerald-600" />
             </div>
-            <p className="text-2xl font-extrabold text-emerald-700 font-mono">
+            <p className="text-2xl font-bold text-emerald-700 font-mono">
               {formatCurrency(stockSummary.total_inventory_value != null ? stockSummary.total_inventory_value : stockSummary.total_selling_value)}
             </p>
             <p className="text-[10px] text-slate-500 font-medium">Selling value of available stock</p>
@@ -234,11 +234,11 @@ export default function Stock() {
 
           {/* Net Profit */}
           <div className="ui-card p-4 space-y-1 col-span-2 md:col-span-1">
-            <div className="flex items-center justify-between text-slate-400 text-xs font-extrabold">
+            <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
               <span>Net Profit</span>
               <TrendingUp className={`w-4 h-4 ${(stockSummary.total_net_profit != null ? stockSummary.total_net_profit : stockSummary.total_profit) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`} />
             </div>
-            <p className={`text-2xl font-extrabold font-mono ${(stockSummary.total_net_profit != null ? stockSummary.total_net_profit : stockSummary.total_profit) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+            <p className={`text-2xl font-bold font-mono ${(stockSummary.total_net_profit != null ? stockSummary.total_net_profit : stockSummary.total_profit) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
               {formatCurrency(stockSummary.total_net_profit != null ? stockSummary.total_net_profit : stockSummary.total_profit)}
             </p>
             <p className="text-[10px] text-slate-500 font-medium">Realized profit - Customer return loss</p>
@@ -255,7 +255,7 @@ export default function Stock() {
           ) : filteredProducts.length === 0 ? (
             <div className="py-20 text-center space-y-3 bg-slate-50/50">
               <Inbox className="w-12 h-12 text-slate-400 mx-auto" />
-              <h4 className="font-extrabold text-slate-800 text-base">No stock products found</h4>
+              <h4 className="font-semibold text-slate-800 text-base">No stock products found</h4>
               <p className="text-xs text-slate-500 max-w-sm mx-auto font-medium">
                 {searchQuery
                   ? `No products match "${searchQuery}"`
@@ -266,7 +266,7 @@ export default function Stock() {
             <div className="overflow-x-auto bg-white">
               <table className="w-full text-left border-collapse text-xs" id="stock-table">
                 <thead>
-                  <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-extrabold text-[11px]">
+                  <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-semibold text-[11px]">
                     <th className="py-4 px-3 border-r border-slate-100">SKU ID</th>
                     <th className="py-4 px-3 border-r border-slate-100">Product Name</th>
                     <th className="py-4 px-2 border-r border-slate-100 text-center" title="Initial/Total Stock Added">Total Qty</th>
@@ -304,7 +304,7 @@ export default function Stock() {
                       >
                         {/* SKU ID */}
                         <td className="py-3.5 px-3 border-r border-slate-100">
-                          <span className="font-mono text-xs font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-full border border-sky-200">
+                          <span className="font-mono text-xs font-semibold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-full border border-sky-200">
                             {p.sku_id}
                           </span>
                         </td>
@@ -318,28 +318,28 @@ export default function Stock() {
 
                         {/* Total Quantity */}
                         <td className="py-3.5 px-2 border-r border-slate-100 text-center">
-                          <span className="font-mono text-xs text-slate-800 font-extrabold">
+                          <span className="font-mono text-xs text-slate-800 font-semibold">
                             {p.total_quantity}
                           </span>
                         </td>
 
                         {/* Successfully Sold Quantity */}
                         <td className="py-3.5 px-2 border-r border-slate-100 text-center">
-                          <span className="font-mono text-xs text-blue-700 font-extrabold">
+                          <span className="font-mono text-xs text-blue-700 font-semibold">
                             {soldQty}
                           </span>
                         </td>
 
                         {/* Customer Return Quantity */}
                         <td className="py-3.5 px-2 border-r border-slate-100 text-center">
-                          <span className="font-mono text-xs text-rose-600 font-extrabold">
+                          <span className="font-mono text-xs text-rose-600 font-semibold">
                             {p.customer_returned_quantity || 0}
                           </span>
                         </td>
 
                         {/* Current Available Stock */}
                         <td className="py-3.5 px-2 border-r border-slate-100 text-center">
-                          <span className="font-mono text-xs text-emerald-700 font-extrabold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                          <span className="font-mono text-xs text-emerald-700 font-semibold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
                             {p.available_quantity != null ? p.available_quantity : p.current_available_stock}
                           </span>
                         </td>
@@ -406,42 +406,42 @@ export default function Stock() {
 
                         {/* Inventory Cost */}
                         <td className="py-3.5 px-3 border-r border-slate-100 text-right">
-                          <span className="font-mono text-xs text-amber-700 font-extrabold">
+                          <span className="font-mono text-xs text-amber-700 font-semibold">
                             {formatCurrency(p.inventory_cost != null ? p.inventory_cost : p.product_cost)}
                           </span>
                         </td>
 
                         {/* Inventory Value */}
                         <td className="py-3.5 px-3 border-r border-slate-100 text-right">
-                          <span className="font-mono text-xs text-emerald-700 font-extrabold">
+                          <span className="font-mono text-xs text-emerald-700 font-semibold">
                             {formatCurrency(p.inventory_value != null ? p.inventory_value : p.selling_value)}
                           </span>
                         </td>
 
                         {/* Realized Sales Profit (Always >= 0) */}
                         <td className="py-3.5 px-3 border-r border-slate-100 text-right">
-                          <span className="font-mono text-xs font-extrabold text-sky-700">
+                          <span className="font-mono text-xs font-semibold text-sky-700">
                             {formatCurrency(p.realized_sales_profit)}
                           </span>
                         </td>
 
                         {/* Sales Loss (Always >= 0, displayed in rose red if > 0) */}
                         <td className="py-3.5 px-3 border-r border-slate-100 text-right">
-                          <span className={`font-mono text-xs font-extrabold ${p.sales_loss > 0 ? 'text-rose-600' : 'text-slate-400'}`}>
+                          <span className={`font-mono text-xs font-semibold ${p.sales_loss > 0 ? 'text-rose-600' : 'text-slate-400'}`}>
                             {formatCurrency(p.sales_loss)}
                           </span>
                         </td>
 
                         {/* Return Loss (Always >= 0, displayed in rose red if > 0) */}
                         <td className="py-3.5 px-3 border-r border-slate-100 text-right">
-                          <span className={`font-mono text-xs font-extrabold ${p.return_loss > 0 ? 'text-rose-600' : 'text-slate-400'}`}>
+                          <span className={`font-mono text-xs font-semibold ${p.return_loss > 0 ? 'text-rose-600' : 'text-slate-400'}`}>
                             {formatCurrency(p.customer_return_loss || p.return_loss)}
                           </span>
                         </td>
 
                         {/* Net Profit */}
                         <td className="py-3.5 px-3 border-r border-slate-100 text-right">
-                          <span className={`font-mono text-xs font-extrabold px-2 py-0.5 rounded-full border ${
+                          <span className={`font-mono text-xs font-semibold px-2 py-0.5 rounded-full border ${
                             netProfitVal == null
                               ? 'text-slate-400 border-transparent'
                               : netProfitVal >= 0

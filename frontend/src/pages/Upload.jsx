@@ -136,8 +136,8 @@ export default function Upload() {
           <div className="inline-flex items-center gap-2 px-3.5 py-1 bg-purple-100 border border-purple-200 rounded-full text-xs font-bold text-purple-800 shadow-xs">
             <Sparkles className="w-3.5 h-3.5 text-purple-600 fill-purple-600" /> Automated Multimodal AI Parser
           </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-            Upload parcel label <span className="font-serif-italic font-normal text-purple-600">document</span>
+          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">
+            Upload parcel label <span className="font-normal text-purple-600">document</span>
           </h1>
           <p className="text-slate-500 text-xs sm:text-sm max-w-xl mx-auto leading-relaxed font-medium">
             Drop shipping waybills, courier bills, or invoices in image or multi-page PDF format. Our Gemini vision engine parses courier data without fixed templates.
@@ -179,7 +179,7 @@ export default function Upload() {
             <UploadCloud className="w-10 h-10" />
           </div>
 
-          <h3 className="text-xl font-extrabold text-slate-900 mb-2">
+          <h3 className="text-xl font-bold text-slate-900 mb-2">
             Drop your parcel label or click to browse
           </h3>
           <p className="text-xs text-slate-500 mb-6 max-w-md mx-auto font-medium">
@@ -198,7 +198,7 @@ export default function Upload() {
             
             <div className="flex items-center justify-between border-b border-purple-100 pb-4">
               <div>
-                <h4 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+                <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                   <FileText className="w-4 h-4 text-purple-600" /> Selected Documents ({selectedFiles.length})
                 </h4>
                 <p className="text-xs text-slate-500 font-medium">Ready for AI multimodal extraction</p>
@@ -222,7 +222,7 @@ export default function Upload() {
                 return (
                   <div key={idx} className="flex items-center justify-between bg-purple-50/40 border border-purple-200/80 p-4 rounded-2xl hover:bg-purple-100/50 transition-all">
                     <div className="flex items-center gap-3.5 truncate pr-4">
-                      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-extrabold text-xs uppercase shrink-0 font-mono border ${
+                      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-bold text-xs uppercase shrink-0 font-mono border ${
                         isPdf
                           ? 'bg-rose-100 border-rose-200 text-rose-700'
                           : 'bg-purple-100 border-purple-200 text-purple-700'
@@ -230,7 +230,7 @@ export default function Upload() {
                         {ext}
                       </div>
                       <div className="truncate">
-                        <p className="text-xs font-extrabold text-slate-800 truncate">{file.name}</p>
+                        <p className="text-xs font-bold text-slate-800 truncate">{file.name}</p>
                         <div className="flex items-center gap-2 mt-0.5">
                           <p className="text-[10px] text-slate-500 font-mono font-medium">{formatBytes(file.size)}</p>
                           {isPdf && (
@@ -261,7 +261,7 @@ export default function Upload() {
             {/* Processing Progress Stepper */}
             {processingState !== 'IDLE' && (
               <div className="pt-5 border-t border-purple-100 space-y-4">
-                <div className="flex items-center justify-between text-xs font-extrabold">
+                <div className="flex items-center justify-between text-xs font-bold">
                   <span className="text-purple-800 flex items-center gap-2">
                     {processingState === 'COMPLETED' ? (
                       <CheckCircle2 className="w-4 h-4 text-emerald-600" />
@@ -270,7 +270,7 @@ export default function Upload() {
                     )}
                     Pipeline State: <span className="text-slate-900 uppercase font-mono">{processingState}</span>
                   </span>
-                  <span className="text-purple-700 font-mono font-extrabold">{uploadProgress}%</span>
+                  <span className="text-purple-700 font-mono font-bold">{uploadProgress}%</span>
                 </div>
 
                 <div className="w-full h-2.5 bg-purple-100 rounded-full overflow-hidden border border-purple-200">
@@ -311,7 +311,7 @@ export default function Upload() {
                   {uploadedResults.length > 0 && (
                     <button
                       onClick={() => navigate(`/document/${uploadedResults[0].id}`)}
-                      className="flex items-center gap-2 px-6 py-2.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-950 text-xs font-extrabold rounded-full transition-all border border-emerald-300 shadow-xs cursor-pointer"
+                      className="flex items-center gap-2 px-6 py-2.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-950 text-xs font-bold rounded-full transition-all border border-emerald-300 shadow-xs cursor-pointer"
                     >
                       Inspect Extracted Label <ArrowRight className="w-4 h-4 text-emerald-700" />
                     </button>
@@ -322,7 +322,7 @@ export default function Upload() {
               {processingState === 'IDLE' && (
                 <button
                   onClick={handleStartUpload}
-                  className="pill-button-pastel flex items-center gap-2.5 px-8 py-3.5 font-extrabold text-xs shadow-xl hover:scale-105"
+                  className="pill-button-pastel flex items-center gap-2.5 px-8 py-3.5 font-bold text-xs shadow-xl hover:scale-105"
                 >
                   <Cpu className="w-4 h-4 text-purple-100" />
                   Run AI Extraction
