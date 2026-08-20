@@ -1,7 +1,6 @@
-import fs from 'fs';
-import path from 'path';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
+import path from 'path';
 import { orderRecordService } from './orderRecordService.js';
 import { dbService } from './supabaseService.js';
 
@@ -21,54 +20,6 @@ function getSupabaseClient() {
     }
   }
   return null;
-}
-
-function getRootDir() {
-  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) return '/tmp';
-  try {
-    if (fs.existsSync(path.join(process.cwd(), '..', 'package.json'))) {
-      return path.resolve(process.cwd(), '..');
-    }
-  } catch {}
-  return process.cwd();
-}
-
-function getProductsDbPath() {
-  return path.join(getRootDir(), 'stock_products.json');
-}
-
-function getReturnsDbPath() {
-  return path.join(getRootDir(), 'stock_returns.json');
-}
-
-function loadProductsDb() {
-  const dbPath = getProductsDbPath();
-  if (!fs.existsSync(dbPath)) {
-    try { fs.writeFileSync(dbPath, JSON.stringify([], null, 2)); } catch {}
-    return [];
-  }
-  try { return JSON.parse(fs.readFileSync(dbPath, 'utf-8')); }
-  catch { return []; }
-}
-
-function saveProductsDb(data) {
-  const dbPath = getProductsDbPath();
-  try { fs.writeFileSync(dbPath, JSON.stringify(data, null, 2)); } catch {}
-}
-
-function loadReturnsDb() {
-  const dbPath = getReturnsDbPath();
-  if (!fs.existsSync(dbPath)) {
-    try { fs.writeFileSync(dbPath, JSON.stringify([], null, 2)); } catch {}
-    return [];
-  }
-  try { return JSON.parse(fs.readFileSync(dbPath, 'utf-8')); }
-  catch { return []; }
-}
-
-function saveReturnsDb(data) {
-  const dbPath = getReturnsDbPath();
-  try { fs.writeFileSync(dbPath, JSON.stringify(data, null, 2)); } catch {}
 }
 
 // ===== HELPER FUNCTIONS =====
@@ -107,14 +58,9 @@ export function cleanProductName(skuId, productName) {
 
 export const stockService = {
   
-  /** Fetch all SKU stock product settings from Supabase or local DB */
+  /** Fetch all SKU stock product settings from Supabase */
   async getStockProductsMap() {
     const map = new Map();
-    const localRecords = loadProductsDb();
-    localRecords.forEach(r => {
-      if (r.sku_id) map.set(r.sku_id.toUpperCase(), r);
-    });
-
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
@@ -122,8 +68,7 @@ export const stockService = {
         if (!error && data) {
           data.forEach(r => {
             if (r.sku_id) {
-              const existing = map.get(r.sku_id.toUpperCase()) || {};
-              map.set(r.sku_id.toUpperCase(), { ...existing, ...r });
+              map.set(r.sku_id.toUpperCase(), r);
             }
           });
         }
@@ -135,14 +80,9 @@ export const stockService = {
     return map;
   },
 
-  /** Fetch all return delivery charges from Supabase or local DB */
+  /** Fetch all return delivery charges from Supabase */
   async getStockReturnsMap() {
     const map = new Map();
-    const localRecords = loadReturnsDb();
-    localRecords.forEach(r => {
-      if (r.order_id) map.set(r.order_id, r);
-    });
-
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
@@ -150,8 +90,7 @@ export const stockService = {
         if (!error && data) {
           data.forEach(r => {
             if (r.order_id) {
-              const existing = map.get(r.order_id) || {};
-              map.set(r.order_id, { ...existing, ...r });
+              map.set(r.order_id, r);
             }
           });
         }
@@ -305,7 +244,7 @@ export const stockService = {
     return { products, summary };
   },
 
-  /** Update or insert product price for a SKU */
+  /** Update or insert product price for a SKU directly in Supabase */
   async updateProductPrice(sku_id, purchase_price, selling_price, product_name) {
     const cleanSku = sku_id.trim().toUpperCase();
     const purchasePriceNum = purchase_price !== '' && purchase_price != null ? parseFloat(purchase_price) : null;
@@ -320,38 +259,39 @@ export const stockService = {
     if (product_name) payload.product_name = product_name;
 
     const supabase = getSupabaseClient();
-    if (supabase) {
-      try {
-        const { data, error } = await supabase
-          .from('stock_products')
-          .upsert(payload, { onConflict: 'sku_id' })
-          .select()
-          .single();
+    if (!supabase) {
+      throw new Error('[StockService] Supabase client is not configured.');
+    }
 
-        if (!error && data) {
-          console.log(`[StockService] Updated stock product in Supabase: ${cleanSku}`);
-        } else if (error) {
-          console.error('[StockService] Supabase stock_products upsert error:', error.message);
-        }
-      } catch (e) {
-        console.error('[StockService] Supabase stock_products exception:', e.message);
+    // 1. Update purchase_price & selling_price in order_records table in Supabase
+    try {
+      const updateObj = { updated_at: new Date().toISOString() };
+      if (purchasePriceNum != null) updateObj.purchase_price = purchasePriceNum;
+      if (sellingPriceNum != null) updateObj.selling_price = sellingPriceNum;
+      if (product_name) updateObj.product_name = product_name;
+
+      await supabase.from('order_records').update(updateObj).eq('sku_id', cleanSku);
+      console.log(`[StockService] Updated order_records prices in Supabase for SKU: ${cleanSku}`);
+    } catch (e) {
+      console.error('[StockService] order_records price update error:', e.message);
+    }
+
+    // 2. Upsert into stock_products table in Supabase if exists
+    try {
+      const { data, error } = await supabase
+        .from('stock_products')
+        .upsert(payload, { onConflict: 'sku_id' })
+        .select()
+        .single();
+
+      if (!error && data) {
+        return data;
       }
+    } catch (e) {
+      console.error('[StockService] stock_products upsert exception:', e.message);
     }
 
-    // Always update local DB fallback
-    const db = loadProductsDb();
-    const idx = db.findIndex(p => p.sku_id && p.sku_id.toUpperCase() === cleanSku);
-    let saved;
-    if (idx >= 0) {
-      db[idx] = { ...db[idx], ...payload };
-      saved = db[idx];
-    } else {
-      saved = { id: `sp_${Date.now()}`, created_at: new Date().toISOString(), ...payload };
-      db.push(saved);
-    }
-    saveProductsDb(db);
-
-    return saved;
+    return { sku_id: cleanSku, purchase_price: purchasePriceNum, selling_price: sellingPriceNum, product_name };
   },
 
   /** Get Return overview of all returned orders */
@@ -429,7 +369,7 @@ export const stockService = {
     return { returns, customerReturns, rtoReturns, summary };
   },
 
-  /** Update or insert delivery boy charge for a returned order */
+  /** Update or insert delivery boy charge for a returned order in Supabase */
   async updateReturnCharge(order_id, delivery_boy_charge, return_type) {
     const chargeNum = delivery_boy_charge !== '' && delivery_boy_charge != null ? parseFloat(delivery_boy_charge) : 0;
 
@@ -441,58 +381,39 @@ export const stockService = {
     if (return_type) payload.return_type = return_type;
 
     const supabase = getSupabaseClient();
-    if (supabase) {
-      try {
-        const { data, error } = await supabase
-          .from('stock_returns')
-          .upsert(payload, { onConflict: 'order_id' })
-          .select()
-          .single();
+    if (!supabase) throw new Error('[StockService] Supabase client is not configured.');
 
-        if (!error && data) {
-          console.log(`[StockService] Updated stock return in Supabase for order: ${order_id}`);
-        } else if (error) {
-          console.error('[StockService] Supabase stock_returns upsert error:', error.message);
-        }
-      } catch (e) {
-        console.error('[StockService] Supabase stock_returns exception:', e.message);
+    try {
+      const { data, error } = await supabase
+        .from('stock_returns')
+        .upsert(payload, { onConflict: 'order_id' })
+        .select()
+        .single();
+
+      if (!error && data) {
+        return data;
       }
+    } catch (e) {
+      console.error('[StockService] Supabase stock_returns exception:', e.message);
     }
 
-    // Always update local DB fallback
-    const db = loadReturnsDb();
-    const idx = db.findIndex(r => r.order_id === order_id);
-    let saved;
-    if (idx >= 0) {
-      db[idx] = { ...db[idx], ...payload };
-      saved = db[idx];
-    } else {
-      saved = { id: `sr_${Date.now()}`, returned_at: new Date().toISOString(), ...payload };
-      db.push(saved);
-    }
-    saveReturnsDb(db);
-
-    return saved;
+    return { order_id, delivery_boy_charge: chargeNum, return_type };
   },
 
-  /** Delete a stock product SKU and all associated order records from database */
+  /** Delete a stock product SKU and all associated order records from Supabase */
   async deleteProduct(sku_id) {
     const cleanSku = sku_id.trim().toUpperCase();
 
     // 1. Delete from stock_products table in Supabase
     const supabase = getSupabaseClient();
-    if (supabase) {
-      try {
-        await supabase.from('stock_products').delete().ilike('sku_id', cleanSku);
-        console.log(`[StockService] Deleted stock product from Supabase: ${cleanSku}`);
-      } catch (e) {
-        console.error('[StockService] Supabase delete stock_product error:', e.message);
-      }
+    if (!supabase) throw new Error('[StockService] Supabase client is not configured.');
+
+    try {
+      await supabase.from('stock_products').delete().ilike('sku_id', cleanSku);
+      console.log(`[StockService] Deleted stock product from Supabase: ${cleanSku}`);
+    } catch (e) {
+      console.error('[StockService] Supabase delete stock_product error:', e.message);
     }
-    // Delete from local file
-    const pDb = loadProductsDb();
-    const updatedPDb = pDb.filter(p => !p.sku_id || p.sku_id.toUpperCase() !== cleanSku);
-    saveProductsDb(updatedPDb);
 
     // 2. Delete all matching order records from database
     const allOrders = await orderRecordService.getAll();
@@ -507,22 +428,18 @@ export const stockService = {
     return { success: true, deletedSku: cleanSku, deletedOrdersCount: ordersToDelete.length };
   },
 
-  /** Delete a returned order record from database */
+  /** Delete a returned order record from Supabase */
   async deleteReturn(order_id) {
     // 1. Delete from stock_returns table in Supabase
     const supabase = getSupabaseClient();
-    if (supabase) {
-      try {
-        await supabase.from('stock_returns').delete().eq('order_id', order_id);
-        console.log(`[StockService] Deleted stock return from Supabase for order: ${order_id}`);
-      } catch (e) {
-        console.error('[StockService] Supabase delete stock_return error:', e.message);
-      }
+    if (!supabase) throw new Error('[StockService] Supabase client is not configured.');
+
+    try {
+      await supabase.from('stock_returns').delete().eq('order_id', order_id);
+      console.log(`[StockService] Deleted stock return from Supabase for order: ${order_id}`);
+    } catch (e) {
+      console.error('[StockService] Supabase delete stock_return error:', e.message);
     }
-    // Delete from local file
-    const rDb = loadReturnsDb();
-    const updatedRDb = rDb.filter(r => r.order_id !== order_id);
-    saveReturnsDb(updatedRDb);
 
     // 2. Delete the order record from order_records
     const allOrders = await orderRecordService.getAll();
@@ -641,3 +558,4 @@ export const stockService = {
     };
   }
 };
+

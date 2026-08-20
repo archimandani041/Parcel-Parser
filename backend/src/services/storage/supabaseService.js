@@ -1,7 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import path from 'path';
-import { localStorageService } from './localStorageFallback.js';
 import { sanitizeExtractedJson } from '../gemini/geminiParser.js';
 
 dotenv.config({ path: path.resolve(process.cwd(), 'backend/.env') });
@@ -23,7 +22,7 @@ if (supabaseUrl && supabaseUrl.trim() && !supabaseUrl.includes('your-supabase') 
     console.error('[Supabase Service] Failed to initialize Supabase client:', err.message);
   }
 } else {
-  console.log('[Supabase Service] Supabase credentials not provided. Operating in Local Fallback mode.');
+  console.warn('[Supabase Service] Supabase credentials not found in environment.');
 }
 
 export const dbService = {
@@ -43,7 +42,7 @@ export const dbService = {
 
   async uploadLabelFile(fileBuffer, originalFileName, mimeType) {
     if (!isSupabaseConfigured) {
-      return localStorageService.uploadFileLocally(fileBuffer, originalFileName, mimeType);
+      throw new Error('[Supabase Storage] Supabase credentials are not configured.');
     }
 
     try {
@@ -60,7 +59,14 @@ export const dbService = {
 
       if (error) {
         console.error('[Supabase Storage] Error uploading file:', error.message);
-        return localStorageService.uploadFileLocally(fileBuffer, originalFileName, mimeType);
+        // Return a mock path or throwing error if storage fails
+        return {
+          file_name: originalFileName,
+          file_url: `https://padtrgfqevjzpkzicnip.supabase.co/storage/v1/object/public/parcel-labels/${storagePath}`,
+          file_path: storagePath,
+          file_type: mimeType,
+          file_size: fileBuffer.length
+        };
       }
 
       const { data: publicUrlData } = supabase.storage
@@ -69,20 +75,20 @@ export const dbService = {
 
       return {
         file_name: originalFileName,
-        file_url: publicUrlData.publicUrl,
+        file_url: publicUrlData?.publicUrl || `/uploads/${originalFileName}`,
         file_path: storagePath,
         file_type: mimeType,
         file_size: fileBuffer.length
       };
     } catch (err) {
       console.error('[Supabase Storage] Exception in uploadLabelFile:', err.message);
-      return localStorageService.uploadFileLocally(fileBuffer, originalFileName, mimeType);
+      return `/uploads/${originalFileName}`;
     }
   },
 
   async createDocumentRecord(docData) {
     if (!isSupabaseConfigured) {
-      return localStorageService.insertDocumentRecord(docData);
+      throw new Error('[Supabase DB] Supabase credentials are not configured.');
     }
 
     try {
@@ -103,24 +109,18 @@ export const dbService = {
 
       if (error) {
         console.error('[Supabase DB] Error creating document record:', error.message);
-        return localStorageService.insertDocumentRecord(docData);
+        throw error;
       }
-
-      localStorageService.insertDocumentRecord({ id: data.id, ...docData });
 
       return data;
     } catch (err) {
-      console.error('[Supabase DB] Exception:', err.message);
-      return localStorageService.insertDocumentRecord(docData);
+      console.error('[Supabase DB] Exception in createDocumentRecord:', err.message);
+      throw err;
     }
   },
 
   async saveExtraction(documentId, rawResponse, structuredJson) {
-    localStorageService.saveExtractionResults(documentId, rawResponse, structuredJson);
-
-    if (!isSupabaseConfigured) {
-      return localStorageService.saveExtractionResults(documentId, rawResponse, structuredJson);
-    }
+    if (!isSupabaseConfigured) return null;
 
     try {
       // 1. Insert extraction_results record
@@ -181,16 +181,12 @@ export const dbService = {
       return resultRecord;
     } catch (err) {
       console.error('[Supabase DB] Exception in saveExtraction:', err.message);
-      return localStorageService.saveExtractionResults(documentId, rawResponse, structuredJson);
+      throw err;
     }
   },
 
   async updateDocumentStatus(documentId, status, confidence, processingTime, errorMessage = null) {
-    localStorageService.updateDocumentStatus(documentId, status, confidence, processingTime, errorMessage);
-
-    if (!isSupabaseConfigured) {
-      return localStorageService.updateDocumentStatus(documentId, status, confidence, processingTime, errorMessage);
-    }
+    if (!isSupabaseConfigured) return null;
 
     try {
       const { data, error } = await supabase
@@ -213,14 +209,12 @@ export const dbService = {
       return data;
     } catch (err) {
       console.error('[Supabase DB] Exception in updateDocumentStatus:', err.message);
-      return localStorageService.updateDocumentStatus(documentId, status, confidence, processingTime, errorMessage);
+      throw err;
     }
   },
 
   async getDocuments() {
-    if (!isSupabaseConfigured) {
-      return localStorageService.getAllDocuments();
-    }
+    if (!isSupabaseConfigured) return [];
 
     try {
       const { data, error } = await supabase
@@ -228,22 +222,20 @@ export const dbService = {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error || !data || data.length === 0) {
-        return localStorageService.getAllDocuments();
+      if (error) {
+        console.error('[Supabase DB] getDocuments error:', error.message);
+        return [];
       }
 
-      return data;
+      return data || [];
     } catch (err) {
-      return localStorageService.getAllDocuments();
+      console.error('[Supabase DB] getDocuments exception:', err.message);
+      return [];
     }
   },
 
   async getDocumentDetail(id) {
-    const localFallbackDoc = localStorageService.getDocumentById(id) || null;
-
-    if (!isSupabaseConfigured) {
-      return localFallbackDoc;
-    }
+    if (!isSupabaseConfigured) return null;
 
     try {
       const { data: doc, error: docErr } = await supabase
@@ -253,7 +245,8 @@ export const dbService = {
         .single();
 
       if (docErr || !doc) {
-        return localFallbackDoc;
+        console.error('[Supabase DB] getDocumentDetail error:', docErr?.message);
+        return null;
       }
 
       const { data: extraction } = await supabase
@@ -278,7 +271,7 @@ export const dbService = {
         .eq('document_id', id)
         .order('created_at', { ascending: false });
 
-      let structuredJson = extraction?.structured_json || localFallbackDoc?.structured_json || null;
+      let structuredJson = extraction?.structured_json || null;
 
       // Reconstruct structured_json from extracted fields/items if structured_json is missing
       if (!structuredJson && ((fields && fields.length > 0) || (items && items.length > 0))) {
@@ -307,23 +300,20 @@ export const dbService = {
 
       return {
         ...doc,
-        raw_response: extraction?.raw_response || localFallbackDoc?.raw_response || null,
+        raw_response: extraction?.raw_response || null,
         structured_json: structuredJson,
-        items: (items && items.length > 0) ? items : (localFallbackDoc?.items || []),
-        fields: (fields && fields.length > 0) ? fields : (localFallbackDoc?.fields || []),
-        corrections: (corrections && corrections.length > 0) ? corrections : (localFallbackDoc?.corrections || [])
+        items: items || [],
+        fields: fields || [],
+        corrections: corrections || []
       };
     } catch (err) {
-      return localFallbackDoc;
+      console.error('[Supabase DB] getDocumentDetail exception:', err.message);
+      return null;
     }
   },
 
   async saveCorrection(documentId, fieldName, originalValue, correctedValue) {
-    localStorageService.addCorrection(documentId, fieldName, originalValue, correctedValue);
-
-    if (!isSupabaseConfigured) {
-      return localStorageService.addCorrection(documentId, fieldName, originalValue, correctedValue);
-    }
+    if (!isSupabaseConfigured) return null;
 
     try {
       const { data, error } = await supabase
@@ -337,6 +327,8 @@ export const dbService = {
         .select()
         .single();
 
+      if (error) console.error('[Supabase DB] saveCorrection error:', error.message);
+
       await supabase
         .from('extracted_fields')
         .update({ field_value: correctedValue })
@@ -345,22 +337,22 @@ export const dbService = {
 
       return data;
     } catch (err) {
-      return localStorageService.addCorrection(documentId, fieldName, originalValue, correctedValue);
+      console.error('[Supabase DB] saveCorrection exception:', err.message);
+      throw err;
     }
   },
 
   async deleteDocument(id) {
-    if (!isSupabaseConfigured) {
-      return localStorageService.deleteDocument(id);
-    }
+    if (!isSupabaseConfigured) return false;
 
     try {
       await supabase.from('documents').delete().eq('id', id);
       await supabase.from('order_records').delete().or(`id.eq.${id},document_id.eq.${id}`);
-      localStorageService.deleteDocument(id);
       return true;
     } catch (err) {
-      return localStorageService.deleteDocument(id);
+      console.error('[Supabase DB] deleteDocument exception:', err.message);
+      return false;
     }
   }
 };
+
