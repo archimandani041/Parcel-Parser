@@ -112,6 +112,7 @@ export const orderRecordService = {
         selling_price: sellingPrice != null ? parseFloat(sellingPrice) : null,
         quantity: totalQty,
         is_returned: false,
+        return_type: null,
         document_id: isUUID(documentId) ? documentId : null,
         updated_at: new Date().toISOString()
       };
@@ -181,7 +182,11 @@ export const orderRecordService = {
     try {
       let query = supabase
         .from('order_records')
-        .update({ is_returned: true, updated_at: new Date().toISOString() });
+        .update({
+          is_returned: true,
+          return_type: cleanReturnType,
+          updated_at: new Date().toISOString()
+        });
 
       if (isUUID(targetId)) {
         query = query.or(`id.eq.${targetId},order_id.eq.${orderId}`);
@@ -263,7 +268,7 @@ export const orderRecordService = {
     try {
       let query = supabase
         .from('order_records')
-        .update({ is_returned: false, updated_at: new Date().toISOString() });
+        .update({ is_returned: false, return_type: null, updated_at: new Date().toISOString() });
 
       if (isUUID(targetId)) {
         query = query.or(`id.eq.${targetId},order_id.eq.${orderId}`);

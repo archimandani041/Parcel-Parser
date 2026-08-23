@@ -15,7 +15,11 @@ import {
   ArrowRight,
   Sparkles,
   FileCheck2,
-  Trash2
+  Trash2,
+  Camera,
+  RefreshCw,
+  Zap,
+  Image as ImageIcon
 } from 'lucide-react';
 
 export default function Upload() {
@@ -25,7 +29,76 @@ export default function Upload() {
   const [errorMessage, setErrorMessage] = useState(null);
   const [uploadedResults, setUploadedResults] = useState([]);
   const fileInputRef = useRef(null);
+  const mobileCameraInputRef = useRef(null);
+  const videoRef = useRef(null);
   const navigate = useNavigate();
+
+  // Camera Capture state
+  const [showCameraModal, setShowCameraModal] = useState(false);
+  const [cameraStream, setCameraStream] = useState(null);
+  const [facingMode, setFacingMode] = useState('environment'); // 'environment' | 'user'
+  const [cameraError, setCameraError] = useState(null);
+
+  const startCamera = async (mode = facingMode) => {
+    setCameraError(null);
+    setShowCameraModal(true);
+    try {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: mode },
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
+        }
+      });
+      setCameraStream(stream);
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      }, 100);
+    } catch (err) {
+      console.error('Camera Access Error:', err);
+      setCameraError('Camera access denied or unavailable. Please check browser permissions.');
+    }
+  };
+
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+    }
+    setShowCameraModal(false);
+    setCameraError(null);
+  };
+
+  const toggleFacingMode = () => {
+    const nextMode = facingMode === 'environment' ? 'user' : 'environment';
+    setFacingMode(nextMode);
+    startCamera(nextMode);
+  };
+
+  const captureCameraPhoto = () => {
+    if (!videoRef.current) return;
+    const video = videoRef.current;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth || 1280;
+    canvas.height = video.videoHeight || 720;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const fileName = `parcel_label_camera_${Date.now()}.jpg`;
+      const file = new File([blob], fileName, { type: 'image/jpeg' });
+      Object.assign(file, { _isPdf: false });
+
+      setSelectedFiles(prev => [...prev, file]);
+      stopCamera();
+    }, 'image/jpeg', 0.92);
+  };
 
   const handleFileSelect = (files) => {
     const validFiles = Array.from(files).filter(file => {
@@ -129,7 +202,7 @@ export default function Upload() {
 
   return (
     <Layout title="Upload Shipping Label">
-      <div className="max-w-4xl mx-auto space-y-8 pb-12">
+      <div className="w-full space-y-8 pb-12">
         
         {/* Header Intro */}
         <div className="text-center space-y-3">
@@ -157,40 +230,181 @@ export default function Upload() {
           </div>
         )}
 
-        {/* Drag and Drop Zone */}
-        <div
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={handleDrop}
-          onClick={() => fileInputRef.current?.click()}
-          className="ui-card border-2 border-dashed border-purple-200 hover:border-purple-400 bg-white hover:bg-purple-50/40 rounded-3xl p-10 sm:p-14 text-center cursor-pointer transition-all duration-300 shadow-xl shadow-purple-900/5 group relative overflow-hidden"
-        >
-          <div className="absolute top-0 right-0 w-64 h-64 bg-purple-200/30 rounded-full blur-3xl pointer-events-none group-hover:bg-purple-300/40 transition-all" />
+        {/* ACTION CARDS: FILE UPLOAD + DIRECT CAMERA UPLOAD */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          {/* Card 1: Drag & Drop / File Upload */}
+          <div
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+            className="ui-card border-2 border-dashed border-purple-200 hover:border-purple-400 bg-white hover:bg-purple-50/40 rounded-3xl p-8 text-center cursor-pointer transition-all duration-300 shadow-xl shadow-purple-900/5 group relative overflow-hidden flex flex-col items-center justify-center min-h-[250px]"
+          >
+            <input
+              type="file"
+              ref={fileInputRef}
+              multiple
+              accept="image/jpeg,image/png,image/webp,image/bmp,image/tiff,application/pdf,.jpg,.jpeg,.png,.webp,.bmp,.tiff,.tif,.pdf"
+              onChange={(e) => handleFileSelect(e.target.files)}
+              className="hidden"
+            />
 
-          <input
-            type="file"
-            ref={fileInputRef}
-            multiple
-            accept="image/jpeg,image/png,image/webp,image/bmp,image/tiff,application/pdf,.jpg,.jpeg,.png,.webp,.bmp,.tiff,.tif,.pdf"
-            onChange={(e) => handleFileSelect(e.target.files)}
-            className="hidden"
-          />
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-purple-400 via-violet-500 to-indigo-500 flex items-center justify-center mb-4 text-white group-hover:scale-105 transition-transform shadow-md shadow-purple-300/40">
+              <UploadCloud className="w-8 h-8" />
+            </div>
 
-          <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-purple-400 via-violet-500 to-indigo-500 flex items-center justify-center mx-auto mb-5 text-white group-hover:scale-110 transition-transform shadow-lg shadow-purple-300/40">
-            <UploadCloud className="w-10 h-10" />
+            <h3 className="text-base font-bold text-slate-900 mb-1">
+              Browse Files or Drag & Drop
+            </h3>
+            <p className="text-xs text-slate-500 mb-4 max-w-xs font-medium">
+              Upload shipping labels, invoices or PDFs from your device
+            </p>
+
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-purple-50 border border-purple-200/80 rounded-full text-[11px] text-purple-700 font-mono font-semibold">
+              <FileCheck2 className="w-3.5 h-3.5 text-purple-600" />
+              JPG • PNG • WEBP • PDF
+            </div>
           </div>
 
-          <h3 className="text-xl font-bold text-slate-900 mb-2">
-            Drop your parcel label or click to browse
-          </h3>
-          <p className="text-xs text-slate-500 mb-6 max-w-md mx-auto font-medium">
-            Supports shipping labels, invoices, air waybills, delivery receipts & multi-page PDF documents
-          </p>
+          {/* Card 2: Direct Camera Image Capture */}
+          <div
+            className="ui-card border-2 border-purple-200/90 bg-gradient-to-br from-purple-50/60 via-violet-50/30 to-white rounded-3xl p-8 text-center transition-all duration-300 shadow-xl shadow-purple-900/5 relative overflow-hidden flex flex-col items-center justify-center min-h-[250px]"
+          >
+            <input
+              type="file"
+              ref={mobileCameraInputRef}
+              accept="image/*"
+              capture="environment"
+              onChange={(e) => e.target.files && handleFileSelect(e.target.files)}
+              className="hidden"
+            />
 
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-50 border border-purple-200/80 rounded-full text-xs text-purple-700 font-mono shadow-inner font-semibold">
-            <FileCheck2 className="w-3.5 h-3.5 text-purple-600" />
-            JPG • PNG • WEBP • TIFF • <span className="text-rose-600 font-bold">PDF</span>
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-400 via-orange-500 to-amber-600 flex items-center justify-center mb-4 text-white shadow-md shadow-amber-300/40">
+              <Camera className="w-8 h-8" />
+            </div>
+
+            <h3 className="text-base font-bold text-slate-900 mb-1">
+              Direct Camera Upload
+            </h3>
+            <p className="text-xs text-slate-500 mb-4 max-w-xs font-medium">
+              Capture parcel label directly using your webcam or phone camera
+            </p>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => startCamera('environment')}
+                className="flex items-center gap-2 px-5 py-2.5 bg-purple-900 hover:bg-purple-950 text-white text-xs font-bold rounded-full shadow-md shadow-purple-900/20 transition-all hover:scale-105 cursor-pointer"
+              >
+                <Camera className="w-4 h-4 text-amber-400" />
+                Open Live Camera
+              </button>
+
+              <button
+                type="button"
+                onClick={() => mobileCameraInputRef.current?.click()}
+                className="flex items-center gap-1.5 px-4 py-2.5 bg-amber-100 hover:bg-amber-200 text-amber-950 text-xs font-bold rounded-full border border-amber-300 transition-all cursor-pointer"
+                title="Direct Phone Camera Shutter"
+              >
+                <Zap className="w-3.5 h-3.5 text-amber-700" />
+                Snap Photo
+              </button>
+            </div>
           </div>
+
         </div>
+
+        {/* LIVE CAMERA VIEWFINDER MODAL */}
+        {showCameraModal && (
+          <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl max-w-2xl w-full p-6 text-white space-y-4 relative overflow-hidden">
+              
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-400">
+                    <Camera className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-100">Live Parcel Label Scanner</h3>
+                    <p className="text-[10px] text-slate-400">Align parcel label inside the viewfinder frame</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={toggleFacingMode}
+                    className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-full border border-slate-700 transition-all cursor-pointer text-xs flex items-center gap-1.5"
+                    title="Switch Camera (Front/Rear)"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Flip</span>
+                  </button>
+
+                  <button
+                    onClick={stopCamera}
+                    className="p-2 bg-slate-800 hover:bg-rose-950/60 text-slate-400 hover:text-rose-400 rounded-full border border-slate-700 hover:border-rose-900 transition-all cursor-pointer"
+                  >
+                    <X className="w-4.5 h-4.5" />
+                  </button>
+                </div>
+              </div>
+
+              {cameraError ? (
+                <div className="py-16 text-center space-y-3 bg-slate-950/60 rounded-2xl border border-slate-800">
+                  <AlertCircle className="w-10 h-10 text-rose-400 mx-auto" />
+                  <p className="text-xs text-rose-300 font-medium px-4">{cameraError}</p>
+                  <button
+                    onClick={() => startCamera()}
+                    className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-full text-xs font-bold cursor-pointer"
+                  >
+                    Retry Camera
+                  </button>
+                </div>
+              ) : (
+                <div className="relative aspect-video bg-black rounded-2xl overflow-hidden border border-slate-800 shadow-inner flex items-center justify-center">
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="w-full h-full object-cover"
+                  />
+
+                  {/* Viewfinder Target Guidelines */}
+                  <div className="absolute inset-8 border-2 border-purple-400/60 rounded-2xl pointer-events-none flex items-center justify-center">
+                    <div className="absolute top-2 left-2 w-4 h-4 border-t-2 border-l-2 border-purple-400" />
+                    <div className="absolute top-2 right-2 w-4 h-4 border-t-2 border-r-2 border-purple-400" />
+                    <div className="absolute bottom-2 left-2 w-4 h-4 border-b-2 border-l-2 border-purple-400" />
+                    <div className="absolute bottom-2 right-2 w-4 h-4 border-b-2 border-r-2 border-purple-400" />
+                    <span className="text-[10px] font-mono text-purple-200/80 bg-slate-900/60 px-2 py-0.5 rounded-full border border-purple-400/30">
+                      Align Parcel Label
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between pt-2">
+                <button
+                  onClick={stopCamera}
+                  className="px-5 py-2 rounded-full text-xs font-semibold text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+
+                {!cameraError && (
+                  <button
+                    onClick={captureCameraPhoto}
+                    className="flex items-center gap-2 px-7 py-3 bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-bold text-xs rounded-full shadow-lg shadow-purple-500/25 transition-all hover:scale-105 cursor-pointer"
+                  >
+                    <Camera className="w-4 h-4" />
+                    Capture Photo & Extract
+                  </button>
+                )}
+              </div>
+
+            </div>
+          </div>
+        )}
 
         {/* Selected Files Preview List */}
         {selectedFiles.length > 0 && (

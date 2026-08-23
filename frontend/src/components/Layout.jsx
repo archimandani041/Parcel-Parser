@@ -23,27 +23,11 @@ export default function Layout({ children, title }) {
       <Navbar title={title} healthInfo={healthInfo} />
 
       {/* Main Content Viewport with minor light background wrapper */}
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-24 lg:pb-16">
+      <main className="flex-1 w-full px-2 sm:px-4 lg:px-6 pt-4 sm:pt-6 pb-8">
         <div className="page-pastel-bg p-3.5 sm:p-7 relative overflow-hidden transition-all duration-300">
           {children}
         </div>
       </main>
-
-      {/* Modern Clean Footer matching reference image */}
-      <footer className="border-t border-purple-100/80 bg-white/70 backdrop-blur-md py-6 mt-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 font-medium">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></span>
-            <span className="font-extrabold text-purple-950 tracking-tight">ParcelAI</span>
-            <span className="text-purple-600/70">• Zero-Template Light Pastel Extraction Platform</span>
-          </div>
-          <div className="flex items-center gap-4 text-purple-700/60 font-medium">
-            <span>Powered by Gemini 3.6 Flash</span>
-            <span>•</span>
-            <span>Supabase Database</span>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

@@ -1,1 +1,18 @@
-[]
+[
+  {
+    "id": "sr_1787508223440",
+    "returned_at": "2026-08-23T18:03:43.440Z",
+    "order_id": "OD437952660555734100",
+    "delivery_boy_charge": 10,
+    "updated_at": "2026-08-23T18:03:42.939Z",
+    "return_type": "CUSTOMER_RETURN"
+  },
+  {
+    "id": "sr_1787510763653",
+    "order_id": "OD337952754675247100",
+    "return_type": "RTO_RETURN",
+    "delivery_boy_charge": 0,
+    "returned_at": "2026-08-23T18:46:03.654Z",
+    "updated_at": "2026-08-23T19:24:39.684Z"
+  }
+]

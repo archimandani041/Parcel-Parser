@@ -138,8 +138,8 @@ export default function Stock() {
 
   return (
     <Layout>
-      <div className="space-y-6 max-w-7xl mx-auto pb-12">
-        
+      <div className="space-y-6 w-full pb-12">
+
         {/* HEADER & CONTROLS */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/70 backdrop-blur-md p-6 rounded-3xl border border-purple-100/80 shadow-sm">
           <div className="flex items-center gap-3.5">
@@ -180,8 +180,8 @@ export default function Stock() {
           </div>
         </div>
 
-        {/* SUMMARY METRICS (4 CARDS) */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {/* SUMMARY METRICS (5 CARDS) */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3.5">
           {/* Total Quantity */}
           <div className="ui-card p-4 space-y-1">
             <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
@@ -210,12 +210,24 @@ export default function Stock() {
           <div className="ui-card p-4 space-y-1">
             <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
               <span>Cust. Returned Qty</span>
-              <Inbox className="w-4 h-4 text-rose-600" />
+              <Inbox className="w-4 h-4 text-amber-600" />
             </div>
-            <p className="text-2xl font-bold text-rose-600 font-mono">
-              {stockSummary.total_returned_quantity || 0}
+            <p className="text-2xl font-bold text-amber-700 font-mono">
+              {stockSummary.total_customer_returned_quantity != null ? stockSummary.total_customer_returned_quantity : 0}
             </p>
-            <p className="text-[10px] text-slate-500 font-medium">Restored to available stock</p>
+            <p className="text-[10px] text-slate-500 font-medium">Customer return units</p>
+          </div>
+
+          {/* Total RTO Returned Qty */}
+          <div className="ui-card p-4 space-y-1">
+            <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
+              <span>RTO Returned Qty</span>
+              <Inbox className="w-4 h-4 text-purple-600" />
+            </div>
+            <p className="text-2xl font-bold text-purple-700 font-mono">
+              {stockSummary.total_rto_returned_quantity || 0}
+            </p>
+            <p className="text-[10px] text-slate-500 font-medium">RTO return units</p>
           </div>
 
           {/* Inventory Cost */}
@@ -250,7 +262,7 @@ export default function Stock() {
             </div>
           ) : (
             <div className="overflow-x-auto bg-white">
-              <table className="w-full text-left border-collapse text-xs min-w-[1200px]" id="stock-table">
+              <table className="w-full text-left border-collapse text-xs min-w-[1250px]" id="stock-table">
                 <thead>
                   <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-semibold text-[11px]">
                     <th className="py-4 px-3 border-r border-slate-100">SKU ID</th>
@@ -258,15 +270,15 @@ export default function Stock() {
                     <th className="py-4 px-2 border-r border-slate-100 text-center" title="Initial/Total Stock Added">Total Qty</th>
                     <th className="py-4 px-2 border-r border-slate-100 text-center" title="Successfully Sold & Kept Quantity">Sold Qty.</th>
                     <th className="py-4 px-2 border-r border-slate-100 text-center" title="Customer Returned Quantity">Cust. Return</th>
+                    <th className="py-4 px-2 border-r border-slate-100 text-center" title="RTO Returned Quantity">RTO Return</th>
                     <th className="py-4 px-2 border-r border-slate-100 text-center" title="Current Physical Available Stock in Hand">Current Stock</th>
                     <th className="py-4 px-2 border-r border-slate-100 text-center">Purchase Price</th>
                     <th className="py-4 px-2 border-r border-slate-100 text-center">Selling Price</th>
                     <th className="py-4 px-3 border-r border-slate-100 text-right">Inventory Cost</th>
                     <th className="py-4 px-3 border-r border-slate-100 text-right">Inventory Value</th>
-                    <th className="py-4 px-3 border-r border-slate-100 text-right" title="Profit from sold items (Selling Price > Purchase Price)">Realized Profit</th>
-                    <th className="py-4 px-3 border-r border-slate-100 text-right" title="Loss from sold items (Purchase Price > Selling Price)">Sales Loss</th>
+                    <th className="py-4 px-3 border-r border-slate-100 text-right" title="Profit from sold items = (Selling Price - Purchase Price) * Sold Qty">Realized Profit</th>
                     <th className="py-4 px-3 border-r border-slate-100 text-right" title="Loss from Customer Return delivery charges">Return Loss</th>
-                    <th className="py-4 px-3 border-r border-slate-100 text-right" title="Net Profit = Realized Profit - Sales Loss - Return Loss">Net Profit</th>
+                    <th className="py-4 px-3 border-r border-slate-100 text-right" title="Net Profit = Realized Profit - Return Loss">Net Profit</th>
                     <th className="py-4 px-3 text-center">Action</th>
                   </tr>
                 </thead>
@@ -280,7 +292,7 @@ export default function Stock() {
                     };
 
                     const rawNet = p.net_profit != null ? p.net_profit : p.profit;
-                    const netProfitVal = (rawNet != null && rawNet < 0) ? 0 : rawNet;
+                    const netProfitVal = rawNet;
                     const soldQty = p.successfully_sold_quantity != null ? p.successfully_sold_quantity : (p.realized_sales_quantity || 0);
 
                     return (
@@ -318,8 +330,15 @@ export default function Stock() {
 
                         {/* Customer Return Quantity */}
                         <td className="py-3.5 px-2 border-r border-slate-100 text-center">
-                          <span className="font-mono text-xs text-rose-600 font-semibold">
+                          <span className="font-mono text-xs text-amber-700 font-semibold">
                             {p.customer_returned_quantity || 0}
+                          </span>
+                        </td>
+
+                        {/* RTO Return Quantity */}
+                        <td className="py-3.5 px-2 border-r border-slate-100 text-center">
+                          <span className="font-mono text-xs text-purple-700 font-semibold">
+                            {p.rto_returned_quantity || 0}
                           </span>
                         </td>
 
@@ -373,11 +392,10 @@ export default function Stock() {
                               onClick={() => handleSavePrice(p.sku_id, p.product_name)}
                               disabled={editState.saving}
                               title="Save price for SKU"
-                              className={`p-1 rounded-full border transition-all cursor-pointer ${
-                                editState.saved
+                              className={`p-1 rounded-full border transition-all cursor-pointer ${editState.saved
                                   ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
                                   : 'bg-purple-100 hover:bg-purple-200 text-purple-900 border-purple-300 shadow-xs'
-                              } disabled:opacity-50`}
+                                } disabled:opacity-50`}
                             >
                               {editState.saved ? (
                                 <Check className="w-3 h-3" />
@@ -404,17 +422,10 @@ export default function Stock() {
                           </span>
                         </td>
 
-                        {/* Realized Sales Profit (Always >= 0) */}
+                        {/* Realized Sales Profit */}
                         <td className="py-3.5 px-3 border-r border-slate-100 text-right">
-                          <span className="font-mono text-xs font-semibold text-sky-700">
+                          <span className={`font-mono text-xs font-semibold ${p.realized_sales_profit == null ? 'text-slate-400' : (p.realized_sales_profit >= 0 ? 'text-sky-700' : 'text-rose-600')}`}>
                             {formatCurrency(p.realized_sales_profit)}
-                          </span>
-                        </td>
-
-                        {/* Sales Loss (Always >= 0, displayed in rose red if > 0) */}
-                        <td className="py-3.5 px-3 border-r border-slate-100 text-right">
-                          <span className={`font-mono text-xs font-semibold ${p.sales_loss > 0 ? 'text-rose-600' : 'text-slate-400'}`}>
-                            {formatCurrency(p.sales_loss)}
                           </span>
                         </td>
 
@@ -427,13 +438,12 @@ export default function Stock() {
 
                         {/* Net Profit */}
                         <td className="py-3.5 px-3 border-r border-slate-100 text-right">
-                          <span className={`font-mono text-xs font-semibold px-2 py-0.5 rounded-full border ${
-                            netProfitVal == null
+                          <span className={`font-mono text-xs font-semibold px-2 py-0.5 rounded-full border ${netProfitVal == null
                               ? 'text-slate-400 border-transparent'
                               : netProfitVal >= 0
-                              ? 'text-emerald-800 bg-emerald-50 border-emerald-200'
-                              : 'text-rose-800 bg-rose-50 border-rose-200'
-                          }`}>
+                                ? 'text-emerald-800 bg-emerald-50 border-emerald-200'
+                                : 'text-rose-800 bg-rose-50 border-rose-200'
+                            }`}>
                             {formatCurrency(netProfitVal)}
                           </span>
                         </td>

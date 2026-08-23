@@ -144,7 +144,6 @@ export async function exportMasterExcel(req, res, next) {
       'Inventory Cost (₹)': p.inventory_cost != null ? Number(p.inventory_cost) : '',
       'Inventory Value (₹)': p.inventory_value != null ? Number(p.inventory_value) : '',
       'Realized Sales Profit (₹)': p.realized_sales_profit != null ? Number(p.realized_sales_profit) : 0,
-      'Sales Loss (₹)': p.sales_loss != null ? Number(p.sales_loss) : 0,
       'Return Loss (₹)': p.return_loss != null ? Number(p.return_loss) : 0,
       'Net Profit (₹)': p.net_profit != null ? Number(p.net_profit) : ''
     }));

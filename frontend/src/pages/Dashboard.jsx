@@ -41,7 +41,7 @@ export default function Dashboard() {
     total_orders: 0
   });
   const [graphData, setGraphData] = useState([]);
-  const [selectedRange, setSelectedRange] = useState('30');
+  const [selectedRange, setSelectedRange] = useState('7');
   const [recentDocs, setRecentDocs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -198,7 +198,7 @@ export default function Dashboard() {
               {formatCurrency(stats.total_loss || 0)}
             </p>
             <div className="flex items-center gap-1 text-[10px] text-rose-600 font-semibold">
-              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" /> Sales & Return Losses
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" /> Customer Return Losses
             </div>
           </div>
 
@@ -320,11 +320,10 @@ export default function Dashboard() {
                   <button
                     key={r.value}
                     onClick={() => setSelectedRange(r.value)}
-                    className={`px-3.5 py-1 text-xs font-extrabold rounded-full transition-all cursor-pointer ${
-                      selectedRange === r.value
+                    className={`px-3.5 py-1 text-xs font-extrabold rounded-full transition-all cursor-pointer ${selectedRange === r.value
                         ? 'bg-purple-700 text-white shadow-xs'
                         : 'text-purple-700 hover:bg-purple-100/80'
-                    }`}
+                      }`}
                   >
                     {r.label}
                   </button>
@@ -397,11 +396,10 @@ export default function Dashboard() {
                               </span>
                             )}
                             <div
-                              className={`w-full rounded-t-md transition-all duration-300 ${
-                                d.profit > 0
+                              className={`w-full rounded-t-md transition-all duration-300 ${d.profit > 0
                                   ? 'bg-gradient-to-t from-emerald-600 via-teal-500 to-emerald-400 shadow-xs shadow-emerald-500/20 group-hover:scale-y-105'
                                   : 'bg-slate-100 h-1'
-                              }`}
+                                }`}
                               style={{ height: d.profit > 0 ? `${profitHeightPercent}%` : '2px' }}
                             />
                           </div>
@@ -414,11 +412,10 @@ export default function Dashboard() {
                               </span>
                             )}
                             <div
-                              className={`w-full rounded-t-md transition-all duration-300 ${
-                                d.loss > 0
+                              className={`w-full rounded-t-md transition-all duration-300 ${d.loss > 0
                                   ? 'bg-gradient-to-t from-rose-600 via-pink-500 to-rose-400 shadow-xs shadow-rose-500/20 group-hover:scale-y-105'
                                   : 'bg-slate-100 h-1'
-                              }`}
+                                }`}
                               style={{ height: d.loss > 0 ? `${lossHeightPercent}%` : '2px' }}
                             />
                           </div>

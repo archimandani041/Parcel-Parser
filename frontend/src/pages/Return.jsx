@@ -1,9 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Layout from '../components/Layout';
 import {
   getReturnsOverview,
   updateReturnDeliveryCharge,
-  undoReturnOrderRecord
+  undoReturnOrderRecord,
+  getOrderRecords,
+  uploadParcelLabels,
+  returnOrderRecord
 } from '../services/api';
 import {
   RotateCcw,
@@ -12,10 +15,20 @@ import {
   RefreshCw,
   Save,
   Check,
-  TrendingDown,
   Truck,
   Inbox,
-  AlertTriangle
+  AlertTriangle,
+  UploadCloud,
+  Camera,
+  Loader2,
+  X,
+  FileText,
+  User,
+  Hash,
+  ShoppingBag,
+  Layers,
+  ArrowRight,
+  RefreshCcw
 } from 'lucide-react';
 
 export default function Return() {
@@ -23,6 +36,194 @@ export default function Return() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [toastMessage, setToastMessage] = useState(null);
+
+  // ===== UPLOAD RETURN LABEL MODAL STATES =====
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadStep, setUploadStep] = useState('SELECT_METHOD');
+  // Steps: 'SELECT_METHOD' | 'IMAGE_PREVIEW' | 'CAMERA_VIEW' | 'CAMERA_PREVIEW' | 'PARSING' | 'MATCH_FOUND' | 'ERROR'
+
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [extractedOrderId, setExtractedOrderId] = useState(null);
+  const [matchedOrder, setMatchedOrder] = useState(null);
+  const [returnModalError, setReturnModalError] = useState(null);
+  const [customDeliveryCharge, setCustomDeliveryCharge] = useState(10);
+  const [processingReturn, setProcessingReturn] = useState(false);
+
+  // Camera stream refs
+  const [cameraStream, setCameraStream] = useState(null);
+  const [facingMode, setFacingMode] = useState('environment');
+  const videoRef = useRef(null);
+  const uploadFileInputRef = useRef(null);
+
+  // 1. File picker handler
+  const handleFileSelectForUpload = (file) => {
+    if (!file) return;
+    setSelectedFile(file);
+    const url = URL.createObjectURL(file);
+    setImagePreview(url);
+    setUploadStep('IMAGE_PREVIEW');
+    setReturnModalError(null);
+  };
+
+  // 2. Camera stream handlers
+  const startCamera = async (mode = facingMode) => {
+    setReturnModalError(null);
+    setUploadStep('CAMERA_VIEW');
+    try {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(t => t.stop());
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: mode }, width: { ideal: 1280 }, height: { ideal: 720 } }
+      });
+      setCameraStream(stream);
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      }, 100);
+    } catch (err) {
+      console.error('Camera Error:', err);
+      setReturnModalError('Unable to access camera. Please check browser permissions.');
+    }
+  };
+
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(t => t.stop());
+      setCameraStream(null);
+    }
+  };
+
+  const toggleFacingMode = () => {
+    const nextMode = facingMode === 'environment' ? 'user' : 'environment';
+    setFacingMode(nextMode);
+    startCamera(nextMode);
+  };
+
+  const capturePhoto = () => {
+    if (!videoRef.current) return;
+    const video = videoRef.current;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth || 1280;
+    canvas.height = video.videoHeight || 720;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const file = new File([blob], `captured_return_${Date.now()}.jpg`, { type: 'image/jpeg' });
+      setSelectedFile(file);
+      setImagePreview(URL.createObjectURL(file));
+      stopCamera();
+      setUploadStep('CAMERA_PREVIEW');
+    }, 'image/jpeg', 0.92);
+  };
+
+  // 3. Process button handler (Gemini Vision Extraction & Order Matching)
+  const handleProcessImage = async () => {
+    if (!selectedFile) return;
+    setUploadStep('PARSING');
+    setReturnModalError(null);
+
+    try {
+      // Call Gemini Vision Parser API
+      const res = await uploadParcelLabels([selectedFile]);
+      const doc = res.documents && res.documents[0];
+      const json = doc?.structured_json || {};
+
+      let extractedId = null;
+      if (json.order?.order_id) extractedId = json.order.order_id;
+      else if (json.order?.order_number) extractedId = json.order.order_number;
+      else if (json.order_id) extractedId = json.order_id;
+      else if (json.orderId) extractedId = json.orderId;
+      else if (Array.isArray(json.labels) && json.labels.length > 0) {
+        const l = json.labels[0];
+        extractedId = l.order?.order_id || l.order?.order_number || l.order_id || null;
+      }
+
+      if (!extractedId || !extractedId.trim()) {
+        setReturnModalError('Order ID not found.');
+        setUploadStep('ERROR');
+        return;
+      }
+
+      const cleanExtractedId = extractedId.trim();
+      setExtractedOrderId(cleanExtractedId);
+
+      // Search existing Supabase Orders data using extracted Order ID
+      const ordersRes = await getOrderRecords();
+      const allOrders = ordersRes.records || [];
+
+      const match = allOrders.find(o => 
+        (o.order_id && o.order_id.trim().toLowerCase() === cleanExtractedId.toLowerCase()) ||
+        (o.id && o.id.trim().toLowerCase() === cleanExtractedId.toLowerCase())
+      );
+
+      // Validation 1: Order ID not found in Supabase
+      if (!match) {
+        setReturnModalError('Order ID not found.');
+        setUploadStep('ERROR');
+        return;
+      }
+
+      // Validation 2: Order already returned check (Duplicate protection)
+      if (match.is_returned) {
+        setReturnModalError('This order has already been returned.');
+        setUploadStep('ERROR');
+        return;
+      }
+
+      // Order found & valid for return!
+      setMatchedOrder(match);
+      setUploadStep('MATCH_FOUND');
+
+    } catch (err) {
+      console.error('Process label error:', err);
+      setReturnModalError('Order ID not found.');
+      setUploadStep('ERROR');
+    }
+  };
+
+  // 4. Save Return (Customer Return vs RTO Return)
+  const handleSaveReturnFromModal = async (returnType) => {
+    if (!matchedOrder) return;
+    setProcessingReturn(true);
+
+    try {
+      const targetId = matchedOrder.id || matchedOrder.order_id;
+      
+      // Save return in Supabase for existing Order ID
+      await returnOrderRecord(targetId, returnType);
+
+      // Set delivery charge (RTO Return = ₹0, Customer Return = custom charge)
+      const chargeVal = returnType === 'RTO_RETURN' ? 0 : (parseFloat(customDeliveryCharge) || 10);
+      await updateReturnDeliveryCharge(matchedOrder.order_id || targetId, chargeVal, returnType);
+
+      showToast(`Order #${matchedOrder.order_id} added to ${returnType === 'RTO_RETURN' ? 'RTO Return' : 'Customer Return'}!`);
+      closeModal();
+      await loadReturnData();
+
+    } catch (err) {
+      console.error('Save Return Error:', err);
+      alert('Failed to save return: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setProcessingReturn(false);
+    }
+  };
+
+  const closeModal = () => {
+    stopCamera();
+    setShowUploadModal(false);
+    setUploadStep('SELECT_METHOD');
+    setSelectedFile(null);
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImagePreview(null);
+    setExtractedOrderId(null);
+    setMatchedOrder(null);
+    setReturnModalError(null);
+  };
 
   // Data states
   const [customerReturns, setCustomerReturns] = useState([]);
@@ -56,7 +257,7 @@ export default function Return() {
       if (data.success) {
         const custRet = data.customerReturns || (data.returns || []).filter(r => r.return_type === 'CUSTOMER_RETURN');
         const rtoRet = data.rtoReturns || (data.returns || []).filter(r => r.return_type === 'RTO_RETURN');
-        
+
         setCustomerReturns(custRet);
         setRtoReturns(rtoRet);
         if (data.summary) {
@@ -106,7 +307,9 @@ export default function Return() {
     }));
 
     try {
-      await updateReturnDeliveryCharge(orderId, itemState.delivery_boy_charge, 'CUSTOMER_RETURN');
+      const currentItem = customerReturns.find(r => r.order_id === orderId) || rtoReturns.find(r => r.order_id === orderId);
+      const currentReturnType = currentItem?.return_type || 'CUSTOMER_RETURN';
+      await updateReturnDeliveryCharge(orderId, itemState.delivery_boy_charge, currentReturnType);
       setEditChargeState(prev => ({
         ...prev,
         [orderId]: { ...prev[orderId], saving: false, saved: true }
@@ -182,8 +385,8 @@ export default function Return() {
 
   return (
     <Layout>
-      <div className="space-y-6 max-w-7xl mx-auto pb-12">
-        
+      <div className="space-y-6 w-full pb-12">
+
         {/* Toast Notification */}
         {toastMessage && (
           <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white text-xs font-semibold px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2 border border-slate-700 animate-in fade-in slide-in-from-bottom-4 duration-200">
@@ -202,7 +405,6 @@ export default function Return() {
               <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
                 Return <span className="font-normal text-amber-700">management</span>
               </h1>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">Track Customer Returns and Logistics RTO Returns with distinct financial rules</p>
             </div>
           </div>
 
@@ -212,11 +414,10 @@ export default function Return() {
               <button
                 id="customer-return-tab-btn"
                 onClick={() => setActiveCategory('customer')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold transition-all duration-200 cursor-pointer ${
-                  activeCategory === 'customer'
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold transition-all duration-200 cursor-pointer ${activeCategory === 'customer'
                     ? 'bg-amber-200/90 text-amber-950 border border-amber-300 shadow-xs'
                     : 'text-purple-800/80 hover:text-purple-950 hover:bg-white/60'
-                }`}
+                  }`}
               >
                 <RotateCcw className="w-3.5 h-3.5 text-amber-800" />
                 Customer Return
@@ -225,16 +426,27 @@ export default function Return() {
               <button
                 id="rto-return-tab-btn"
                 onClick={() => setActiveCategory('rto')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold transition-all duration-200 cursor-pointer ${
-                  activeCategory === 'rto'
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold transition-all duration-200 cursor-pointer ${activeCategory === 'rto'
                     ? 'bg-purple-200/90 text-purple-950 border border-purple-300 shadow-xs'
                     : 'text-purple-800/80 hover:text-purple-950 hover:bg-white/60'
-                }`}
+                  }`}
               >
                 <Truck className="w-3.5 h-3.5 text-purple-700" />
                 RTO Return
               </button>
             </div>
+
+            {/* Upload Return Label Button */}
+            <button
+              onClick={() => {
+                setShowUploadModal(true);
+                setUploadStep('SELECT_METHOD');
+              }}
+              className="flex items-center gap-2 px-4.5 py-2.5 bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white text-xs font-bold rounded-full shadow-md shadow-purple-500/25 hover:shadow-lg hover:shadow-purple-500/35 transition-all hover:scale-105 cursor-pointer shrink-0"
+            >
+              <UploadCloud className="w-4 h-4 text-white" />
+              <span>Upload Return Label</span>
+            </button>
 
             {/* Search Input */}
             <div className="relative flex-1 min-w-[180px] sm:w-60">
@@ -263,9 +475,9 @@ export default function Return() {
 
         {/* DYNAMIC SUMMARY CARDS DEPENDING ON CATEGORY */}
         {activeCategory === 'customer' ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Total Customer Returns */}
-            <div className="ui-card p-4 space-y-1">
+            <div className="ui-card p-5 space-y-1.5">
               <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
                 <span>Total Customer Returns</span>
                 <RotateCcw className="w-4 h-4 text-amber-600" />
@@ -277,7 +489,7 @@ export default function Return() {
             </div>
 
             {/* Total Returned Quantity */}
-            <div className="ui-card p-4 space-y-1">
+            <div className="ui-card p-5 space-y-1.5">
               <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
                 <span>Total Returned Qty</span>
                 <Package className="w-4 h-4 text-amber-600" />
@@ -287,35 +499,11 @@ export default function Return() {
               </p>
               <p className="text-[10px] text-slate-500 font-medium">Units added back to stock</p>
             </div>
-
-            {/* Total Customer Return Charges */}
-            <div className="ui-card p-4 space-y-1">
-              <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
-                <span>Total Return Charges</span>
-                <Truck className="w-4 h-4 text-sky-600" />
-              </div>
-              <p className="text-2xl font-bold text-sky-700 font-mono">
-                {formatCurrency(summary.total_customer_delivery_charges)}
-              </p>
-              <p className="text-[10px] text-slate-500 font-medium">Delivery charges incurred</p>
-            </div>
-
-            {/* Total Customer Return Loss */}
-            <div className="ui-card p-4 space-y-1">
-              <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
-                <span>Total Return Loss</span>
-                <TrendingDown className="w-4 h-4 text-rose-600" />
-              </div>
-              <p className="text-2xl font-bold text-rose-600 font-mono">
-                {formatCurrency(summary.total_customer_return_loss)}
-              </p>
-              <p className="text-[10px] text-slate-500 font-medium">Deducted from realized profit</p>
-            </div>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Total RTO Returns */}
-            <div className="ui-card p-4 space-y-1">
+            <div className="ui-card p-5 space-y-1.5">
               <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
                 <span>Total RTO Returns</span>
                 <Truck className="w-4 h-4 text-purple-600" />
@@ -327,7 +515,7 @@ export default function Return() {
             </div>
 
             {/* Total RTO Quantity */}
-            <div className="ui-card p-4 space-y-1">
+            <div className="ui-card p-5 space-y-1.5">
               <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
                 <span>Total RTO Quantity</span>
                 <Package className="w-4 h-4 text-purple-600" />
@@ -336,30 +524,6 @@ export default function Return() {
                 {summary.total_rto_returned_quantity || rtoReturns.reduce((acc, r) => acc + (r.quantity || 1), 0)}
               </p>
               <p className="text-[10px] text-slate-500 font-medium">Restored to available stock</p>
-            </div>
-
-            {/* Total RTO Charges */}
-            <div className="ui-card p-4 space-y-1">
-              <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
-                <span>Total RTO Charges</span>
-                <Truck className="w-4 h-4 text-emerald-600" />
-              </div>
-              <p className="text-2xl font-bold text-emerald-700 font-mono">
-                ₹0
-              </p>
-              <p className="text-[10px] text-slate-500 font-medium">Logistics neutral (No charge)</p>
-            </div>
-
-            {/* Total RTO Return Loss */}
-            <div className="ui-card p-4 space-y-1">
-              <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
-                <span>Total RTO Loss</span>
-                <TrendingDown className="w-4 h-4 text-emerald-600" />
-              </div>
-              <p className="text-2xl font-bold text-emerald-600 font-mono">
-                ₹0
-              </p>
-              <p className="text-[10px] text-slate-500 font-medium">Zero financial loss</p>
             </div>
           </div>
         )}
@@ -461,11 +625,10 @@ export default function Return() {
                                 onClick={() => handleSaveCharge(r.order_id)}
                                 disabled={itemState.saving}
                                 title="Save delivery charge"
-                                className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
-                                  itemState.saved
+                                className={`p-1.5 rounded-lg border transition-all cursor-pointer ${itemState.saved
                                     ? 'bg-emerald-100 text-emerald-700 border-emerald-300'
                                     : 'bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200'
-                                }`}
+                                  }`}
                               >
                                 {itemState.saving ? (
                                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -658,6 +821,303 @@ export default function Return() {
                   Confirm Undo Return
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* UPLOAD RETURN LABEL POPUP MODAL */}
+        {showUploadModal && (
+          <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+            <div className="bg-white border border-purple-100 rounded-3xl shadow-2xl max-w-xl w-full p-6 sm:p-7 space-y-6 relative max-h-[90vh] overflow-y-auto my-auto">
+              
+              {/* Modal Header */}
+              <div className="flex items-center justify-between border-b border-purple-100 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-violet-600 via-purple-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-purple-500/30 shrink-0">
+                    <UploadCloud className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900 tracking-tight">Upload Return Label</h3>
+                    <p className="text-xs text-slate-500 font-medium font-sans">Extract Order ID & verify Supabase order status</p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={closeModal}
+                  className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* STEP 1: SELECT METHOD (Exact 2 Options: 1. Upload Image, 2. Capture Image) */}
+              {uploadStep === 'SELECT_METHOD' && (
+                <div className="space-y-5">
+                  <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">Select Return Label Source:</p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Option 1: Upload Image */}
+                    <div
+                      onClick={() => uploadFileInputRef.current?.click()}
+                      className="border-2 border-dashed border-purple-200 hover:border-purple-400 bg-purple-50/40 hover:bg-purple-50/90 rounded-2xl p-6 text-center cursor-pointer transition-all duration-200 group flex flex-col items-center justify-center space-y-3"
+                    >
+                      <input
+                        type="file"
+                        ref={uploadFileInputRef}
+                        accept="image/jpeg,image/png,image/webp,image/jpg"
+                        onChange={(e) => e.target.files?.[0] && handleFileSelectForUpload(e.target.files[0])}
+                        className="hidden"
+                      />
+                      <div className="w-12 h-12 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center group-hover:scale-110 transition-transform shadow-xs">
+                        <UploadCloud className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-slate-900">1. Upload Image</h4>
+                        <p className="text-[11px] text-slate-500 mt-0.5 font-medium">JPG, JPEG, PNG, or WEBP</p>
+                      </div>
+                    </div>
+
+                    {/* Option 2: Capture Image */}
+                    <div
+                      onClick={() => startCamera('environment')}
+                      className="border-2 border-amber-200 hover:border-amber-400 bg-amber-50/40 hover:bg-amber-50/90 rounded-2xl p-6 text-center cursor-pointer transition-all duration-200 group flex flex-col items-center justify-center space-y-3"
+                    >
+                      <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center group-hover:scale-110 transition-transform shadow-xs">
+                        <Camera className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-slate-900">2. Capture Image</h4>
+                        <p className="text-[11px] text-slate-500 mt-0.5 font-medium">Device camera shutter</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 2A: UPLOAD IMAGE PREVIEW & PROCESS BUTTON */}
+              {uploadStep === 'IMAGE_PREVIEW' && (
+                <div className="space-y-5">
+                  <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">Selected Return Label Image:</p>
+                  
+                  {imagePreview && (
+                    <div className="relative aspect-video max-h-56 bg-slate-900 rounded-2xl overflow-hidden border border-purple-100 flex items-center justify-center p-2">
+                      <img src={imagePreview} alt="Selected Return Label" className="h-full object-contain rounded-xl" />
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between pt-2">
+                    <button
+                      onClick={() => setUploadStep('SELECT_METHOD')}
+                      className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-full transition-colors cursor-pointer"
+                    >
+                      Change Option
+                    </button>
+                    <button
+                      onClick={handleProcessImage}
+                      className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-bold text-xs rounded-full shadow-md shadow-purple-500/25 transition-all hover:scale-105 cursor-pointer"
+                    >
+                      <span>Continue & Process</span>
+                      <ArrowRight className="w-4 h-4 text-white" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 2B: LIVE CAMERA VIEWFINDER */}
+              {uploadStep === 'CAMERA_VIEW' && (
+                <div className="space-y-4">
+                  <div className="relative aspect-video bg-black rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center">
+                    <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
+                    <div className="absolute inset-6 border-2 border-amber-400/70 rounded-2xl pointer-events-none flex items-center justify-center">
+                      <span className="text-[10px] font-mono text-amber-200 bg-slate-900/80 px-3 py-1 rounded-full border border-amber-400/40">
+                        Position Parcel Label inside Frame
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <button
+                      onClick={() => {
+                        stopCamera();
+                        setUploadStep('SELECT_METHOD');
+                      }}
+                      className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-full transition-colors cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={toggleFacingMode}
+                        className="px-3 py-2 text-xs font-bold text-purple-800 bg-purple-100 hover:bg-purple-200 rounded-full transition-colors cursor-pointer"
+                      >
+                        Flip Camera
+                      </button>
+                      <button
+                        onClick={capturePhoto}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 text-white text-xs font-bold rounded-full shadow-md cursor-pointer"
+                      >
+                        <Camera className="w-4 h-4 text-white" /> Snap Photo
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 2C: CAPTURED CAMERA IMAGE PREVIEW & PROCESS BUTTON */}
+              {uploadStep === 'CAMERA_PREVIEW' && (
+                <div className="space-y-5">
+                  <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">Captured Parcel Label Photo:</p>
+                  
+                  {imagePreview && (
+                    <div className="relative aspect-video max-h-56 bg-slate-900 rounded-2xl overflow-hidden border border-amber-200 flex items-center justify-center p-2">
+                      <img src={imagePreview} alt="Captured Return Label" className="h-full object-contain rounded-xl" />
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between pt-2">
+                    <button
+                      onClick={() => startCamera('environment')}
+                      className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-purple-800 bg-purple-100 hover:bg-purple-200 rounded-full transition-colors cursor-pointer"
+                    >
+                      <RefreshCcw className="w-3.5 h-3.5" /> Retake Photo
+                    </button>
+                    <button
+                      onClick={handleProcessImage}
+                      className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-bold text-xs rounded-full shadow-md shadow-purple-500/25 transition-all hover:scale-105 cursor-pointer"
+                    >
+                      <span>Continue & Process</span>
+                      <ArrowRight className="w-4 h-4 text-white" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 3: PARSING SPINNER */}
+              {uploadStep === 'PARSING' && (
+                <div className="py-12 text-center space-y-4 bg-purple-50/40 rounded-2xl border border-purple-100">
+                  <Loader2 className="w-10 h-10 text-amber-600 animate-spin mx-auto" />
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900">Extracting Order ID with Gemini Vision...</h4>
+                    <p className="text-xs text-slate-500 mt-1 font-medium">Searching Supabase Order Database for match...</p>
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 4: INVALID ORDER ID OR DUPLICATE RETURN ERROR */}
+              {uploadStep === 'ERROR' && (
+                <div className="space-y-5">
+                  <div className="bg-rose-50 border-2 border-rose-200 rounded-2xl p-5 text-center space-y-3">
+                    <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto shadow-xs">
+                      <AlertTriangle className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h4 className="text-base font-bold text-rose-900">{returnModalError}</h4>
+                      {extractedOrderId && (
+                        <p className="text-xs text-rose-700 mt-1 font-mono">
+                          Extracted Order ID: <span className="font-bold">{extractedOrderId}</span>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-center gap-3 pt-2">
+                    <button
+                      onClick={() => setUploadStep('SELECT_METHOD')}
+                      className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-full shadow-md transition-colors cursor-pointer"
+                    >
+                      Try Upload / Capture Again
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 5: MATCH FOUND - SHOW MATCHED ORDER DETAILS & SELECT RETURN TYPE */}
+              {uploadStep === 'MATCH_FOUND' && matchedOrder && (
+                <div className="space-y-6">
+                  {/* Matched Order Details Box */}
+                  <div className="bg-emerald-50/80 rounded-2xl p-5 border border-emerald-200/80 space-y-3 shadow-xs">
+                    <div className="flex items-center justify-between border-b border-emerald-200/60 pb-2.5">
+                      <span className="text-xs font-bold text-emerald-900 uppercase tracking-wider flex items-center gap-1.5">
+                        <Check className="w-4 h-4 text-emerald-600" /> Order Found in Supabase
+                      </span>
+                      <span className="text-[10px] bg-emerald-200 text-emerald-900 px-2.5 py-0.5 rounded-full font-extrabold">Verified Match</span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div className="bg-white/80 p-2.5 rounded-xl border border-emerald-100">
+                        <span className="text-[11px] text-slate-500 font-medium block">Order ID</span>
+                        <span className="font-mono font-extrabold text-slate-900 text-sm">{matchedOrder.order_id}</span>
+                      </div>
+
+                      <div className="bg-white/80 p-2.5 rounded-xl border border-emerald-100">
+                        <span className="text-[11px] text-slate-500 font-medium block">Customer Name</span>
+                        <span className="font-bold text-slate-900">{matchedOrder.customer_name || 'N/A'}</span>
+                      </div>
+
+                      <div className="bg-white/80 p-2.5 rounded-xl border border-emerald-100">
+                        <span className="text-[11px] text-slate-500 font-medium block">SKU ID</span>
+                        <span className="font-mono font-bold text-purple-950">{matchedOrder.sku_id || 'N/A'}</span>
+                      </div>
+
+                      <div className="bg-white/80 p-2.5 rounded-xl border border-emerald-100">
+                        <span className="text-[11px] text-slate-500 font-medium block">Quantity</span>
+                        <span className="font-bold text-slate-900">{matchedOrder.quantity || 1}</span>
+                      </div>
+
+                      <div className="col-span-2 bg-white/80 p-2.5 rounded-xl border border-emerald-100">
+                        <span className="text-[11px] text-slate-500 font-medium block">Product Name</span>
+                        <span className="font-bold text-slate-900">{matchedOrder.product_name || 'N/A'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Customer Return Delivery Charge input */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Delivery Charge for Customer Return (₹)
+                    </label>
+                    <input
+                      type="number"
+                      value={customDeliveryCharge}
+                      onChange={(e) => setCustomDeliveryCharge(e.target.value)}
+                      placeholder="10"
+                      className="w-full sm:w-48 bg-white border border-purple-200 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-purple-400 focus:outline-none"
+                    />
+                    <p className="text-[11px] text-slate-400 mt-1">* Note: Delivery charge for RTO Return is automatically ₹0.</p>
+                  </div>
+
+                  {/* SELECT RETURN TYPE BUTTONS */}
+                  <div>
+                    <p className="text-xs font-bold text-slate-900 mb-3">Select Return Type:</p>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        disabled={processingReturn}
+                        onClick={() => handleSaveReturnFromModal('CUSTOMER_RETURN')}
+                        className="flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-950 transition-all group cursor-pointer shadow-xs disabled:opacity-50"
+                      >
+                        <RotateCcw className="w-6 h-6 text-amber-700 mb-1.5 group-hover:scale-110 transition-transform" />
+                        <span className="text-xs font-extrabold">Customer Return</span>
+                        <span className="text-[10px] text-amber-800 font-medium text-center mt-0.5">Deducts ₹{customDeliveryCharge || 10} charge</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={processingReturn}
+                        onClick={() => handleSaveReturnFromModal('RTO_RETURN')}
+                        className="flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-purple-300 bg-purple-50 hover:bg-purple-100 text-purple-950 transition-all group cursor-pointer shadow-xs disabled:opacity-50"
+                      >
+                        <Truck className="w-6 h-6 text-purple-700 mb-1.5 group-hover:scale-110 transition-transform" />
+                        <span className="text-xs font-extrabold">RTO Return</span>
+                        <span className="text-[10px] text-purple-800 font-medium text-center mt-0.5">Return to origin (₹0 loss)</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
             </div>
           </div>
         )}

@@ -14,7 +14,7 @@ export async function getStockOverview(req, res, next) {
 /** GET /api/stock/dashboard-stats */
 export async function getDashboardStats(req, res, next) {
   try {
-    const range = req.query.range || '30';
+    const range = req.query.range || '7';
     const data = await stockService.getDashboardStats(range);
     res.status(200).json({ success: true, ...data });
   } catch (err) {
@@ -41,7 +41,6 @@ export async function exportStockExcel(req, res, next) {
       'Inventory Cost (₹)': p.inventory_cost != null ? Number(p.inventory_cost) : '',
       'Inventory Value (₹)': p.inventory_value != null ? Number(p.inventory_value) : '',
       'Realized Sales Profit (₹)': p.realized_sales_profit != null ? Number(p.realized_sales_profit) : 0,
-      'Sales Loss (₹)': p.sales_loss != null ? Number(p.sales_loss) : 0,
       'Return Loss (₹)': p.return_loss != null ? Number(p.return_loss) : 0,
       'Net Profit (₹)': p.net_profit != null ? Number(p.net_profit) : ''
     }));

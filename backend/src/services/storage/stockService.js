@@ -11,9 +11,9 @@ dotenv.config();
 function getSupabaseClient() {
   const supabaseUrl = process.env.SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
-  
+
   if (supabaseUrl && supabaseUrl.trim() && !supabaseUrl.includes('your-supabase') &&
-      supabaseKey && supabaseKey.trim() && !supabaseKey.includes('your-supabase')) {
+    supabaseKey && supabaseKey.trim() && !supabaseKey.includes('your-supabase')) {
     try {
       return createClient(supabaseUrl, supabaseKey);
     } catch (e) {
@@ -29,7 +29,7 @@ function getRootDir() {
     if (fs.existsSync(path.join(process.cwd(), '..', 'package.json'))) {
       return path.resolve(process.cwd(), '..');
     }
-  } catch {}
+  } catch { }
   return process.cwd();
 }
 
@@ -44,7 +44,7 @@ function getReturnsDbPath() {
 function loadProductsDb() {
   const dbPath = getProductsDbPath();
   if (!fs.existsSync(dbPath)) {
-    try { fs.writeFileSync(dbPath, JSON.stringify([], null, 2)); } catch {}
+    try { fs.writeFileSync(dbPath, JSON.stringify([], null, 2)); } catch { }
     return [];
   }
   try { return JSON.parse(fs.readFileSync(dbPath, 'utf-8')); }
@@ -53,13 +53,13 @@ function loadProductsDb() {
 
 function saveProductsDb(data) {
   const dbPath = getProductsDbPath();
-  try { fs.writeFileSync(dbPath, JSON.stringify(data, null, 2)); } catch {}
+  try { fs.writeFileSync(dbPath, JSON.stringify(data, null, 2)); } catch { }
 }
 
 function loadReturnsDb() {
   const dbPath = getReturnsDbPath();
   if (!fs.existsSync(dbPath)) {
-    try { fs.writeFileSync(dbPath, JSON.stringify([], null, 2)); } catch {}
+    try { fs.writeFileSync(dbPath, JSON.stringify([], null, 2)); } catch { }
     return [];
   }
   try { return JSON.parse(fs.readFileSync(dbPath, 'utf-8')); }
@@ -68,7 +68,7 @@ function loadReturnsDb() {
 
 function saveReturnsDb(data) {
   const dbPath = getReturnsDbPath();
-  try { fs.writeFileSync(dbPath, JSON.stringify(data, null, 2)); } catch {}
+  try { fs.writeFileSync(dbPath, JSON.stringify(data, null, 2)); } catch { }
 }
 
 // ===== HELPER FUNCTIONS =====
@@ -176,7 +176,7 @@ export async function cleanOrphanedStock() {
         rDb = rDb.filter(r => r.order_id && activeReturnedOrderIds.has(r.order_id));
         fs.writeFileSync(rDbPath, JSON.stringify(rDb, null, 2));
       }
-    } catch (e) {}
+    } catch (e) { }
 
   } catch (err) {
     console.error('[StockService] Exception in cleanOrphanedStock:', err.message);
@@ -250,6 +250,15 @@ export async function autoSyncLocalFilesToSupabase() {
     await cleanOrphanedStock();
     await ensureStockProductsSynced();
 
+    // 1. Reset return_type to NULL for all non-returned order records in Supabase
+    try {
+      await supabase
+        .from('order_records')
+        .update({ return_type: null })
+        .or('is_returned.eq.false,is_returned.is.null');
+    } catch (e) {}
+
+    // 2. Sync local stock_returns DB to Supabase stock_returns and order_records
     const returnsLocal = loadReturnsDb();
     for (const r of returnsLocal) {
       if (r.order_id) {
@@ -266,10 +275,33 @@ export async function autoSyncLocalFilesToSupabase() {
             return_type: r.return_type || 'CUSTOMER_RETURN',
             updated_at: new Date().toISOString()
           }, { onConflict: 'order_id' });
-        } catch (e) {}
+        } catch (e) { }
       }
     }
 
+    // 3. Ensure returned orders in order_records have matching entries in stock_returns table
+    try {
+      const { data: retOrders } = await supabase
+        .from('order_records')
+        .select('order_id, return_type, delivery_boy_charge')
+        .eq('is_returned', true);
+
+      if (retOrders && retOrders.length > 0) {
+        for (const ord of retOrders) {
+          if (ord.order_id) {
+            const cleanType = ord.return_type === 'RTO_RETURN' ? 'RTO_RETURN' : 'CUSTOMER_RETURN';
+            await supabase.from('stock_returns').upsert({
+              order_id: ord.order_id,
+              return_type: cleanType,
+              delivery_boy_charge: ord.delivery_boy_charge != null ? Number(ord.delivery_boy_charge) : 0,
+              updated_at: new Date().toISOString()
+            }, { onConflict: 'order_id' });
+          }
+        }
+      }
+    } catch (e) {}
+
+    // 4. Sync product prices
     const productsLocal = loadProductsDb();
     for (const p of productsLocal) {
       if (p.sku_id) {
@@ -289,7 +321,7 @@ export async function autoSyncLocalFilesToSupabase() {
             product_name: p.product_name || null,
             updated_at: new Date().toISOString()
           }, { onConflict: 'sku_id' });
-        } catch (e) {}
+        } catch (e) { }
       }
     }
   } catch (err) {
@@ -298,13 +330,13 @@ export async function autoSyncLocalFilesToSupabase() {
 }
 
 // Automatically purge orphaned records and sync on startup
-cleanOrphanedStock().then(() => ensureStockProductsSynced()).catch(() => {});
-autoSyncLocalFilesToSupabase().catch(() => {});
+cleanOrphanedStock().then(() => ensureStockProductsSynced()).catch(() => { });
+autoSyncLocalFilesToSupabase().catch(() => { });
 
 // ===== SERVICE DEFINITION =====
 
 export const stockService = {
-  
+
   /** Fetch all SKU stock product settings from Supabase or local DB */
   async getStockProductsMap() {
     const map = new Map();
@@ -345,7 +377,7 @@ export const stockService = {
             }
           });
         }
-      } catch (e) {}
+      } catch (e) { }
     }
 
     // 3. Fallback: Merge local file records
@@ -401,14 +433,14 @@ export const stockService = {
               } else if (updated.delivery_boy_charge == null && r.delivery_boy_charge != null) {
                 updated.delivery_boy_charge = r.delivery_boy_charge;
               }
-              if (!updated.return_type && r.return_type) {
+              if (!updated.return_type || (r.return_type === 'RTO_RETURN' && updated.return_type !== 'RTO_RETURN')) {
                 updated.return_type = r.return_type;
               }
               map.set(r.order_id, updated);
             }
           });
         }
-      } catch (e) {}
+      } catch (e) { }
     }
 
     // 3. Fallback: Merge local file records
@@ -421,6 +453,9 @@ export const stockService = {
           const existing = map.get(r.order_id);
           if ((existing.delivery_boy_charge == null || existing.delivery_boy_charge === 0) && r.delivery_boy_charge != null && r.delivery_boy_charge > 0) {
             existing.delivery_boy_charge = r.delivery_boy_charge;
+          }
+          if (r.return_type === 'RTO_RETURN') {
+            existing.return_type = 'RTO_RETURN';
           }
         }
       }
@@ -512,30 +547,13 @@ export const stockService = {
       const inventory_cost = purchase_price != null ? purchase_price * available_quantity : null;
       const inventory_value = selling_price != null ? selling_price * available_quantity : null;
 
-      // 1. If Selling Price > Purchase Price:
-      //    Profit per sold item = Selling Price - Purchase Price, Loss per sold item = 0
-      // 2. If Purchase Price > Selling Price:
-      //    This is a LOSS, not negative profit! Profit per sold item = 0, Loss per sold item = Purchase Price - Selling Price
-      let profit_per_unit = 0;
-      let sales_loss_per_unit = 0;
-
-      if (selling_price != null && purchase_price != null) {
-        if (selling_price > purchase_price) {
-          profit_per_unit = selling_price - purchase_price;
-        } else if (purchase_price > selling_price) {
-          sales_loss_per_unit = purchase_price - selling_price;
-        }
-      }
-
-      // Realized Sales Profit is ONLY from profitable sales (always >= 0)
+      // Realized Sales Profit = (Selling Price - Purchase Price) * Successfully Sold Qty
+      // (Can be positive if Selling Price > Purchase Price, or negative if Purchase Price > Selling Price)
       const realized_sales_profit = (selling_price != null && purchase_price != null)
-        ? profit_per_unit * successfully_sold_quantity
+        ? (selling_price - purchase_price) * successfully_sold_quantity
         : null;
 
-      // Sales Loss is ONLY from loss-making sales (always >= 0)
-      const sales_loss = (selling_price != null && purchase_price != null)
-        ? sales_loss_per_unit * successfully_sold_quantity
-        : 0;
+      const sales_loss = 0;
 
       // Calculate return delivery charges ONLY for CUSTOMER_RETURN parcels of this SKU
       let customer_return_loss = 0;
@@ -552,14 +570,11 @@ export const stockService = {
       // RTO Return Loss is strictly ₹0
       const rto_return_loss = 0;
       const return_loss = customer_return_loss;
+      const total_loss = customer_return_loss;
 
-      // Total Loss = Sales Loss (from selling below purchase price) + Customer Return Loss (delivery charges)
-      const total_loss = sales_loss + customer_return_loss;
-
-      // Net Profit = Realized Sales Profit - Sales Loss - Customer Return Loss
-      // Per user instruction: If Net Profit < 0, set to 0 (loss is already represented in Sales Loss & Return Loss fields)
-      const raw_net_profit = realized_sales_profit != null ? realized_sales_profit - sales_loss - customer_return_loss : null;
-      const net_profit = (raw_net_profit != null && raw_net_profit < 0) ? 0 : raw_net_profit;
+      // Net Profit = Realized Sales Profit - Return Loss (Negative if total loss exceeds profit)
+      const net_profit = realized_sales_profit != null ? (realized_sales_profit - customer_return_loss) : 0;
+      const raw_net_profit = net_profit;
 
       products.push({
         sku_id: sku,
@@ -577,7 +592,7 @@ export const stockService = {
         inventory_cost,
         inventory_value,
         realized_sales_profit,
-        sales_loss,
+        sales_loss: 0,
         customer_return_loss,
         rto_return_loss: 0,
         return_loss: customer_return_loss,
@@ -604,12 +619,12 @@ export const stockService = {
       total_inventory_cost: products.reduce((acc, p) => acc + (p.inventory_cost || 0), 0),
       total_inventory_value: products.reduce((acc, p) => acc + (p.inventory_value || 0), 0),
       total_realized_sales_profit: products.reduce((acc, p) => acc + (p.realized_sales_profit || 0), 0),
-      total_sales_loss: products.reduce((acc, p) => acc + (p.sales_loss || 0), 0),
+      total_sales_loss: 0,
       total_customer_return_loss: products.reduce((acc, p) => acc + (p.customer_return_loss || 0), 0),
       total_return_loss: products.reduce((acc, p) => acc + (p.customer_return_loss || 0), 0),
-      total_loss: products.reduce((acc, p) => acc + (p.total_loss || 0), 0),
-      total_net_profit: Math.max(0, products.reduce((acc, p) => acc + (p.realized_sales_profit || 0), 0) - products.reduce((acc, p) => acc + (p.total_loss || 0), 0)),
-      total_profit: Math.max(0, products.reduce((acc, p) => acc + (p.realized_sales_profit || 0), 0) - products.reduce((acc, p) => acc + (p.total_loss || 0), 0)),
+      total_loss: products.reduce((acc, p) => acc + (p.customer_return_loss || 0), 0),
+      total_net_profit: products.reduce((acc, p) => acc + (p.net_profit || 0), 0),
+      total_profit: products.reduce((acc, p) => acc + (p.net_profit || 0), 0),
       // Backward compatibility aliases
       total_product_cost: products.reduce((acc, p) => acc + (p.inventory_cost || 0), 0),
       total_selling_value: products.reduce((acc, p) => acc + (p.inventory_value || 0), 0)
@@ -655,7 +670,7 @@ export const stockService = {
         if (product_name) updateObj.product_name = product_name;
 
         await supabase.from('order_records').update(updateObj).eq('sku_id', cleanSku);
-      } catch (e) {}
+      } catch (e) { }
 
       // 3. Upsert into stock_products table in Supabase if exists
       try {
@@ -668,7 +683,7 @@ export const stockService = {
         if (!error && data) {
           return data;
         }
-      } catch (e) {}
+      } catch (e) { }
     }
 
     return saved;
@@ -752,22 +767,39 @@ export const stockService = {
   /** Update or insert delivery boy charge for a returned order */
   async updateReturnCharge(order_id, delivery_boy_charge, return_type) {
     const chargeNum = delivery_boy_charge !== '' && delivery_boy_charge != null ? parseFloat(delivery_boy_charge) : 0;
+    const supabase = getSupabaseClient();
+    let finalReturnType = return_type;
+
+    if (!finalReturnType && supabase) {
+      try {
+        const { data: srData } = await supabase.from('stock_returns').select('return_type').eq('order_id', order_id).maybeSingle();
+        if (srData?.return_type) finalReturnType = srData.return_type;
+        else {
+          const { data: ordData } = await supabase.from('order_records').select('return_type').eq('order_id', order_id).maybeSingle();
+          if (ordData?.return_type) finalReturnType = ordData.return_type;
+        }
+      } catch (e) {}
+    }
+
+    if (!finalReturnType) {
+      const localDb = loadReturnsDb();
+      const match = localDb.find(r => r.order_id === order_id);
+      finalReturnType = match?.return_type || 'CUSTOMER_RETURN';
+    }
 
     const payload = {
       order_id,
       delivery_boy_charge: chargeNum,
+      return_type: finalReturnType,
       updated_at: new Date().toISOString()
     };
-    if (return_type) payload.return_type = return_type;
 
-    const supabase = getSupabaseClient();
     let supabaseResult = null;
 
     if (supabase) {
       try {
         // Update core order_records table in Supabase directly
-        const orderUpdate = { delivery_boy_charge: chargeNum, updated_at: new Date().toISOString() };
-        if (return_type) orderUpdate.return_type = return_type;
+        const orderUpdate = { delivery_boy_charge: chargeNum, return_type: finalReturnType, updated_at: new Date().toISOString() };
 
         await supabase
           .from('order_records')
@@ -789,20 +821,17 @@ export const stockService = {
       }
     }
 
-    // Always keep local file fallback in sync
+    // Save to local file fallback
     const db = loadReturnsDb();
     const idx = db.findIndex(r => r.order_id === order_id);
-    let saved;
     if (idx >= 0) {
-      db[idx] = { ...db[idx], ...payload };
-      saved = db[idx];
+      db[idx] = { ...db[idx], delivery_boy_charge: chargeNum, return_type: finalReturnType, updated_at: payload.updated_at };
     } else {
-      saved = { id: `sr_${Date.now()}`, returned_at: new Date().toISOString(), ...payload };
-      db.push(saved);
+      db.push({ id: `sr_${Date.now()}`, ...payload, returned_at: payload.updated_at });
     }
     saveReturnsDb(db);
 
-    return supabaseResult || saved;
+    return supabaseResult || payload;
   },
 
   /** Delete a stock product SKU and all associated order records */
@@ -819,7 +848,7 @@ export const stockService = {
     if (supabase) {
       try {
         await supabase.from('stock_products').delete().ilike('sku_id', cleanSku);
-      } catch (e) {}
+      } catch (e) { }
     }
 
     // 3. Delete matching order records
@@ -847,7 +876,7 @@ export const stockService = {
     if (supabase) {
       try {
         await supabase.from('stock_returns').delete().eq('order_id', order_id);
-      } catch (e) {}
+      } catch (e) { }
     }
 
     // 3. Delete the order record from order_records
@@ -861,7 +890,7 @@ export const stockService = {
   },
 
   /** Get aggregated dashboard metrics & Profit/Loss graph data */
-  async getDashboardStats(range = '30') {
+  async getDashboardStats(range = '7') {
     const { products, summary: stockSummary } = await this.getStockOverview();
     const { returns, summary: returnsSummary } = await this.getReturnsOverview();
     const productsMap = await this.getStockProductsMap();
@@ -906,7 +935,7 @@ export const stockService = {
       return `${y}-${m}-${day}`;
     };
 
-    let daysCount = 30;
+    let daysCount = 7;
     if (range === '7') daysCount = 7;
     else if (range === '30') daysCount = 30;
     else if (range === '90') daysCount = 90;
@@ -949,22 +978,18 @@ export const stockService = {
         const sku = normalizeSku(o.sku_id, o.product_name);
         const prod = productPriceMap.get(sku);
 
-        const pPrice = prod?.purchase_price != null 
-          ? Number(prod.purchase_price) 
+        const pPrice = prod?.purchase_price != null
+          ? Number(prod.purchase_price)
           : (o.purchase_price != null ? Number(o.purchase_price) : null);
 
-        const sPrice = prod?.selling_price != null 
-          ? Number(prod.selling_price) 
+        const sPrice = prod?.selling_price != null
+          ? Number(prod.selling_price)
           : (o.selling_price != null ? Number(o.selling_price) : null);
 
         const qty = parseInt(o.quantity, 10) || 1;
 
         if (sPrice != null && pPrice != null) {
-          if (sPrice > pPrice) {
-            entry.profit += (sPrice - pPrice) * qty;
-          } else if (pPrice > sPrice) {
-            entry.loss += (pPrice - sPrice) * qty;
-          }
+          entry.profit += (sPrice - pPrice) * qty;
         }
       }
     });
