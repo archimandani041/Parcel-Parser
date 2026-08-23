@@ -89,7 +89,7 @@ export default function Navbar({ title = 'Parcel Information Extractor', healthI
 
       {/* ===== FIXED MOBILE & TABLET BOTTOM NAVIGATION BAR ===== */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-2xl border-t border-purple-200/90 shadow-[0_-8px_25px_-5px_rgba(147,112,219,0.2)] px-2 py-1.5 flex items-center justify-around">
-        {navItems.map((item) => {
+        {navItems.filter(item => item.path !== '/documents').map((item) => {
           const Icon = item.icon;
           return (
             <NavLink
