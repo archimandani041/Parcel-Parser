@@ -4,11 +4,11 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://backend-xi-ten-18.vercel.app/api/:path*"
+      "destination": "https://parcel-parser-backend.vercel.app/api/:path*"
     },
     {
       "source": "/uploads/:path*",
-      "destination": "https://backend-xi-ten-18.vercel.app/uploads/:path*"
+      "destination": "https://parcel-parser-backend.vercel.app/uploads/:path*"
     },
     {
       "source": "/(.*)",
