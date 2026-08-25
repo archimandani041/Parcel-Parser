@@ -204,6 +204,7 @@
     "uploadReturnLabel": "रिटर्न लेबल अपलोड करें",
     "searchPlaceholder": "ऑर्डर आईडी, SKU या ग्राहक खोजें...",
     "totalCustomerReturns": "कुल ग्राहक रिटर्न",
+    "totalReturnLoss": "कुल रिटर्न नुकसान",
     "customerReturnParcels": "ग्राहक रिटर्न पार्सल",
     "totalReturnedQty": "कुल रिटर्न मात्रा",
     "unitsAddedBackToStock": "स्टॉक में पुनः जोड़ी गई इकाइयां",

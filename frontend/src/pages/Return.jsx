@@ -30,7 +30,8 @@ import {
   ShoppingBag,
   Layers,
   ArrowRight,
-  RefreshCcw
+  RefreshCcw,
+  TrendingDown
 } from 'lucide-react';
 
 export default function Return() {
@@ -497,7 +498,7 @@ export default function Return() {
 
         {/* DYNAMIC SUMMARY CARDS DEPENDING ON CATEGORY */}
         {activeCategory === 'customer' ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {/* Total Customer Returns */}
             <div className="ui-card p-5 space-y-1.5">
               <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
@@ -520,6 +521,22 @@ export default function Return() {
                 {summary.total_customer_returned_quantity || customerReturns.reduce((acc, r) => acc + (r.quantity || 1), 0)}
               </p>
               <p className="text-[10px] text-slate-500 font-medium">{t('returns.unitsAddedBackToStock')}</p>
+            </div>
+
+            {/* Total Customer Return Loss */}
+            <div className="ui-card p-5 space-y-1.5 border-rose-200/80 bg-rose-50/40">
+              <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
+                <span className="text-rose-700 font-bold">{t('fields.returnLoss', { defaultValue: 'Total Return Loss' })}</span>
+                <TrendingDown className="w-4 h-4 text-rose-600" />
+              </div>
+              <p className="text-2xl font-bold text-rose-600 font-mono">
+                {formatCurrency(
+                  summary.total_customer_return_loss != null
+                    ? summary.total_customer_return_loss
+                    : customerReturns.reduce((acc, r) => acc + (Number(r.return_loss) || Number(r.delivery_boy_charge) || 0), 0)
+                )}
+              </p>
+              <p className="text-[10px] text-rose-600/80 font-medium">{t('dashboard.customerReturnLosses', { defaultValue: 'Customer return delivery charges' })}</p>
             </div>
           </div>
         ) : (

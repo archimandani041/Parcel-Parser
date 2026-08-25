@@ -204,6 +204,7 @@
     "uploadReturnLabel": "Upload Return Label",
     "searchPlaceholder": "Search Order ID, SKU or Customer...",
     "totalCustomerReturns": "Total Customer Returns",
+    "totalReturnLoss": "Total Return Loss",
     "customerReturnParcels": "Customer return parcels",
     "totalReturnedQty": "Total Returned Qty",
     "unitsAddedBackToStock": "Units added back to stock",

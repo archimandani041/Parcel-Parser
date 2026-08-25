@@ -205,6 +205,7 @@
     "uploadReturnLabel": "રિટર્ન લેબલ અપલોડ કરો",
     "searchPlaceholder": "ઓર્ડર ID, SKU અથવા ગ્રાહક શોધો...",
     "totalCustomerReturns": "કુલ ગ્રાહક રિટર્ન",
+    "totalReturnLoss": "કુલ રિટર્ન નુકસાન",
     "customerReturnParcels": "ગ્રાહક રિટર્ન પારસલ",
     "totalReturnedQty": "કુલ રિટર્ન જથ્થો",
     "unitsAddedBackToStock": "સ્ટોકમાં પાછા ઉમેરાયેલા યુનિટ્સ",
