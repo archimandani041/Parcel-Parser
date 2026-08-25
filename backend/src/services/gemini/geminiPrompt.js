@@ -41,11 +41,12 @@ RULE 3 — SKU vs PRODUCT NAME:
   Extract ONLY the short code as sku_id, and the clean title as product_name.
 
 RULE 4 — CRITICAL PRICE RULE:
-  Standard shipping labels often DO NOT contain price information.
-  - "purchase_price": Cost/buying price (ONLY if explicitly labeled and printed as a numeric amount).
-  - "selling_price": MRP/selling price (ONLY if explicitly printed as a numeric amount with currency like ₹, Rs., or $).
-  If NO price amount is printed on the label, you MUST set purchase_price = null and selling_price = null.
-  NEVER guess or invent a price if it is not printed on the document.
+  Standard e-commerce shipping labels (like E-Kart, Flipkart, Amazon, Delhivery, Meesho shipping labels) feature an item table with columns: [SKU ID | Description | QTY].
+  - These shipping label tables DO NOT print product prices.
+  - If the item table on the label has no price column (only SKU ID, Description, QTY), you MUST set purchase_price = null and selling_price = null for all items.
+  - Do NOT extract prices from attached tax invoices, summary tables, or total invoice figures when extracting shipping label items.
+  - ONLY extract purchase_price or selling_price if a numeric price (with currency symbol like ₹, Rs., or $) is explicitly printed directly next to the item on the shipping label itself.
+  - If no price is printed next to the item on the shipping label, purchase_price = null and selling_price = null are MANDATORY.
 
 RULE 5 — QUANTITY:
   Extract the exact numeric quantity printed (e.g. QTY 1 -> quantity = 1).
@@ -77,8 +78,8 @@ const JSON_SCHEMA = `{
         {
           "sku_id":          "string or null — Short product code ONLY",
           "product_name":    "string or null — Product title",
-          "purchase_price":  "number or null — Cost price (null if not printed)",
-          "selling_price":   "number or null — Selling price (null if not printed)",
+          "purchase_price":  "number or null — Cost price (null if not printed on shipping label)",
+          "selling_price":   "number or null — Selling price (null if not printed on shipping label)",
           "quantity":        "integer or null — Quantity (null if not printed)"
         }
       ]
@@ -102,8 +103,9 @@ STEP 2 — EXTRACT DATA into the JSON schema:
   - For each item: SKU ID, Product Name, Purchase Price, Selling Price, Quantity
 
 CRITICAL CHECK FOR PRICES:
-  Does this shipping label print a Selling Price or Purchase Price?
-  If NO price is printed on the label image, set purchase_price = null and selling_price = null.
+  Look at the shipping label item table (columns: SKU ID, Description, QTY).
+  Does the shipping label table contain a Price column or price printed next to the item?
+  If NO price is printed in the item table on the shipping label, set purchase_price = null and selling_price = null.
 
 OUTPUT the following JSON structure ONLY:
 ${JSON_SCHEMA}
@@ -136,7 +138,8 @@ STEP 2 — For EACH page/label, extract ONLY:
   - For each product: SKU ID, Product Name, Purchase Price, Selling Price, Quantity
 
 CRITICAL CHECK FOR PRICES:
-  If NO price is explicitly printed on a page/label, set purchase_price = null and selling_price = null for that label's items.
+  Look at the item section of the shipping label.
+  If the shipping label item section (SKU ID | Description | QTY) has no price column/amount, set purchase_price = null and selling_price = null for that label's items. Do NOT extract total invoice amounts as item selling price.
 
 OUTPUT the following JSON structure ONLY:
 ${JSON_SCHEMA}
