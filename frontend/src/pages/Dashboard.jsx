@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Layout from '../components/Layout';
 import {
   getDocuments,
@@ -31,6 +32,7 @@ import {
 } from 'lucide-react';
 
 export default function Dashboard() {
+  const { t } = useTranslation();
   const [stats, setStats] = useState({
     total_profit: 0,
     total_loss: 0,
@@ -67,25 +69,26 @@ export default function Dashboard() {
   // Single Click Download for Master Excel (Contains 3 Sheets: Orders, Stock, Return)
   const handleDownloadAllThree = async () => {
     setExportingAll(true);
-    setExportProgress('Downloading Master Excel (3-in-1)...');
+    setExportProgress(t('dashboard.downloadingMaster'));
 
     try {
       const dateStr = new Date().toISOString().split('T')[0];
       const masterRes = await exportMasterExcel();
       triggerDownload(masterRes.data, `master_report_orders_stock_returns_${dateStr}.xlsx`);
 
-      setExportProgress('Master Excel Downloaded!');
+      setExportProgress(t('dashboard.masterDownloaded'));
       setTimeout(() => {
         setExportProgress('');
       }, 4000);
 
     } catch (err) {
-      alert('Master Excel Download failed: ' + (err.response?.data?.error || err.message));
+      alert(t('dashboard.masterExcelFailed') + (err.response?.data?.error || err.message));
       setExportProgress('');
     } finally {
       setExportingAll(false);
     }
   };
+
 
   const formatCurrency = (val) => {
     if (val == null || isNaN(val)) return '₹0';
@@ -131,17 +134,17 @@ export default function Dashboard() {
   const hasGraphData = graphData.length > 0;
 
   return (
-    <Layout title="Business Intelligence Dashboard">
+    <Layout title={t('dashboard.title')}>
       <div className="space-y-8 pb-10">
 
         {/* Action Header Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/80 border border-purple-100 p-5 rounded-2xl shadow-xs">
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-              Real-Time Business Intelligence
+              {t('dashboard.title')}
             </h1>
             <p className="text-xs text-slate-500 font-medium mt-0.5">
-              Live operational metrics, returns tracking, and profit analytics
+              {t('dashboard.subtitle')}
             </p>
           </div>
 
@@ -154,7 +157,7 @@ export default function Dashboard() {
               title="Download 1. Orders, 2. Stock, and 3. Return Excel files"
             >
               <Download className={`w-3.5 h-3.5 text-white ${exportingAll ? 'animate-bounce' : ''}`} />
-              {exportingAll ? exportProgress : 'Download All 3 Excels (1-Click)'}
+              {exportingAll ? exportProgress : t('dashboard.downloadAll3Excels')}
             </button>
 
             <Link
@@ -162,7 +165,7 @@ export default function Dashboard() {
               className="pill-button-dark flex items-center gap-2 px-5 py-2.5 text-xs font-semibold shadow-xs"
             >
               <UploadCloud className="w-3.5 h-3.5 text-purple-400" />
-              Upload New Label
+              {t('dashboard.uploadNewLabel')}
             </Link>
           </div>
         </div>
@@ -173,7 +176,7 @@ export default function Dashboard() {
           {/* 1. Total Profit Card */}
           <div className="ui-card ui-card-hover p-4 sm:p-5 space-y-2 bg-gradient-to-br from-emerald-50/80 via-teal-50/30 to-white border border-emerald-200/90 shadow-xs">
             <div className="flex items-center justify-between text-slate-500">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-800">Total Profit</span>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-800">{t('dashboard.totalProfit')}</span>
               <div className="w-8 h-8 rounded-xl bg-emerald-100 border border-emerald-200 flex items-center justify-center text-emerald-700 shadow-xs">
                 <Coins className="w-4 h-4" />
               </div>
@@ -182,14 +185,14 @@ export default function Dashboard() {
               {formatCurrency(stats.total_profit)}
             </p>
             <div className="flex items-center gap-1 text-[10px] text-emerald-700 font-semibold">
-              <TrendingUp className="w-3 h-3 text-emerald-600" /> Matches Stock Net Profit
+              <TrendingUp className="w-3 h-3 text-emerald-600" /> {t('dashboard.matchesStockNetProfit')}
             </div>
           </div>
 
           {/* 2. Total Loss Card */}
           <div className="ui-card ui-card-hover p-4 sm:p-5 space-y-2 bg-gradient-to-br from-rose-50/80 via-pink-50/30 to-white border border-rose-200/90 shadow-xs">
             <div className="flex items-center justify-between text-slate-500">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-rose-800">Total Loss</span>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-rose-800">{t('dashboard.totalLoss')}</span>
               <div className="w-8 h-8 rounded-xl bg-rose-100 border border-rose-200 flex items-center justify-center text-rose-600 shadow-xs">
                 <TrendingDown className="w-4 h-4" />
               </div>
@@ -198,14 +201,14 @@ export default function Dashboard() {
               {formatCurrency(stats.total_loss || 0)}
             </p>
             <div className="flex items-center gap-1 text-[10px] text-rose-600 font-semibold">
-              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" /> Customer Return Losses
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" /> {t('dashboard.customerReturnLosses')}
             </div>
           </div>
 
-          {/* 2. Total Selling Card */}
+          {/* 3. Total Selling Card */}
           <div className="ui-card ui-card-hover p-5 space-y-2 bg-gradient-to-br from-purple-50/60 via-violet-50/20 to-white border border-purple-200/80 shadow-xs">
             <div className="flex items-center justify-between text-slate-500">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-purple-800">Total Selling</span>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-purple-800">{t('dashboard.totalSelling')}</span>
               <div className="w-8 h-8 rounded-xl bg-purple-100 border border-purple-200 flex items-center justify-center text-purple-700 shadow-xs">
                 <IndianRupee className="w-4 h-4" />
               </div>
@@ -214,14 +217,14 @@ export default function Dashboard() {
               {formatCurrency(stats.total_selling)}
             </p>
             <div className="flex items-center gap-1 text-[10px] text-purple-700 font-semibold">
-              <TrendingUp className="w-3 h-3 text-purple-600" /> Realized sold revenue
+              <TrendingUp className="w-3 h-3 text-purple-600" /> {t('dashboard.realizedSoldRevenue')}
             </div>
           </div>
 
-          {/* 3. Total Return Card */}
+          {/* 4. Total Return Card */}
           <div className="ui-card ui-card-hover p-5 space-y-2 bg-gradient-to-br from-rose-50/60 via-amber-50/20 to-white border border-rose-200/80 shadow-xs">
             <div className="flex items-center justify-between text-slate-500">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-rose-800">Total Return</span>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-rose-800">{t('dashboard.totalReturn')}</span>
               <div className="w-8 h-8 rounded-xl bg-rose-100 border border-rose-200 flex items-center justify-center text-rose-600 shadow-xs">
                 <RotateCcw className="w-4 h-4" />
               </div>
@@ -230,14 +233,14 @@ export default function Dashboard() {
               {stats.total_return || 0}
             </p>
             <div className="flex items-center gap-1 text-[10px] text-rose-600 font-semibold">
-              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" /> Customer + RTO Returns
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" /> {t('dashboard.customerPlusRtoReturns')}
             </div>
           </div>
 
-          {/* 4. Total Stock Items Card */}
+          {/* 5. Total Stock Items Card */}
           <div className="ui-card ui-card-hover p-5 space-y-2 bg-gradient-to-br from-blue-50/60 via-sky-50/20 to-white border border-blue-200/80 shadow-xs">
             <div className="flex items-center justify-between text-slate-500">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-blue-800">Total Stock Items</span>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-blue-800">{t('dashboard.totalStockItems')}</span>
               <div className="w-8 h-8 rounded-xl bg-blue-100 border border-blue-200 flex items-center justify-center text-blue-700 shadow-xs">
                 <Boxes className="w-4 h-4" />
               </div>
@@ -246,14 +249,14 @@ export default function Dashboard() {
               {stats.total_stock_items || 0}
             </p>
             <div className="flex items-center gap-1 text-[10px] text-blue-700 font-semibold">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500" /> Available inventory
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500" /> {t('dashboard.availableInventory')}
             </div>
           </div>
 
-          {/* 5. Total Labels Card */}
+          {/* 6. Total Labels Card */}
           <div className="ui-card ui-card-hover p-5 space-y-2 bg-gradient-to-br from-violet-50/60 via-indigo-50/20 to-white border border-violet-200/80 shadow-xs">
             <div className="flex items-center justify-between text-slate-500">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-violet-800">Total Labels</span>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-violet-800">{t('dashboard.totalLabels')}</span>
               <div className="w-8 h-8 rounded-xl bg-violet-100 border border-violet-200 flex items-center justify-center text-violet-700 shadow-xs">
                 <FileText className="w-4 h-4" />
               </div>
@@ -262,14 +265,14 @@ export default function Dashboard() {
               {stats.total_labels || 0}
             </p>
             <div className="flex items-center gap-1 text-[10px] text-violet-700 font-semibold">
-              <span className="w-1.5 h-1.5 rounded-full bg-violet-500" /> Extracted documents
+              <span className="w-1.5 h-1.5 rounded-full bg-violet-500" /> {t('dashboard.extractedDocuments')}
             </div>
           </div>
 
-          {/* 6. Total Orders Card */}
+          {/* 7. Total Orders Card */}
           <div className="ui-card ui-card-hover p-5 space-y-2 bg-gradient-to-br from-amber-50/60 via-orange-50/20 to-white border border-amber-200/80 shadow-xs">
             <div className="flex items-center justify-between text-slate-500">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-amber-800">Total Orders</span>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-amber-800">{t('dashboard.totalOrders')}</span>
               <div className="w-8 h-8 rounded-xl bg-amber-100 border border-amber-200 flex items-center justify-center text-amber-700 shadow-xs">
                 <Layers className="w-4 h-4" />
               </div>
@@ -278,7 +281,7 @@ export default function Dashboard() {
               {stats.total_orders || 0}
             </p>
             <div className="flex items-center gap-1 text-[10px] text-amber-700 font-semibold">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Unique Order IDs
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> {t('dashboard.uniqueOrderIds')}
             </div>
           </div>
 
@@ -292,10 +295,10 @@ export default function Dashboard() {
             <div>
               <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
                 <BarChart3 className="w-5 h-5 text-purple-600" />
-                Profit & Loss
+                {t('dashboard.profitAndLoss')}
               </h3>
               <p className="text-xs text-slate-500 mt-0.5 font-medium">
-                Real-time tracking of sales profits and return delivery losses over time
+                {t('dashboard.profitLossSubtitle')}
               </p>
             </div>
 
@@ -303,19 +306,19 @@ export default function Dashboard() {
             <div className="flex items-center gap-4 flex-wrap">
               <div className="flex items-center gap-3 text-xs font-semibold text-slate-600 bg-purple-50/50 px-3 py-1.5 rounded-full border border-purple-100">
                 <span className="flex items-center gap-1 text-emerald-700">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Profit
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> {t('dashboard.profit')}
                 </span>
                 <span className="flex items-center gap-1 text-rose-700">
-                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500" /> Loss
+                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500" /> {t('dashboard.loss')}
                 </span>
               </div>
 
               <div className="inline-flex items-center bg-purple-50/70 p-1 rounded-full border border-purple-200/80">
                 {[
-                  { label: '7 Days', value: '7' },
-                  { label: '30 Days', value: '30' },
-                  { label: '90 Days', value: '90' },
-                  { label: 'All', value: 'all' }
+                  { label: t('dashboard.days7'), value: '7' },
+                  { label: t('dashboard.days30'), value: '30' },
+                  { label: t('dashboard.days90'), value: '90' },
+                  { label: t('dashboard.allTime'), value: 'all' }
                 ].map(r => (
                   <button
                     key={r.value}
@@ -336,9 +339,9 @@ export default function Dashboard() {
           {!hasGraphData ? (
             <div className="py-20 text-center text-slate-400 text-sm border-2 border-dashed border-purple-200/60 rounded-3xl bg-purple-50/20 p-8 space-y-2">
               <BarChart3 className="w-10 h-10 text-purple-300 mx-auto" />
-              <h4 className="font-bold text-slate-700">No profit or loss data available yet.</h4>
+              <h4 className="font-bold text-slate-700">{t('dashboard.noGraphData')}</h4>
               <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                Upload parcel documents or record customer returns to generate real-time profit and loss trends.
+                {t('dashboard.noGraphDataHint')}
               </p>
             </div>
           ) : (
@@ -346,14 +349,14 @@ export default function Dashboard() {
               {/* Active Hover Data Banner */}
               <div className="mb-4 p-3 bg-slate-900 text-white rounded-xl text-xs flex items-center justify-between shadow-md max-w-md transition-all">
                 <span className="font-bold text-purple-200">
-                  {hoveredDataPoint ? hoveredDataPoint.displayDate : 'Hover over bars for daily breakdown'}
+                  {hoveredDataPoint ? hoveredDataPoint.displayDate : t('dashboard.hoverForBreakdown')}
                 </span>
                 <div className="flex items-center gap-4">
                   <span className="text-emerald-400 font-mono font-bold">
-                    Profit: {formatCurrency(hoveredDataPoint ? hoveredDataPoint.profit : graphData.reduce((a, b) => a + (b.profit || 0), 0))}
+                    {t('dashboard.profit')}: {formatCurrency(hoveredDataPoint ? hoveredDataPoint.profit : graphData.reduce((a, b) => a + (b.profit || 0), 0))}
                   </span>
                   <span className="text-rose-400 font-mono font-bold">
-                    Loss: {formatCurrency(hoveredDataPoint ? hoveredDataPoint.loss : graphData.reduce((a, b) => a + (b.loss || 0), 0))}
+                    {t('dashboard.loss')}: {formatCurrency(hoveredDataPoint ? hoveredDataPoint.loss : graphData.reduce((a, b) => a + (b.loss || 0), 0))}
                   </span>
                 </div>
               </div>
@@ -442,9 +445,9 @@ export default function Dashboard() {
             <div>
               <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
                 <PackageCheck className="w-5 h-5 text-purple-600" />
-                Recent extracted parcel <span className="font-normal text-purple-600">documents</span>
+                {t('dashboard.recentDocuments')} <span className="font-normal text-purple-600">{t('dashboard.recentDocumentsHighlight')}</span>
               </h3>
-              <p className="text-xs text-slate-500 mt-0.5">Live feed of parsed shipping labels and metadata</p>
+              <p className="text-xs text-slate-500 mt-0.5">{t('dashboard.recentDocumentsSubtitle')}</p>
             </div>
 
             <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
@@ -452,7 +455,7 @@ export default function Dashboard() {
                 <Search className="w-4 h-4 text-purple-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  placeholder="Search by filename or status..."
+                  placeholder={t('dashboard.searchByFilename')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="bg-purple-50/40 border border-purple-200/80 rounded-full pl-9 pr-4 py-2 text-xs text-slate-800 placeholder-purple-300 outline-none focus:border-purple-400 focus:bg-white focus:ring-2 focus:ring-purple-200 transition-all w-full font-medium"
@@ -471,7 +474,7 @@ export default function Dashboard() {
                 to="/documents"
                 className="flex items-center gap-1.5 text-xs font-extrabold text-purple-700 bg-purple-50 hover:bg-purple-100 px-4 py-2.5 rounded-full border border-purple-200 transition-all shadow-xs shrink-0"
               >
-                View Repository <ArrowRight className="w-3.5 h-3.5" />
+                {t('dashboard.viewRepository')} <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
           </div>
@@ -480,20 +483,20 @@ export default function Dashboard() {
           {loading ? (
             <div className="py-20 text-center text-slate-400 text-sm space-y-3">
               <RefreshCw className="w-6 h-6 animate-spin mx-auto text-purple-600" />
-              <p className="font-mono text-xs text-slate-500">Synchronizing database records...</p>
+              <p className="font-mono text-xs text-slate-500">{t('dashboard.synchronizing')}</p>
             </div>
           ) : filteredDocs.length === 0 ? (
             <div className="py-16 text-center text-slate-500 text-sm border-2 border-dashed border-purple-200/70 rounded-3xl bg-purple-50/20 p-8 space-y-3">
               <UploadCloud className="w-10 h-10 text-purple-300 mx-auto" />
-              <h4 className="font-bold text-slate-800">No parcel labels found</h4>
+              <h4 className="font-bold text-slate-800">{t('dashboard.noLabelsFound')}</h4>
               <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                Upload your first parcel label or invoice to extract shipping details automatically.
+                {t('dashboard.noLabelsFoundHint')}
               </p>
               <Link
                 to="/upload"
                 className="pill-button-dark inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold"
               >
-                Upload Document Now
+                {t('dashboard.uploadDocumentNow')}
               </Link>
             </div>
           ) : (
@@ -501,12 +504,12 @@ export default function Dashboard() {
               <table className="w-full text-left text-xs border-collapse min-w-[650px]">
                 <thead>
                   <tr className="border-b border-purple-100 bg-purple-50/40 text-slate-500 uppercase tracking-wider font-extrabold text-[11px]">
-                    <th className="py-3.5 px-4">Document Title</th>
-                    <th className="py-3.5 px-4">Status</th>
-                    <th className="py-3.5 px-4 text-center">Confidence Score</th>
-                    <th className="py-3.5 px-4 text-center">Processing Speed</th>
-                    <th className="py-3.5 px-4">Created Date</th>
-                    <th className="py-3.5 px-4 text-right">Action</th>
+                    <th className="py-3.5 px-4">{t('dashboard.documentTitle')}</th>
+                    <th className="py-3.5 px-4">{t('fields.status')}</th>
+                    <th className="py-3.5 px-4 text-center">{t('fields.confidenceScore')}</th>
+                    <th className="py-3.5 px-4 text-center">{t('fields.processingSpeed')}</th>
+                    <th className="py-3.5 px-4">{t('fields.createdDate')}</th>
+                    <th className="py-3.5 px-4 text-right">{t('common.action')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-sans">
@@ -530,7 +533,7 @@ export default function Dashboard() {
                         <td className="py-3.5 px-4">
                           <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border ${badge.bgClass}`}>
                             <span className={`w-1.5 h-1.5 rounded-full ${badge.dotClass}`} />
-                            {badge.label}
+                            {t(`status.${badge.label.toLowerCase().replace(/ /g, '')}`, badge.label)}
                           </span>
                         </td>
 
@@ -553,7 +556,7 @@ export default function Dashboard() {
                             to={`/document/${doc.id}`}
                             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 hover:text-purple-900 border border-purple-200/80 rounded-full text-xs font-bold transition-all shadow-xs"
                           >
-                            Inspect <ExternalLink className="w-3.5 h-3.5" />
+                            {t('common.inspect')} <ExternalLink className="w-3.5 h-3.5" />
                           </Link>
                         </td>
                       </tr>
@@ -569,3 +572,4 @@ export default function Dashboard() {
     </Layout>
   );
 }
+

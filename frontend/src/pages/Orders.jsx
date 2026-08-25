@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import Layout from '../components/Layout';
+import AutoTranslate from '../components/AutoTranslate';
 import { getOrderRecords, returnOrderRecord, undoReturnOrderRecord, deleteOrderRecord } from '../services/api';
 import {
   Search,
@@ -12,6 +14,7 @@ import {
 } from 'lucide-react';
 
 export default function Orders() {
+  const { t } = useTranslation();
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -57,10 +60,13 @@ export default function Orders() {
     setReturnModalOrder(null);
     try {
       await returnOrderRecord(targetId, returnType);
-      showToast(`Order #${rec.order_id || rec.id} marked as ${returnType === 'RTO_RETURN' ? 'RTO Return' : 'Customer Return'}.`);
+      showToast(t('orders.orderMarkedAsReturn', {
+        id: rec.order_id || rec.id,
+        type: returnType === 'RTO_RETURN' ? t('orders.rtoReturn') : t('orders.customerReturn')
+      }));
       await loadRecords();
     } catch (err) {
-      alert('Return failed: ' + (err.response?.data?.error || err.message));
+      alert(t('orders.returnFailed') + (err.response?.data?.error || err.message));
     } finally {
       setReturningId(null);
     }
@@ -77,17 +83,17 @@ export default function Orders() {
     setUndoingId(targetId);
     try {
       await undoReturnOrderRecord(targetId);
-      showToast("Return undone successfully.");
+      showToast(t('orders.returnUndoneSuccess'));
       await loadRecords();
     } catch (err) {
-      alert('Undo Return failed: ' + (err.response?.data?.error || err.message));
+      alert(t('orders.undoReturnFailed') + (err.response?.data?.error || err.message));
     } finally {
       setUndoingId(null);
     }
   };
 
   const handleDelete = async (id, orderId) => {
-    if (!window.confirm(`Are you sure you want to delete order "${orderId || id}"? This will permanently remove it from the database.`)) {
+    if (!window.confirm(t('orders.confirmDeleteOrder', { id: orderId || id }))) {
       return;
     }
 
@@ -96,14 +102,14 @@ export default function Orders() {
       await deleteOrderRecord(id);
       setRecords(prev => prev.filter(r => r.id !== id && r.order_id !== id));
     } catch (err) {
-      alert('Delete failed: ' + (err.response?.data?.error || err.message));
+      alert(t('orders.deleteFailed') + (err.response?.data?.error || err.message));
     } finally {
       setDeletingId(null);
     }
   };
 
   return (
-    <Layout title="Orders">
+    <Layout title={t('nav.orders')}>
       <div className="space-y-6 pb-10">
 
         {/* Header Row */}
@@ -114,9 +120,9 @@ export default function Orders() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-                Parcel order <span className="font-normal text-purple-600">records</span>
+                {t('orders.title')} <span className="font-normal text-purple-600">{t('orders.titleHighlight')}</span>
               </h1>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">Extracted parcel customer orders and SKU logistics</p>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">{t('orders.subtitle')}</p>
             </div>
           </div>
 
@@ -128,7 +134,7 @@ export default function Orders() {
                 <input
                   id="search-order-id"
                   type="text"
-                  placeholder="Search Order ID, SKU or Customer..."
+                  placeholder={t('orders.searchPlaceholder')}
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
                   className="bg-purple-50/40 border border-purple-200/80 rounded-full pl-9 pr-4 py-2 text-xs text-slate-800 placeholder-purple-300 outline-none focus:border-purple-400 focus:bg-white focus:ring-2 focus:ring-purple-200 transition-all w-full shadow-xs font-medium"
@@ -138,7 +144,7 @@ export default function Orders() {
                 type="submit"
                 className="px-4 py-2 bg-purple-100 hover:bg-purple-200 text-purple-800 text-xs font-semibold rounded-full border border-purple-200 transition-all shadow-xs shrink-0 cursor-pointer"
               >
-                Search
+                {t('common.search')}
               </button>
             </form>
 
@@ -147,7 +153,7 @@ export default function Orders() {
               onClick={loadRecords}
               disabled={loading}
               className="p-2 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-full border border-purple-200/80 transition-all shadow-xs disabled:opacity-50 shrink-0 cursor-pointer"
-              title="Refresh order records"
+              title={t('common.refresh')}
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             </button>
@@ -159,16 +165,16 @@ export default function Orders() {
           {loading ? (
             <div className="py-20 text-center space-y-3">
               <RefreshCw className="w-6 h-6 animate-spin mx-auto text-purple-600" />
-              <p className="text-xs text-slate-500 font-mono font-medium">Loading extracted orders...</p>
+              <p className="text-xs text-slate-500 font-mono font-medium">{t('orders.loadingOrders')}</p>
             </div>
           ) : records.length === 0 ? (
             <div className="py-20 text-center space-y-3 bg-purple-50/20">
               <Inbox className="w-12 h-12 text-purple-300 mx-auto" />
-              <h4 className="font-semibold text-slate-800 text-base">No orders found</h4>
+              <h4 className="font-semibold text-slate-800 text-base">{t('orders.noOrdersFound')}</h4>
               <p className="text-xs text-slate-500 max-w-sm mx-auto font-medium">
                 {searchQuery
-                  ? `No orders match "${searchQuery}"`
-                  : 'Upload a parcel label to create your first order record.'}
+                  ? t('orders.noOrdersMatch', { query: searchQuery })
+                  : t('orders.noOrdersHint')}
               </p>
             </div>
           ) : (
@@ -176,13 +182,13 @@ export default function Orders() {
               <table className="w-full text-left border-collapse text-xs min-w-[750px]" id="orders-table">
                 <thead>
                   <tr className="bg-purple-50/50 border-b border-purple-100 text-slate-500 uppercase tracking-wider font-semibold text-[11px]">
-                    <th className="py-4 px-4 border-r border-purple-50">Order ID</th>
-                    <th className="py-4 px-4 border-r border-purple-50">Customer Name</th>
-                    <th className="py-4 px-4 border-r border-purple-50">SKU ID</th>
-                    <th className="py-4 px-4 border-r border-purple-50">Product Name</th>
-                    <th className="py-4 px-4 border-r border-purple-50 text-center">Quantity</th>
-                    <th className="py-4 px-4 border-r border-purple-50 text-center">Return Status</th>
-                    <th className="py-4 px-4 text-center">Action</th>
+                    <th className="py-4 px-4 border-r border-purple-50">{t('fields.orderId')}</th>
+                    <th className="py-4 px-4 border-r border-purple-50">{t('fields.customerName')}</th>
+                    <th className="py-4 px-4 border-r border-purple-50">{t('fields.skuId')}</th>
+                    <th className="py-4 px-4 border-r border-purple-50">{t('fields.productName')}</th>
+                    <th className="py-4 px-4 border-r border-purple-50 text-center">{t('fields.quantity')}</th>
+                    <th className="py-4 px-4 border-r border-purple-50 text-center">{t('orders.returnStatus')}</th>
+                    <th className="py-4 px-4 text-center">{t('common.action')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -201,7 +207,7 @@ export default function Orders() {
                       {/* Customer Name */}
                       <td className="py-3.5 px-4 border-r border-slate-100">
                         <span className="text-xs text-slate-800 font-semibold">
-                          {rec.customer_name || '-'}
+                          {rec.customer_name ? <AutoTranslate text={rec.customer_name} /> : '-'}
                         </span>
                       </td>
 
@@ -215,7 +221,7 @@ export default function Orders() {
                       {/* Product Name */}
                       <td className="py-3.5 px-4 border-r border-slate-100">
                         <span className="text-xs text-slate-700 font-medium">
-                          {rec.product_name || '-'}
+                          {rec.product_name ? <AutoTranslate text={rec.product_name} /> : '-'}
                         </span>
                       </td>
 
@@ -232,11 +238,11 @@ export default function Orders() {
                           <button
                             onClick={() => handleOpenUndoModal(rec)}
                             disabled={undoingId === rec.id}
-                            title="Click to undo return and restore stock"
+                            title={t('orders.clickToUndoReturn')}
                             className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-rose-100/90 text-rose-800 border border-rose-300 hover:bg-rose-200 hover:border-rose-400 shadow-xs transition-all cursor-pointer disabled:opacity-50"
                           >
                             <RotateCcw className={`w-3 h-3 text-rose-700 ${undoingId === rec.id ? 'animate-spin' : ''}`} />
-                            {undoingId === rec.id ? 'Undoing...' : 'Returned'}
+                            {undoingId === rec.id ? t('orders.undoing') : t('orders.returned')}
                           </button>
                         ) : (
                           <button
@@ -245,7 +251,7 @@ export default function Orders() {
                             className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-amber-100/90 text-amber-800 border border-amber-200 hover:bg-amber-200 transition-all cursor-pointer disabled:opacity-50"
                           >
                             <RotateCcw className={`w-3 h-3 ${returningId === rec.id ? 'animate-spin' : ''}`} />
-                            {returningId === rec.id ? 'Returning...' : 'Return'}
+                            {returningId === rec.id ? t('orders.returning') : t('common.return')}
                           </button>
                         )}
                       </td>
@@ -255,7 +261,7 @@ export default function Orders() {
                         <button
                           onClick={() => handleDelete(rec.id, rec.order_id)}
                           disabled={deletingId === rec.id}
-                          title="Delete record from database"
+                          title={t('orders.deleteRecord')}
                           className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-full transition-all border border-transparent hover:border-rose-200 disabled:opacity-50"
                         >
                           <Trash2 className={`w-4 h-4 ${deletingId === rec.id ? 'animate-spin' : ''}`} />
@@ -272,13 +278,13 @@ export default function Orders() {
           {!loading && records.length > 0 && (
             <div className="px-5 py-3.5 border-t border-purple-100 bg-purple-50/40 flex items-center justify-between">
               <span className="text-xs text-slate-500 font-semibold">
-                Showing {records.length} record{records.length !== 1 ? 's' : ''}
+                {t('orders.showingCount', { count: records.length })}
               </span>
               <button
                 onClick={loadRecords}
                 className="text-xs text-purple-700 hover:text-purple-900 font-bold flex items-center gap-1.5 transition-colors"
               >
-                <RefreshCw className="w-3.5 h-3.5" /> Refresh List
+                <RefreshCw className="w-3.5 h-3.5" /> {t('common.refresh')}
               </button>
             </div>
           )}
@@ -293,20 +299,20 @@ export default function Orders() {
                   <RotateCcw className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900">Select Return Type</h3>
+                  <h3 className="text-base font-bold text-slate-900">{t('orders.selectReturnType')}</h3>
                   <p className="text-xs text-slate-500 font-medium mt-1">
-                    Choose category for returned Order <span className="font-mono font-bold text-slate-800">#{returnModalOrder.order_id}</span>
+                    {t('orders.chooseCategoryForOrder')} <span className="font-mono font-bold text-slate-800">#{returnModalOrder.order_id}</span>
                   </p>
                 </div>
               </div>
 
               <div className="bg-purple-50/60 rounded-2xl p-3.5 border border-purple-100 space-y-1.5 text-xs text-slate-600 font-medium">
                 <div className="flex justify-between">
-                  <span>SKU ID:</span>
+                  <span>{t('fields.skuId')}:</span>
                   <span className="font-mono font-bold text-purple-950">{returnModalOrder.sku_id}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Customer:</span>
+                  <span>{t('fields.customer')}:</span>
                   <span className="font-bold text-slate-800">{returnModalOrder.customer_name || '-'}</span>
                 </div>
               </div>
@@ -317,8 +323,8 @@ export default function Orders() {
                   className="flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-950 transition-all group cursor-pointer"
                 >
                   <RotateCcw className="w-6 h-6 text-amber-700 mb-1.5 group-hover:scale-110 transition-transform" />
-                  <span className="text-xs font-bold">Customer Return</span>
-                  <span className="text-[10px] text-amber-800/80 font-medium text-center mt-0.5">Delivery charge applies</span>
+                  <span className="text-xs font-bold">{t('orders.customerReturn')}</span>
+                  <span className="text-[10px] text-amber-800/80 font-medium text-center mt-0.5">{t('orders.deliveryChargeApplies')}</span>
                 </button>
 
                 <button
@@ -326,8 +332,8 @@ export default function Orders() {
                   className="flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-950 transition-all group cursor-pointer"
                 >
                   <Package className="w-6 h-6 text-purple-700 mb-1.5 group-hover:scale-110 transition-transform" />
-                  <span className="text-xs font-bold">RTO Return</span>
-                  <span className="text-[10px] text-purple-800/80 font-medium text-center mt-0.5">Return to origin (₹0 loss)</span>
+                  <span className="text-xs font-bold">{t('orders.rtoReturn')}</span>
+                  <span className="text-[10px] text-purple-800/80 font-medium text-center mt-0.5">{t('orders.returnToOriginZeroLoss')}</span>
                 </button>
               </div>
 
@@ -336,7 +342,7 @@ export default function Orders() {
                   onClick={() => setReturnModalOrder(null)}
                   className="px-4 py-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
               </div>
             </div>
@@ -352,13 +358,13 @@ export default function Orders() {
                   <AlertTriangle className="w-5 h-5" />
                 </div>
                 <div className="space-y-1">
-                  <h3 className="text-lg font-bold text-slate-900">Undo Return?</h3>
+                  <h3 className="text-lg font-bold text-slate-900">{t('orders.undoReturnTitle')}</h3>
                   <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                    This parcel is currently marked as returned. Do you want to undo the return and restore it to normal stock?
+                    {t('orders.undoReturnConfirmMessage')}
                   </p>
                   {confirmUndoOrder.order_id && (
                     <div className="pt-1 text-[11px] font-mono font-semibold text-purple-700">
-                      Order ID: {confirmUndoOrder.order_id}
+                      {t('fields.orderId')}: {confirmUndoOrder.order_id}
                     </div>
                   )}
                 </div>
@@ -369,14 +375,14 @@ export default function Orders() {
                   onClick={() => setConfirmUndoOrder(null)}
                   className="px-4 py-2 rounded-full text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all cursor-pointer"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
                 <button
                   onClick={handleConfirmUndoReturn}
                   className="px-5 py-2 rounded-full text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 shadow-md shadow-rose-500/20 transition-all cursor-pointer flex items-center gap-1.5"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
-                  Undo Return
+                  {t('orders.undoReturn')}
                 </button>
               </div>
             </div>
@@ -396,5 +402,6 @@ export default function Orders() {
     </Layout>
   );
 }
+
 
 

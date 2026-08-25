@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Layout from '../components/Layout';
 import { uploadParcelLabels } from '../services/api';
 import { formatBytes } from '../utils/formatters';
@@ -23,6 +24,7 @@ import {
 } from 'lucide-react';
 
 export default function Upload() {
+  const { t } = useTranslation();
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [processingState, setProcessingState] = useState('IDLE'); // IDLE, UPLOADING, ANALYZING, EXTRACTING, VALIDATING, COMPLETED, FAILED
@@ -61,7 +63,7 @@ export default function Upload() {
       }, 100);
     } catch (err) {
       console.error('Camera Access Error:', err);
-      setCameraError('Camera access denied or unavailable. Please check browser permissions.');
+      setCameraError(t('upload.cameraDeniedError'));
     }
   };
 
@@ -107,7 +109,7 @@ export default function Upload() {
     });
 
     if (validFiles.length < files.length) {
-      setErrorMessage('Some files were skipped. Only JPG, PNG, WEBP, BMP, TIFF, and PDF formats are supported.');
+      setErrorMessage(t('upload.fileSkippedError'));
     } else {
       setErrorMessage(null);
     }
@@ -173,16 +175,16 @@ export default function Upload() {
     } catch (err) {
       console.error('Upload Error:', err);
       setProcessingState('FAILED');
-      setErrorMessage(err.response?.data?.error || err.message || 'Failed to process document extraction.');
+      setErrorMessage(err.response?.data?.error || err.message || t('upload.failedProcessError'));
     }
   };
 
   const steps = [
-    { id: 'UPLOADING', label: '1. File Ingestion' },
-    { id: 'ANALYZING', label: '2. Vision OCR Analysis' },
-    { id: 'EXTRACTING', label: '3. Gemini Parsing' },
-    { id: 'VALIDATING', label: '4. Data Validation' },
-    { id: 'COMPLETED', label: '5. Finished' }
+    { id: 'UPLOADING', label: t('upload.step1') },
+    { id: 'ANALYZING', label: t('upload.step2') },
+    { id: 'EXTRACTING', label: t('upload.step3') },
+    { id: 'VALIDATING', label: t('upload.step4') },
+    { id: 'COMPLETED', label: t('upload.step5') }
   ];
 
   const getStepStatusClass = (stepId, currentStep) => {
@@ -201,19 +203,19 @@ export default function Upload() {
   };
 
   return (
-    <Layout title="Upload Shipping Label">
+    <Layout title={t('nav.upload')}>
       <div className="w-full space-y-8 pb-12">
         
         {/* Header Intro */}
         <div className="text-center space-y-3">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 bg-purple-100 border border-purple-200 rounded-full text-xs font-bold text-purple-800 shadow-xs">
-            <Sparkles className="w-3.5 h-3.5 text-purple-600 fill-purple-600" /> Automated Multimodal AI Parser
+            <Sparkles className="w-3.5 h-3.5 text-purple-600 fill-purple-600" /> {t('upload.badge')}
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">
-            Upload parcel label <span className="font-normal text-purple-600">document</span>
+            {t('upload.title')}
           </h1>
           <p className="text-slate-500 text-xs sm:text-sm max-w-xl mx-auto leading-relaxed font-medium">
-            Drop shipping waybills, courier bills, or invoices in image or multi-page PDF format. Our Gemini vision engine parses courier data without fixed templates.
+            {t('upload.subtitle')}
           </p>
         </div>
 
@@ -254,15 +256,15 @@ export default function Upload() {
             </div>
 
             <h3 className="text-base font-bold text-slate-900 mb-1">
-              Browse Files or Drag & Drop
+              {t('upload.browseOrDrag')}
             </h3>
             <p className="text-xs text-slate-500 mb-4 max-w-xs font-medium">
-              Upload shipping labels, invoices or PDFs from your device
+              {t('upload.browseSubtitle')}
             </p>
 
             <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-purple-50 border border-purple-200/80 rounded-full text-[11px] text-purple-700 font-mono font-semibold">
               <FileCheck2 className="w-3.5 h-3.5 text-purple-600" />
-              JPG • PNG • WEBP • PDF
+              {t('upload.supportedFormats')}
             </div>
           </div>
 
@@ -284,10 +286,10 @@ export default function Upload() {
             </div>
 
             <h3 className="text-base font-bold text-slate-900 mb-1">
-              Direct Camera Upload
+              {t('upload.directCamera')}
             </h3>
             <p className="text-xs text-slate-500 mb-4 max-w-xs font-medium">
-              Capture parcel label directly using your webcam or phone camera
+              {t('upload.directCameraSubtitle')}
             </p>
 
             <div className="flex items-center gap-2">
@@ -297,17 +299,17 @@ export default function Upload() {
                 className="flex items-center gap-2 px-5 py-2.5 bg-purple-900 hover:bg-purple-950 text-white text-xs font-bold rounded-full shadow-md shadow-purple-900/20 transition-all hover:scale-105 cursor-pointer"
               >
                 <Camera className="w-4 h-4 text-amber-400" />
-                Open Live Camera
+                {t('upload.openLiveCamera')}
               </button>
 
               <button
                 type="button"
                 onClick={() => mobileCameraInputRef.current?.click()}
                 className="flex items-center gap-1.5 px-4 py-2.5 bg-amber-100 hover:bg-amber-200 text-amber-950 text-xs font-bold rounded-full border border-amber-300 transition-all cursor-pointer"
-                title="Direct Phone Camera Shutter"
+                title={t('upload.snapPhoto')}
               >
                 <Zap className="w-3.5 h-3.5 text-amber-700" />
-                Snap Photo
+                {t('upload.snapPhoto')}
               </button>
             </div>
           </div>
@@ -325,8 +327,8 @@ export default function Upload() {
                     <Camera className="w-4 h-4" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-slate-100">Live Parcel Label Scanner</h3>
-                    <p className="text-[10px] text-slate-400">Align parcel label inside the viewfinder frame</p>
+                    <h3 className="text-sm font-bold text-slate-100">{t('upload.liveScannerTitle')}</h3>
+                    <p className="text-[10px] text-slate-400">{t('upload.liveScannerSubtitle')}</p>
                   </div>
                 </div>
 
@@ -357,7 +359,7 @@ export default function Upload() {
                     onClick={() => startCamera()}
                     className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-full text-xs font-bold cursor-pointer"
                   >
-                    Retry Camera
+                    {t('upload.retryCamera')}
                   </button>
                 </div>
               ) : (
@@ -377,7 +379,7 @@ export default function Upload() {
                     <div className="absolute bottom-2 left-2 w-4 h-4 border-b-2 border-l-2 border-purple-400" />
                     <div className="absolute bottom-2 right-2 w-4 h-4 border-b-2 border-r-2 border-purple-400" />
                     <span className="text-[10px] font-mono text-purple-200/80 bg-slate-900/60 px-2 py-0.5 rounded-full border border-purple-400/30">
-                      Align Parcel Label
+                      {t('upload.alignParcelLabel')}
                     </span>
                   </div>
                 </div>
@@ -388,7 +390,7 @@ export default function Upload() {
                   onClick={stopCamera}
                   className="px-5 py-2 rounded-full text-xs font-semibold text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition-all cursor-pointer"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
 
                 {!cameraError && (
@@ -397,7 +399,7 @@ export default function Upload() {
                     className="flex items-center gap-2 px-7 py-3 bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-bold text-xs rounded-full shadow-lg shadow-purple-500/25 transition-all hover:scale-105 cursor-pointer"
                   >
                     <Camera className="w-4 h-4" />
-                    Capture Photo & Extract
+                    {t('upload.capturePhotoAndExtract')}
                   </button>
                 )}
               </div>
@@ -413,9 +415,9 @@ export default function Upload() {
             <div className="flex items-center justify-between border-b border-purple-100 pb-4">
               <div>
                 <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-purple-600" /> Selected Documents ({selectedFiles.length})
+                  <FileText className="w-4 h-4 text-purple-600" /> {t('upload.selectedDocuments')} ({selectedFiles.length})
                 </h4>
-                <p className="text-xs text-slate-500 font-medium">Ready for AI multimodal extraction</p>
+                <p className="text-xs text-slate-500 font-medium">{t('upload.readyForAi')}</p>
               </div>
 
               {processingState === 'IDLE' && (
@@ -423,7 +425,7 @@ export default function Upload() {
                   onClick={() => setSelectedFiles([])}
                   className="text-xs font-bold text-slate-500 hover:text-rose-600 flex items-center gap-1 transition-colors px-3 py-1.5 rounded-full hover:bg-rose-50 border border-transparent hover:border-rose-200"
                 >
-                  <Trash2 className="w-3.5 h-3.5" /> Clear All
+                  <Trash2 className="w-3.5 h-3.5" /> {t('documents.deleteAll')}
                 </button>
               )}
             </div>
@@ -482,7 +484,7 @@ export default function Upload() {
                     ) : (
                       <Loader2 className="w-4 h-4 animate-spin text-purple-600" />
                     )}
-                    Pipeline State: <span className="text-slate-900 uppercase font-mono">{processingState}</span>
+                    {t('upload.pipelineState')}: <span className="text-slate-900 uppercase font-mono">{processingState}</span>
                   </span>
                   <span className="text-purple-700 font-mono font-bold">{uploadProgress}%</span>
                 </div>
@@ -520,14 +522,14 @@ export default function Upload() {
                     }}
                     className="px-5 py-2.5 bg-purple-50 hover:bg-purple-100 text-purple-800 text-xs font-bold rounded-full transition-colors border border-purple-200"
                   >
-                    Upload More Labels
+                    {t('upload.uploadMore')}
                   </button>
                   {uploadedResults.length > 0 && (
                     <button
                       onClick={() => navigate(`/document/${uploadedResults[0].id}`)}
                       className="flex items-center gap-2 px-6 py-2.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-950 text-xs font-bold rounded-full transition-all border border-emerald-300 shadow-xs cursor-pointer"
                     >
-                      Inspect Extracted Label <ArrowRight className="w-4 h-4 text-emerald-700" />
+                      {t('upload.inspectExtractedLabel')} <ArrowRight className="w-4 h-4 text-emerald-700" />
                     </button>
                   )}
                 </div>
@@ -539,7 +541,7 @@ export default function Upload() {
                   className="pill-button-pastel flex items-center gap-2.5 px-8 py-3.5 font-bold text-xs shadow-xl hover:scale-105"
                 >
                   <Cpu className="w-4 h-4 text-purple-100" />
-                  Run AI Extraction
+                  {t('upload.runAiExtraction')}
                 </button>
               )}
             </div>
@@ -551,4 +553,5 @@ export default function Upload() {
     </Layout>
   );
 }
+
 

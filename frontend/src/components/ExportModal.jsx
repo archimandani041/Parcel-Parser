@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Download, FileJson, FileSpreadsheet, FileText, CheckCircle2, Loader2 } from 'lucide-react';
 import { exportDocumentsData } from '../services/api';
 
 export default function ExportModal({ isOpen, onClose, selectedDocumentIds = [] }) {
+  const { t } = useTranslation();
   const [format, setFormat] = useState('json');
   const [includeRaw, setIncludeRaw] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -61,12 +63,12 @@ export default function ExportModal({ isOpen, onClose, selectedDocumentIds = [] 
         <div className="flex items-center justify-between border-b border-purple-100 pb-4">
           <div>
             <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-              <Download className="w-4 h-4 text-purple-600" /> Export Shipping Label Data
+              <Download className="w-4 h-4 text-purple-600" /> {t('export.title', { defaultValue: 'Export Shipping Label Data' })}
             </h3>
             <p className="text-xs text-slate-500 mt-0.5 font-medium">
               {selectedDocumentIds.length > 0
-                ? `Exporting ${selectedDocumentIds.length} selected document(s)`
-                : 'Exporting all documents in catalog'}
+                ? t('export.selectedCount', { count: selectedDocumentIds.length, defaultValue: `Exporting ${selectedDocumentIds.length} selected document(s)` })
+                : t('export.allDocs', { defaultValue: 'Exporting all documents in catalog' })}
             </p>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-900 p-1.5 rounded-full hover:bg-purple-50 transition-colors">
@@ -76,7 +78,7 @@ export default function ExportModal({ isOpen, onClose, selectedDocumentIds = [] 
 
         {/* Format Selection List */}
         <div className="space-y-2.5">
-          <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Select Target Format</label>
+          <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">{t('export.selectFormat', { defaultValue: 'Select Target Format' })}</label>
           <div className="space-y-2">
             {formats.map((f) => {
               const Icon = f.icon;
@@ -115,10 +117,10 @@ export default function ExportModal({ isOpen, onClose, selectedDocumentIds = [] 
               onChange={(e) => setIncludeRaw(e.target.checked)}
               className="rounded border-purple-300 text-purple-600 focus:ring-0 bg-white cursor-pointer"
             />
-            Include Raw Unstructured Gemini Responses
+            {t('export.includeRaw', { defaultValue: 'Include Raw Unstructured Gemini Responses' })}
           </label>
           <p className="text-[10px] text-slate-500 font-mono pl-6">
-            Appends original raw AI payloads to output document
+            {t('export.includeRawDesc', { defaultValue: 'Appends original raw AI payloads to output document' })}
           </p>
         </div>
 
@@ -129,7 +131,7 @@ export default function ExportModal({ isOpen, onClose, selectedDocumentIds = [] 
             onClick={onClose}
             className="px-4 py-2.5 bg-purple-50 hover:bg-purple-100 text-purple-800 text-xs font-bold rounded-full transition-colors border border-purple-200/80"
           >
-            Cancel
+            {t('common.cancel')}
           </button>
           
           <button
@@ -140,15 +142,15 @@ export default function ExportModal({ isOpen, onClose, selectedDocumentIds = [] 
           >
             {loading ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" /> Preparing File...
+                <Loader2 className="w-4 h-4 animate-spin" /> {t('export.preparing', { defaultValue: 'Preparing File...' })}
               </>
             ) : downloadSuccess ? (
               <>
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Exported!
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" /> {t('export.exported', { defaultValue: 'Exported!' })}
               </>
             ) : (
               <>
-                <Download className="w-4 h-4 text-purple-300" /> Export {format.toUpperCase()} Data
+                <Download className="w-4 h-4 text-purple-300" /> {t('common.export')} {format.toUpperCase()}
               </>
             )}
           </button>
@@ -158,3 +160,4 @@ export default function ExportModal({ isOpen, onClose, selectedDocumentIds = [] 
     </div>
   );
 }
+

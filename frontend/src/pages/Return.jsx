@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import Layout from '../components/Layout';
+import AutoTranslate from '../components/AutoTranslate';
 import {
   getReturnsOverview,
   updateReturnDeliveryCharge,
@@ -32,6 +34,7 @@ import {
 } from 'lucide-react';
 
 export default function Return() {
+  const { t } = useTranslation();
   const [activeCategory, setActiveCategory] = useState('customer'); // 'customer' | 'rto'
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -85,7 +88,7 @@ export default function Return() {
       }, 100);
     } catch (err) {
       console.error('Camera Error:', err);
-      setReturnModalError('Unable to access camera. Please check browser permissions.');
+      setReturnModalError(t('returns.cameraAccessError'));
     }
   };
 
@@ -144,7 +147,7 @@ export default function Return() {
       }
 
       if (!extractedId || !extractedId.trim()) {
-        setReturnModalError('Order ID not found.');
+        setReturnModalError(t('returns.orderIdNotFound'));
         setUploadStep('ERROR');
         return;
       }
@@ -163,14 +166,14 @@ export default function Return() {
 
       // Validation 1: Order ID not found in Supabase
       if (!match) {
-        setReturnModalError('Order ID not found.');
+        setReturnModalError(t('returns.orderIdNotFound'));
         setUploadStep('ERROR');
         return;
       }
 
       // Validation 2: Order already returned check (Duplicate protection)
       if (match.is_returned) {
-        setReturnModalError('This order has already been returned.');
+        setReturnModalError(t('returns.orderAlreadyReturned'));
         setUploadStep('ERROR');
         return;
       }
@@ -181,7 +184,7 @@ export default function Return() {
 
     } catch (err) {
       console.error('Process label error:', err);
-      setReturnModalError('Order ID not found.');
+      setReturnModalError(t('returns.orderIdNotFound'));
       setUploadStep('ERROR');
     }
   };
@@ -201,13 +204,16 @@ export default function Return() {
       const chargeVal = returnType === 'RTO_RETURN' ? 0 : (parseFloat(customDeliveryCharge) || 10);
       await updateReturnDeliveryCharge(matchedOrder.order_id || targetId, chargeVal, returnType);
 
-      showToast(`Order #${matchedOrder.order_id} added to ${returnType === 'RTO_RETURN' ? 'RTO Return' : 'Customer Return'}!`);
+      showToast(t('returns.orderAddedToReturn', {
+        id: matchedOrder.order_id,
+        type: returnType === 'RTO_RETURN' ? t('orders.rtoReturn') : t('orders.customerReturn')
+      }));
       closeModal();
       await loadReturnData();
 
     } catch (err) {
       console.error('Save Return Error:', err);
-      alert('Failed to save return: ' + (err.response?.data?.error || err.message));
+      alert(t('returns.failedSaveReturn') + (err.response?.data?.error || err.message));
     } finally {
       setProcessingReturn(false);
     }
@@ -314,10 +320,10 @@ export default function Return() {
         ...prev,
         [orderId]: { ...prev[orderId], saving: false, saved: true }
       }));
-      showToast(`Updated delivery charge for order #${orderId}`);
+      showToast(t('returns.updatedDeliveryCharge', { id: orderId }));
       await loadReturnData();
     } catch (err) {
-      alert('Failed to update delivery charge: ' + (err.response?.data?.error || err.message));
+      alert(t('returns.failedUpdateDeliveryCharge') + (err.response?.data?.error || err.message));
       setEditChargeState(prev => ({
         ...prev,
         [orderId]: { ...prev[orderId], saving: false }
@@ -332,10 +338,10 @@ export default function Return() {
     setUndoingId(targetId);
     try {
       await undoReturnOrderRecord(targetId);
-      showToast(`Return undone for order #${confirmUndoOrder.order_id}. Restored to stock.`);
+      showToast(t('returns.returnUndoneForOrder', { id: confirmUndoOrder.order_id }));
       await loadReturnData();
     } catch (err) {
-      alert('Undo Return failed: ' + (err.response?.data?.error || err.message));
+      alert(t('orders.undoReturnFailed') + (err.response?.data?.error || err.message));
     } finally {
       setUndoingId(null);
     }
@@ -384,7 +390,7 @@ export default function Return() {
   });
 
   return (
-    <Layout>
+    <Layout title={t('nav.returns')}>
       <div className="space-y-6 w-full pb-12">
 
         {/* Toast Notification */}
@@ -403,7 +409,7 @@ export default function Return() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-                Return <span className="font-normal text-amber-700">management</span>
+                {t('returns.title')} <span className="font-normal text-amber-700">{t('returns.titleHighlight')}</span>
               </h1>
             </div>
           </div>
@@ -420,7 +426,7 @@ export default function Return() {
                   }`}
               >
                 <RotateCcw className="w-3.5 h-3.5 text-amber-800" />
-                Customer Return
+                {t('orders.customerReturn')}
               </button>
 
               <button
@@ -432,7 +438,7 @@ export default function Return() {
                   }`}
               >
                 <Truck className="w-3.5 h-3.5 text-purple-700" />
-                RTO Return
+                {t('orders.rtoReturn')}
               </button>
             </div>
 
@@ -445,7 +451,7 @@ export default function Return() {
               className="flex items-center gap-2 px-4.5 py-2.5 bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white text-xs font-bold rounded-full shadow-md shadow-purple-500/25 hover:shadow-lg hover:shadow-purple-500/35 transition-all hover:scale-105 cursor-pointer shrink-0"
             >
               <UploadCloud className="w-4 h-4 text-white" />
-              <span>Upload Return Label</span>
+              <span>{t('returns.uploadReturnLabel')}</span>
             </button>
 
             {/* Search Input */}
@@ -454,7 +460,7 @@ export default function Return() {
               <input
                 id="search-return-input"
                 type="text"
-                placeholder="Search Order ID, SKU or Customer..."
+                placeholder={t('orders.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full bg-purple-50/40 border border-purple-200/80 rounded-full pl-9 pr-4 py-2.5 text-xs text-slate-800 placeholder-purple-300 outline-none focus:border-purple-400 focus:bg-white focus:ring-2 focus:ring-purple-200 transition-all font-medium shadow-xs"
@@ -466,7 +472,7 @@ export default function Return() {
               onClick={loadReturnData}
               disabled={loading}
               className="p-2.5 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-full border border-purple-200/80 transition-all shadow-xs disabled:opacity-50 cursor-pointer shrink-0"
-              title="Refresh return data"
+              title={t('common.refresh')}
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             </button>
@@ -479,25 +485,25 @@ export default function Return() {
             {/* Total Customer Returns */}
             <div className="ui-card p-5 space-y-1.5">
               <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
-                <span>Total Customer Returns</span>
+                <span>{t('returns.customerReturns')}</span>
                 <RotateCcw className="w-4 h-4 text-amber-600" />
               </div>
               <p className="text-2xl font-bold text-amber-700 font-mono">
                 {summary.total_customer_returns || customerReturns.length || 0}
               </p>
-              <p className="text-[10px] text-slate-500 font-medium">Customer return parcels</p>
+              <p className="text-[10px] text-slate-500 font-medium">{t('returns.customerReturnParcels')}</p>
             </div>
 
             {/* Total Returned Quantity */}
             <div className="ui-card p-5 space-y-1.5">
               <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
-                <span>Total Returned Qty</span>
+                <span>{t('stock.custReturnedQty')}</span>
                 <Package className="w-4 h-4 text-amber-600" />
               </div>
               <p className="text-2xl font-bold text-slate-900 font-mono">
                 {summary.total_customer_returned_quantity || customerReturns.reduce((acc, r) => acc + (r.quantity || 1), 0)}
               </p>
-              <p className="text-[10px] text-slate-500 font-medium">Units added back to stock</p>
+              <p className="text-[10px] text-slate-500 font-medium">{t('returns.unitsAddedBackToStock')}</p>
             </div>
           </div>
         ) : (
@@ -505,25 +511,25 @@ export default function Return() {
             {/* Total RTO Returns */}
             <div className="ui-card p-5 space-y-1.5">
               <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
-                <span>Total RTO Returns</span>
+                <span>{t('returns.rtoReturns')}</span>
                 <Truck className="w-4 h-4 text-purple-600" />
               </div>
               <p className="text-2xl font-bold text-purple-700 font-mono">
                 {summary.total_rto_returns || rtoReturns.length || 0}
               </p>
-              <p className="text-[10px] text-slate-500 font-medium">Return To Origin parcels</p>
+              <p className="text-[10px] text-slate-500 font-medium">{t('returns.rtoReturnParcels')}</p>
             </div>
 
             {/* Total RTO Quantity */}
             <div className="ui-card p-5 space-y-1.5">
               <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
-                <span>Total RTO Quantity</span>
+                <span>{t('stock.rtoReturnedQty')}</span>
                 <Package className="w-4 h-4 text-purple-600" />
               </div>
               <p className="text-2xl font-bold text-slate-900 font-mono">
                 {summary.total_rto_returned_quantity || rtoReturns.reduce((acc, r) => acc + (r.quantity || 1), 0)}
               </p>
-              <p className="text-[10px] text-slate-500 font-medium">Restored to available stock</p>
+              <p className="text-[10px] text-slate-500 font-medium">{t('returns.restoredToAvailableStock')}</p>
             </div>
           </div>
         )}
@@ -535,16 +541,16 @@ export default function Return() {
             {loading ? (
               <div className="py-20 text-center space-y-3">
                 <RefreshCw className="w-6 h-6 animate-spin mx-auto text-amber-600" />
-                <p className="text-xs text-slate-500 font-mono font-medium">Loading customer returns...</p>
+                <p className="text-xs text-slate-500 font-mono font-medium">{t('returns.loadingCustomerReturns')}</p>
               </div>
             ) : filteredCustomerReturns.length === 0 ? (
               <div className="py-20 text-center space-y-3 bg-slate-50/50">
                 <Inbox className="w-12 h-12 text-slate-400 mx-auto" />
-                <h4 className="font-semibold text-slate-800 text-base">No customer returns found</h4>
+                <h4 className="font-semibold text-slate-800 text-base">{t('returns.noCustomerReturnsFound')}</h4>
                 <p className="text-xs text-slate-500 max-w-sm mx-auto font-medium">
                   {searchQuery
-                    ? `No customer returns match "${searchQuery}"`
-                    : 'Mark an order as "Customer Return" on the Orders page to see it listed here.'}
+                    ? t('returns.noCustomerReturnsMatch', { query: searchQuery })
+                    : t('returns.noCustomerReturnsHint')}
                 </p>
               </div>
             ) : (
@@ -552,16 +558,16 @@ export default function Return() {
                 <table className="w-full text-left border-collapse text-xs min-w-[950px]" id="customer-returns-table">
                   <thead>
                     <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-semibold text-[11px]">
-                      <th className="py-4 px-3 border-r border-slate-100">Order ID</th>
-                      <th className="py-4 px-3 border-r border-slate-100">SKU ID</th>
-                      <th className="py-4 px-3 border-r border-slate-100">Product Name</th>
-                      <th className="py-4 px-2 border-r border-slate-100 text-center">Quantity</th>
-                      <th className="py-4 px-3 border-r border-slate-100 text-center">Purchase Price</th>
-                      <th className="py-4 px-3 border-r border-slate-100 text-center">Selling Price</th>
-                      <th className="py-4 px-3 border-r border-slate-100 text-center">Delivery Charge</th>
-                      <th className="py-4 px-3 border-r border-slate-100 text-right">Return Loss</th>
-                      <th className="py-4 px-3 border-r border-slate-100 text-center">Return Date</th>
-                      <th className="py-4 px-3 text-center">Action</th>
+                      <th className="py-4 px-3 border-r border-slate-100">{t('fields.orderId')}</th>
+                      <th className="py-4 px-3 border-r border-slate-100">{t('fields.skuId')}</th>
+                      <th className="py-4 px-3 border-r border-slate-100">{t('fields.productName')}</th>
+                      <th className="py-4 px-2 border-r border-slate-100 text-center">{t('fields.quantity')}</th>
+                      <th className="py-4 px-3 border-r border-slate-100 text-center">{t('fields.purchasePrice')}</th>
+                      <th className="py-4 px-3 border-r border-slate-100 text-center">{t('fields.sellingPrice')}</th>
+                      <th className="py-4 px-3 border-r border-slate-100 text-center">{t('fields.deliveryCharge')}</th>
+                      <th className="py-4 px-3 border-r border-slate-100 text-right">{t('stock.returnLoss')}</th>
+                      <th className="py-4 px-3 border-r border-slate-100 text-center">{t('fields.returnDate')}</th>
+                      <th className="py-4 px-3 text-center">{t('common.action')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -589,7 +595,7 @@ export default function Return() {
                           {/* Product Name */}
                           <td className="py-3.5 px-3 border-r border-slate-100">
                             <span className="text-xs text-slate-800 font-semibold line-clamp-2">
-                              {r.product_name}
+                              {r.product_name ? <AutoTranslate text={r.product_name} /> : '-'}
                             </span>
                           </td>
 
@@ -624,7 +630,7 @@ export default function Return() {
                               <button
                                 onClick={() => handleSaveCharge(r.order_id)}
                                 disabled={itemState.saving}
-                                title="Save delivery charge"
+                                title={t('common.save')}
                                 className={`p-1.5 rounded-lg border transition-all cursor-pointer ${itemState.saved
                                     ? 'bg-emerald-100 text-emerald-700 border-emerald-300'
                                     : 'bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200'
@@ -661,7 +667,7 @@ export default function Return() {
                               className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800 border border-rose-300 hover:bg-rose-200 transition-all cursor-pointer disabled:opacity-50"
                             >
                               <RotateCcw className={`w-3 h-3 ${undoingId === (r.id || r.order_id) ? 'animate-spin' : ''}`} />
-                              Undo Return
+                              {t('orders.undoReturn')}
                             </button>
                           </td>
                         </tr>
@@ -678,16 +684,16 @@ export default function Return() {
             {loading ? (
               <div className="py-20 text-center space-y-3">
                 <RefreshCw className="w-6 h-6 animate-spin mx-auto text-purple-600" />
-                <p className="text-xs text-slate-500 font-mono font-medium">Loading RTO returns...</p>
+                <p className="text-xs text-slate-500 font-mono font-medium">{t('returns.loadingRtoReturns')}</p>
               </div>
             ) : filteredRtoReturns.length === 0 ? (
               <div className="py-20 text-center space-y-3 bg-slate-50/50">
                 <Inbox className="w-12 h-12 text-slate-400 mx-auto" />
-                <h4 className="font-semibold text-slate-800 text-base">No RTO returns found</h4>
+                <h4 className="font-semibold text-slate-800 text-base">{t('returns.noRtoReturnsFound')}</h4>
                 <p className="text-xs text-slate-500 max-w-sm mx-auto font-medium">
                   {searchQuery
-                    ? `No RTO returns match "${searchQuery}"`
-                    : 'Mark an order as "RTO Return" on the Orders page to see it listed here.'}
+                    ? t('returns.noRtoReturnsMatch', { query: searchQuery })
+                    : t('returns.noRtoReturnsHint')}
                 </p>
               </div>
             ) : (
@@ -695,15 +701,15 @@ export default function Return() {
                 <table className="w-full text-left border-collapse text-xs min-w-[950px]" id="rto-returns-table">
                   <thead>
                     <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-semibold text-[11px]">
-                      <th className="py-4 px-3 border-r border-slate-100">Order ID</th>
-                      <th className="py-4 px-3 border-r border-slate-100">SKU ID</th>
-                      <th className="py-4 px-3 border-r border-slate-100">Product Name</th>
-                      <th className="py-4 px-2 border-r border-slate-100 text-center">Quantity</th>
-                      <th className="py-4 px-3 border-r border-slate-100 text-center">Purchase Price</th>
-                      <th className="py-4 px-3 border-r border-slate-100 text-center">Selling Price</th>
-                      <th className="py-4 px-3 border-r border-slate-100 text-center">Return Type</th>
-                      <th className="py-4 px-3 border-r border-slate-100 text-center">Return Date</th>
-                      <th className="py-4 px-3 text-center">Action</th>
+                      <th className="py-4 px-3 border-r border-slate-100">{t('fields.orderId')}</th>
+                      <th className="py-4 px-3 border-r border-slate-100">{t('fields.skuId')}</th>
+                      <th className="py-4 px-3 border-r border-slate-100">{t('fields.productName')}</th>
+                      <th className="py-4 px-2 border-r border-slate-100 text-center">{t('fields.quantity')}</th>
+                      <th className="py-4 px-3 border-r border-slate-100 text-center">{t('fields.purchasePrice')}</th>
+                      <th className="py-4 px-3 border-r border-slate-100 text-center">{t('fields.sellingPrice')}</th>
+                      <th className="py-4 px-3 border-r border-slate-100 text-center">{t('orders.returnStatus')}</th>
+                      <th className="py-4 px-3 border-r border-slate-100 text-center">{t('fields.returnDate')}</th>
+                      <th className="py-4 px-3 text-center">{t('common.action')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -724,7 +730,7 @@ export default function Return() {
                         {/* Product Name */}
                         <td className="py-3.5 px-3 border-r border-slate-100">
                           <span className="text-xs text-slate-800 font-semibold line-clamp-2">
-                            {r.product_name}
+                            {r.product_name ? <AutoTranslate text={r.product_name} /> : '-'}
                           </span>
                         </td>
 
@@ -763,7 +769,7 @@ export default function Return() {
                             className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800 border border-rose-300 hover:bg-rose-200 transition-all cursor-pointer disabled:opacity-50"
                           >
                             <RotateCcw className={`w-3 h-3 ${undoingId === (r.id || r.order_id) ? 'animate-spin' : ''}`} />
-                            Undo Return
+                            {t('orders.undoReturn')}
                           </button>
                         </td>
                       </tr>
@@ -784,26 +790,26 @@ export default function Return() {
                   <AlertTriangle className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900">Undo Return Confirmation</h3>
+                  <h3 className="text-base font-bold text-slate-900">{t('returns.undoReturnConfirmation')}</h3>
                   <p className="text-xs text-slate-500 font-medium mt-1">
-                    Are you sure you want to undo return for Order <span className="font-mono font-bold text-slate-800">#{confirmUndoOrder.order_id}</span>?
+                    {t('returns.undoReturnConfirmMessage')} <span className="font-mono font-bold text-slate-800">#{confirmUndoOrder.order_id}</span>?
                   </p>
                 </div>
               </div>
 
               <div className="bg-purple-50/60 rounded-2xl p-3.5 border border-purple-100 space-y-1.5 text-xs text-slate-600 font-medium">
                 <div className="flex justify-between">
-                  <span>SKU ID:</span>
+                  <span>{t('fields.skuId')}:</span>
                   <span className="font-mono font-bold text-purple-950">{confirmUndoOrder.sku_id}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Returned Category:</span>
+                  <span>{t('returns.returnedCategory')}:</span>
                   <span className="font-bold text-amber-800">
-                    {confirmUndoOrder.return_type === 'RTO_RETURN' ? 'RTO Return' : 'Customer Return'}
+                    {confirmUndoOrder.return_type === 'RTO_RETURN' ? t('orders.rtoReturn') : t('orders.customerReturn')}
                   </span>
                 </div>
                 <p className="text-[11px] text-purple-900/80 pt-1 border-t border-purple-200/50">
-                  This action will restore the returned quantity to active available inventory and recalculate stock metrics.
+                  {t('returns.undoReturnRestoreNotice')}
                 </p>
               </div>
 
@@ -812,13 +818,13 @@ export default function Return() {
                   onClick={() => setConfirmUndoOrder(null)}
                   className="px-4 py-2 rounded-full text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
                 <button
                   onClick={handleConfirmUndoReturn}
                   className="px-5 py-2 rounded-full text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-md transition-all cursor-pointer"
                 >
-                  Confirm Undo Return
+                  {t('returns.confirmUndoReturn')}
                 </button>
               </div>
             </div>
@@ -837,8 +843,8 @@ export default function Return() {
                     <UploadCloud className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-slate-900 tracking-tight">Upload Return Label</h3>
-                    <p className="text-xs text-slate-500 font-medium font-sans">Extract Order ID & verify Supabase order status</p>
+                    <h3 className="text-lg font-bold text-slate-900 tracking-tight">{t('returns.uploadReturnLabel')}</h3>
+                    <p className="text-xs text-slate-500 font-medium font-sans">{t('upload.subtitle')}</p>
                   </div>
                 </div>
 
@@ -853,7 +859,7 @@ export default function Return() {
               {/* STEP 1: SELECT METHOD (Exact 2 Options: 1. Upload Image, 2. Capture Image) */}
               {uploadStep === 'SELECT_METHOD' && (
                 <div className="space-y-5">
-                  <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">Select Return Label Source:</p>
+                  <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">{t('returns.selectReturnLabelSource')}</p>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {/* Option 1: Upload Image */}
@@ -872,8 +878,8 @@ export default function Return() {
                         <UploadCloud className="w-6 h-6" />
                       </div>
                       <div>
-                        <h4 className="text-xs font-bold text-slate-900">1. Upload Image</h4>
-                        <p className="text-[11px] text-slate-500 mt-0.5 font-medium">JPG, JPEG, PNG, or WEBP</p>
+                        <h4 className="text-xs font-bold text-slate-900">{t('returns.uploadImage')}</h4>
+                        <p className="text-[11px] text-slate-500 mt-0.5 font-medium">JPG, JPEG, PNG, WEBP</p>
                       </div>
                     </div>
 
@@ -886,7 +892,7 @@ export default function Return() {
                         <Camera className="w-6 h-6" />
                       </div>
                       <div>
-                        <h4 className="text-xs font-bold text-slate-900">2. Capture Image</h4>
+                        <h4 className="text-xs font-bold text-slate-900">{t('returns.captureImage')}</h4>
                         <p className="text-[11px] text-slate-500 mt-0.5 font-medium">Device camera shutter</p>
                       </div>
                     </div>
@@ -897,7 +903,7 @@ export default function Return() {
               {/* STEP 2A: UPLOAD IMAGE PREVIEW & PROCESS BUTTON */}
               {uploadStep === 'IMAGE_PREVIEW' && (
                 <div className="space-y-5">
-                  <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">Selected Return Label Image:</p>
+                  <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">{t('upload.preview')}:</p>
                   
                   {imagePreview && (
                     <div className="relative aspect-video max-h-56 bg-slate-900 rounded-2xl overflow-hidden border border-purple-100 flex items-center justify-center p-2">
@@ -910,13 +916,13 @@ export default function Return() {
                       onClick={() => setUploadStep('SELECT_METHOD')}
                       className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-full transition-colors cursor-pointer"
                     >
-                      Change Option
+                      {t('common.back')}
                     </button>
                     <button
                       onClick={handleProcessImage}
                       className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-bold text-xs rounded-full shadow-md shadow-purple-500/25 transition-all hover:scale-105 cursor-pointer"
                     >
-                      <span>Continue & Process</span>
+                      <span>{t('returns.continueAndProcess')}</span>
                       <ArrowRight className="w-4 h-4 text-white" />
                     </button>
                   </div>
@@ -930,7 +936,7 @@ export default function Return() {
                     <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
                     <div className="absolute inset-6 border-2 border-amber-400/70 rounded-2xl pointer-events-none flex items-center justify-center">
                       <span className="text-[10px] font-mono text-amber-200 bg-slate-900/80 px-3 py-1 rounded-full border border-amber-400/40">
-                        Position Parcel Label inside Frame
+                        {t('returns.positionParcelLabel')}
                       </span>
                     </div>
                   </div>
@@ -943,7 +949,7 @@ export default function Return() {
                       }}
                       className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-full transition-colors cursor-pointer"
                     >
-                      Cancel
+                      {t('common.cancel')}
                     </button>
 
                     <div className="flex items-center gap-2">
@@ -957,7 +963,7 @@ export default function Return() {
                         onClick={capturePhoto}
                         className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 text-white text-xs font-bold rounded-full shadow-md cursor-pointer"
                       >
-                        <Camera className="w-4 h-4 text-white" /> Snap Photo
+                        <Camera className="w-4 h-4 text-white" /> {t('returns.captureImage')}
                       </button>
                     </div>
                   </div>
@@ -967,7 +973,7 @@ export default function Return() {
               {/* STEP 2C: CAPTURED CAMERA IMAGE PREVIEW & PROCESS BUTTON */}
               {uploadStep === 'CAMERA_PREVIEW' && (
                 <div className="space-y-5">
-                  <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">Captured Parcel Label Photo:</p>
+                  <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">{t('upload.preview')}:</p>
                   
                   {imagePreview && (
                     <div className="relative aspect-video max-h-56 bg-slate-900 rounded-2xl overflow-hidden border border-amber-200 flex items-center justify-center p-2">
@@ -980,13 +986,13 @@ export default function Return() {
                       onClick={() => startCamera('environment')}
                       className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-purple-800 bg-purple-100 hover:bg-purple-200 rounded-full transition-colors cursor-pointer"
                     >
-                      <RefreshCcw className="w-3.5 h-3.5" /> Retake Photo
+                      <RefreshCcw className="w-3.5 h-3.5" /> {t('returns.retakePhoto')}
                     </button>
                     <button
                       onClick={handleProcessImage}
                       className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-bold text-xs rounded-full shadow-md shadow-purple-500/25 transition-all hover:scale-105 cursor-pointer"
                     >
-                      <span>Continue & Process</span>
+                      <span>{t('returns.continueAndProcess')}</span>
                       <ArrowRight className="w-4 h-4 text-white" />
                     </button>
                   </div>
@@ -998,8 +1004,8 @@ export default function Return() {
                 <div className="py-12 text-center space-y-4 bg-purple-50/40 rounded-2xl border border-purple-100">
                   <Loader2 className="w-10 h-10 text-amber-600 animate-spin mx-auto" />
                   <div>
-                    <h4 className="text-sm font-bold text-slate-900">Extracting Order ID with Gemini Vision...</h4>
-                    <p className="text-xs text-slate-500 mt-1 font-medium">Searching Supabase Order Database for match...</p>
+                    <h4 className="text-sm font-bold text-slate-900">{t('returns.extractingOrderId')}</h4>
+                    <p className="text-xs text-slate-500 mt-1 font-medium">{t('returns.searchingSupabase')}</p>
                   </div>
                 </div>
               )}
@@ -1015,7 +1021,7 @@ export default function Return() {
                       <h4 className="text-base font-bold text-rose-900">{returnModalError}</h4>
                       {extractedOrderId && (
                         <p className="text-xs text-rose-700 mt-1 font-mono">
-                          Extracted Order ID: <span className="font-bold">{extractedOrderId}</span>
+                          {t('fields.orderId')}: <span className="font-bold">{extractedOrderId}</span>
                         </p>
                       )}
                     </div>
@@ -1026,7 +1032,7 @@ export default function Return() {
                       onClick={() => setUploadStep('SELECT_METHOD')}
                       className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-full shadow-md transition-colors cursor-pointer"
                     >
-                      Try Upload / Capture Again
+                      {t('common.back')}
                     </button>
                   </div>
                 </div>
@@ -1039,34 +1045,34 @@ export default function Return() {
                   <div className="bg-emerald-50/80 rounded-2xl p-5 border border-emerald-200/80 space-y-3 shadow-xs">
                     <div className="flex items-center justify-between border-b border-emerald-200/60 pb-2.5">
                       <span className="text-xs font-bold text-emerald-900 uppercase tracking-wider flex items-center gap-1.5">
-                        <Check className="w-4 h-4 text-emerald-600" /> Order Found in Supabase
+                        <Check className="w-4 h-4 text-emerald-600" /> {t('returns.orderFoundInSupabase')}
                       </span>
-                      <span className="text-[10px] bg-emerald-200 text-emerald-900 px-2.5 py-0.5 rounded-full font-extrabold">Verified Match</span>
+                      <span className="text-[10px] bg-emerald-200 text-emerald-900 px-2.5 py-0.5 rounded-full font-extrabold">{t('returns.verifiedMatch')}</span>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3 text-xs">
                       <div className="bg-white/80 p-2.5 rounded-xl border border-emerald-100">
-                        <span className="text-[11px] text-slate-500 font-medium block">Order ID</span>
+                        <span className="text-[11px] text-slate-500 font-medium block">{t('fields.orderId')}</span>
                         <span className="font-mono font-extrabold text-slate-900 text-sm">{matchedOrder.order_id}</span>
                       </div>
 
                       <div className="bg-white/80 p-2.5 rounded-xl border border-emerald-100">
-                        <span className="text-[11px] text-slate-500 font-medium block">Customer Name</span>
+                        <span className="text-[11px] text-slate-500 font-medium block">{t('fields.customerName')}</span>
                         <span className="font-bold text-slate-900">{matchedOrder.customer_name || 'N/A'}</span>
                       </div>
 
                       <div className="bg-white/80 p-2.5 rounded-xl border border-emerald-100">
-                        <span className="text-[11px] text-slate-500 font-medium block">SKU ID</span>
+                        <span className="text-[11px] text-slate-500 font-medium block">{t('fields.skuId')}</span>
                         <span className="font-mono font-bold text-purple-950">{matchedOrder.sku_id || 'N/A'}</span>
                       </div>
 
                       <div className="bg-white/80 p-2.5 rounded-xl border border-emerald-100">
-                        <span className="text-[11px] text-slate-500 font-medium block">Quantity</span>
+                        <span className="text-[11px] text-slate-500 font-medium block">{t('fields.quantity')}</span>
                         <span className="font-bold text-slate-900">{matchedOrder.quantity || 1}</span>
                       </div>
 
                       <div className="col-span-2 bg-white/80 p-2.5 rounded-xl border border-emerald-100">
-                        <span className="text-[11px] text-slate-500 font-medium block">Product Name</span>
+                        <span className="text-[11px] text-slate-500 font-medium block">{t('fields.productName')}</span>
                         <span className="font-bold text-slate-900">{matchedOrder.product_name || 'N/A'}</span>
                       </div>
                     </div>
@@ -1075,7 +1081,7 @@ export default function Return() {
                   {/* Customer Return Delivery Charge input */}
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Delivery Charge for Customer Return (₹)
+                      {t('returns.deliveryChargeForCustomerReturn')}
                     </label>
                     <input
                       type="number"
@@ -1084,12 +1090,12 @@ export default function Return() {
                       placeholder="10"
                       className="w-full sm:w-48 bg-white border border-purple-200 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-purple-400 focus:outline-none"
                     />
-                    <p className="text-[11px] text-slate-400 mt-1">* Note: Delivery charge for RTO Return is automatically ₹0.</p>
+                    <p className="text-[11px] text-slate-400 mt-1">{t('returns.deliveryChargeRtoNote')}</p>
                   </div>
 
                   {/* SELECT RETURN TYPE BUTTONS */}
                   <div>
-                    <p className="text-xs font-bold text-slate-900 mb-3">Select Return Type:</p>
+                    <p className="text-xs font-bold text-slate-900 mb-3">{t('returns.selectReturnType')}:</p>
 
                     <div className="grid grid-cols-2 gap-3">
                       <button
@@ -1099,8 +1105,8 @@ export default function Return() {
                         className="flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-950 transition-all group cursor-pointer shadow-xs disabled:opacity-50"
                       >
                         <RotateCcw className="w-6 h-6 text-amber-700 mb-1.5 group-hover:scale-110 transition-transform" />
-                        <span className="text-xs font-extrabold">Customer Return</span>
-                        <span className="text-[10px] text-amber-800 font-medium text-center mt-0.5">Deducts ₹{customDeliveryCharge || 10} charge</span>
+                        <span className="text-xs font-extrabold">{t('orders.customerReturn')}</span>
+                        <span className="text-[10px] text-amber-800 font-medium text-center mt-0.5">{t('returns.customerReturnLossNotice', { amount: customDeliveryCharge || 10 })}</span>
                       </button>
 
                       <button
@@ -1110,8 +1116,8 @@ export default function Return() {
                         className="flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-purple-300 bg-purple-50 hover:bg-purple-100 text-purple-950 transition-all group cursor-pointer shadow-xs disabled:opacity-50"
                       >
                         <Truck className="w-6 h-6 text-purple-700 mb-1.5 group-hover:scale-110 transition-transform" />
-                        <span className="text-xs font-extrabold">RTO Return</span>
-                        <span className="text-[10px] text-purple-800 font-medium text-center mt-0.5">Return to origin (₹0 loss)</span>
+                        <span className="text-xs font-extrabold">{t('orders.rtoReturn')}</span>
+                        <span className="text-[10px] text-purple-800 font-medium text-center mt-0.5">{t('orders.returnToOriginZeroLoss')}</span>
                       </button>
                     </div>
                   </div>
@@ -1126,3 +1132,4 @@ export default function Return() {
     </Layout>
   );
 }
+

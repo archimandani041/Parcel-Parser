@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Layout from '../components/Layout';
 import DocumentViewer from '../components/DocumentViewer';
 import ExtractionFields from '../components/ExtractionFields';
@@ -26,6 +27,7 @@ import {
 } from 'lucide-react';
 
 export default function DocumentDetail() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -54,7 +56,7 @@ export default function DocumentDetail() {
   };
 
   const handleDelete = async () => {
-    if (window.confirm('Are you sure you want to delete this document extraction record?')) {
+    if (window.confirm(t('documents.deleteConfirmRecord', { defaultValue: 'Are you sure you want to delete this document extraction record?' }))) {
       await deleteDocument(id);
       navigate('/documents');
     }
@@ -62,10 +64,10 @@ export default function DocumentDetail() {
 
   if (loading) {
     return (
-      <Layout title="Document Details">
+      <Layout title={t('documents.detailTitle', { defaultValue: 'Document Details' })}>
         <div className="py-24 text-center text-slate-500 space-y-4">
           <RefreshCw className="w-8 h-8 animate-spin mx-auto text-sky-600" />
-          <p className="font-mono text-xs text-slate-500 font-medium">Loading document extraction workspace...</p>
+          <p className="font-mono text-xs text-slate-500 font-medium">{t('documents.loadingWorkspace', { defaultValue: 'Loading document extraction workspace...' })}</p>
         </div>
       </Layout>
     );
@@ -73,11 +75,11 @@ export default function DocumentDetail() {
 
   if (!documentData) {
     return (
-      <Layout title="Document Not Found">
+      <Layout title={t('documents.notFound', { defaultValue: 'Document Not Found' })}>
         <div className="py-20 text-center space-y-4">
-          <p className="text-slate-500 font-medium">Document record not found or deleted.</p>
+          <p className="text-slate-500 font-medium">{t('documents.notFoundSubtitle', { defaultValue: 'Document record not found or deleted.' })}</p>
           <Link to="/documents" className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-full text-xs font-bold shadow-md">
-            <ArrowLeft className="w-4 h-4" /> Back to Documents
+            <ArrowLeft className="w-4 h-4" /> {t('documents.backToDocs', { defaultValue: 'Back to Documents' })}
           </Link>
         </div>
       </Layout>
@@ -87,7 +89,7 @@ export default function DocumentDetail() {
   const badge = getStatusBadgeConfig(documentData.status);
 
   return (
-    <Layout title={`Document: ${documentData.file_name}`}>
+    <Layout title={`${t('documents.documentFile')}: ${documentData.file_name}`}>
       <div className="space-y-6 pb-12">
         
         {/* Detail Page Header */}
@@ -98,7 +100,7 @@ export default function DocumentDetail() {
               <button
                 onClick={() => navigate('/documents')}
                 className="p-2.5 text-slate-500 hover:text-slate-900 bg-white border border-slate-200 hover:bg-slate-50 rounded-full transition-colors shadow-sm"
-                title="Back to All Documents"
+                title={t('documents.backToDocs', { defaultValue: 'Back to Documents' })}
               >
                 <ArrowLeft className="w-4 h-4" />
               </button>
@@ -113,7 +115,7 @@ export default function DocumentDetail() {
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 flex items-center gap-3 mt-1 font-mono font-medium">
-                  <span>Created: {formatDate(documentData.created_at)}</span>
+                  <span>{t('documents.createdDate')}: {formatDate(documentData.created_at)}</span>
                   <span>•</span>
                   <span className="flex items-center gap-1 text-purple-700 font-bold"><Clock className="w-3.5 h-3.5" /> {documentData.processing_time || 0}ms</span>
                   <span>•</span>
@@ -127,12 +129,12 @@ export default function DocumentDetail() {
                 onClick={() => setIsExportModalOpen(true)}
                 className="pill-button-dark flex items-center gap-2 px-6 py-2.5 text-xs font-extrabold shadow-md"
               >
-                <Download className="w-3.5 h-3.5 text-purple-300" /> Export Data
+                <Download className="w-3.5 h-3.5 text-purple-300" /> {t('documents.exportData', { defaultValue: 'Export Data' })}
               </button>
               <button
                 onClick={handleDelete}
                 className="p-2.5 text-slate-400 hover:text-rose-600 bg-white hover:bg-rose-50 border border-slate-200 hover:border-rose-200 rounded-full transition-colors shadow-sm"
-                title="Delete Document"
+                title={t('common.delete')}
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -168,7 +170,7 @@ export default function DocumentDetail() {
                       : 'text-purple-800/80 hover:text-purple-950 hover:bg-white/60'
                   }`}
                 >
-                  <FileText className="w-4 h-4 text-purple-700" /> Extracted Info
+                  <FileText className="w-4 h-4 text-purple-700" /> {t('documents.extractedInfo', { defaultValue: 'Extracted Info' })}
                 </button>
 
                 <button
@@ -179,7 +181,7 @@ export default function DocumentDetail() {
                       : 'text-purple-800/80 hover:text-purple-950 hover:bg-white/60'
                   }`}
                 >
-                  <Code className="w-4 h-4 text-purple-700" /> JSON View
+                  <Code className="w-4 h-4 text-purple-700" /> {t('documents.jsonView', { defaultValue: 'JSON View' })}
                 </button>
 
                 <button
@@ -190,7 +192,7 @@ export default function DocumentDetail() {
                       : 'text-purple-800/80 hover:text-purple-950 hover:bg-white/60'
                   }`}
                 >
-                  <Terminal className="w-4 h-4 text-amber-700" /> Developer Debug
+                  <Terminal className="w-4 h-4 text-amber-700" /> {t('documents.developerDebug', { defaultValue: 'Developer Debug' })}
                 </button>
 
                 {documentData.corrections && documentData.corrections.length > 0 && (
@@ -202,7 +204,7 @@ export default function DocumentDetail() {
                         : 'text-purple-800/80 hover:text-purple-950 hover:bg-white/60'
                     }`}
                   >
-                    <History className="w-4 h-4 text-emerald-700" /> Corrections ({documentData.corrections.length})
+                    <History className="w-4 h-4 text-emerald-700" /> {t('documents.corrections', { defaultValue: 'Corrections' })} ({documentData.corrections.length})
                   </button>
                 )}
               </div>
@@ -239,7 +241,7 @@ export default function DocumentDetail() {
               {activeTab === 'corrections' && (
                 <div className="space-y-3">
                   <h4 className="text-xs font-extrabold text-slate-500 uppercase tracking-wider mb-2">
-                    Manual Field Correction Log ({documentData.corrections.length})
+                    {t('documents.manualCorrectionLog', { defaultValue: 'Manual Field Correction Log' })} ({documentData.corrections.length})
                   </h4>
                   <div className="space-y-2">
                     {documentData.corrections.map((corr) => (
@@ -250,11 +252,11 @@ export default function DocumentDetail() {
                         </div>
                         <div className="grid grid-cols-2 gap-2 text-slate-700">
                           <div>
-                            <span className="text-[10px] text-rose-600 block uppercase font-bold">Original</span>
+                            <span className="text-[10px] text-rose-600 block uppercase font-bold">{t('documents.original', { defaultValue: 'Original' })}</span>
                             <span className="line-through text-slate-400">{corr.original_value || 'null'}</span>
                           </div>
                           <div>
-                            <span className="text-[10px] text-emerald-600 block uppercase font-bold">Corrected</span>
+                            <span className="text-[10px] text-emerald-600 block uppercase font-bold">{t('documents.corrected', { defaultValue: 'Corrected' })}</span>
                             <span className="text-emerald-700 font-bold">{corr.corrected_value}</span>
                           </div>
                         </div>
@@ -290,4 +292,5 @@ export default function DocumentDetail() {
     </Layout>
   );
 }
+
 

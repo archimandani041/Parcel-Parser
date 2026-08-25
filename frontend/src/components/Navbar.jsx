@@ -1,5 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   LayoutDashboard,
   UploadCloud,
@@ -7,17 +8,24 @@ import {
   Boxes,
   Package,
   RotateCcw,
-  Sparkles
+  Sparkles,
+  Globe
 } from 'lucide-react';
 
 export default function Navbar({ title = 'Parcel Information Extractor', healthInfo }) {
+  const { t, i18n } = useTranslation();
+
+  const changeLanguage = (lng) => {
+    i18n.changeLanguage(lng);
+  };
+
   const navItems = [
-    { path: '/', label: 'Dashboard', icon: LayoutDashboard },
-    { path: '/upload', label: 'Upload', icon: UploadCloud, badge: 'AI' },
-    { path: '/orders', label: 'Orders', icon: Package },
-    { path: '/stock', label: 'Stock', icon: Boxes },
-    { path: '/return', label: 'Return', icon: RotateCcw },
-    { path: '/documents', label: 'Docs', icon: FileText },
+    { path: '/', label: t('nav.dashboard'), icon: LayoutDashboard },
+    { path: '/upload', label: t('nav.uploadLabel'), icon: UploadCloud, badge: 'AI' },
+    { path: '/orders', label: t('nav.orders'), icon: Package },
+    { path: '/stock', label: t('nav.stock'), icon: Boxes },
+    { path: '/return', label: t('nav.return'), icon: RotateCcw },
+    { path: '/documents', label: t('nav.docs'), icon: FileText },
   ];
 
   return (
@@ -32,7 +40,7 @@ export default function Navbar({ title = 'Parcel Information Extractor', healthI
               <Boxes className="w-4.5 h-4.5" />
             </div>
             <div className="flex items-center gap-2">
-              <span className="font-extrabold text-base sm:text-sm text-slate-900 tracking-tight">ParcelAI</span>
+              <span className="font-extrabold text-base sm:text-sm text-slate-900 tracking-tight">{t('nav.parcelAI')}</span>
               <span className="hidden xs:inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-purple-100/80 text-purple-800 border border-purple-200">
                 <Sparkles className="w-2.5 h-2.5 text-purple-600" /> AI
               </span>
@@ -58,7 +66,7 @@ export default function Navbar({ title = 'Parcel Information Extractor', healthI
                   {({ isActive }) => (
                     <>
                       <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-purple-800' : 'text-purple-500'}`} />
-                      <span>{item.label === 'Upload' ? 'Upload Label' : item.label}</span>
+                      <span>{item.label}</span>
                       {item.badge && (
                         <span className={`px-1.5 py-0.2 rounded-full text-[9px] font-extrabold ${
                           isActive ? 'bg-purple-300/80 text-purple-950' : 'bg-purple-200/60 text-purple-800'
@@ -73,14 +81,29 @@ export default function Navbar({ title = 'Parcel Information Extractor', healthI
             })}
           </nav>
 
-          {/* Right: Quick Upload Action Button */}
+          {/* Right: Language Switcher Dropdown & Quick Upload Action Button */}
           <div className="flex items-center gap-2">
+            {/* Language Switcher Dropdown */}
+            <div className="relative flex items-center bg-purple-50/80 hover:bg-purple-100/80 border border-purple-200/80 rounded-full px-2.5 py-1 text-xs font-bold text-purple-900 shadow-xs transition-all">
+              <Globe className="w-3.5 h-3.5 text-purple-600 mr-1.5 shrink-0" />
+              <select
+                id="language-switcher"
+                value={i18n.language || 'en'}
+                onChange={(e) => changeLanguage(e.target.value)}
+                className="bg-transparent text-purple-950 font-extrabold text-xs outline-none cursor-pointer pr-1 py-0.5"
+              >
+                <option value="en" className="text-slate-900 font-sans">English</option>
+                <option value="gu" className="text-slate-900 font-sans">ગુજરાતી</option>
+                <option value="hi" className="text-slate-900 font-sans">हिंदी</option>
+              </select>
+            </div>
+
             <NavLink
               to="/upload"
               className="flex items-center gap-1.5 bg-gradient-to-r from-purple-500 via-violet-600 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white text-xs font-extrabold px-4 py-2 rounded-full shadow-md shadow-purple-300/40 transition-all hover:scale-105 shrink-0"
             >
               <UploadCloud className="w-3.5 h-3.5" />
-              <span>Parse Label</span>
+              <span>{t('nav.parseLabel')}</span>
             </NavLink>
           </div>
 
@@ -127,6 +150,7 @@ export default function Navbar({ title = 'Parcel Information Extractor', healthI
     </>
   );
 }
+
 
 
 

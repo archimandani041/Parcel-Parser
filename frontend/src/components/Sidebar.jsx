@@ -1,5 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { 
   LayoutDashboard, 
   UploadCloud, 
@@ -15,13 +16,15 @@ import {
 } from 'lucide-react';
 
 export default function Sidebar({ healthInfo }) {
+  const { t } = useTranslation();
+
   const navItems = [
-    { path: '/', label: 'Dashboard', icon: LayoutDashboard, badge: null },
-    { path: '/upload', label: 'Upload Label', icon: UploadCloud, badge: 'AI' },
-    { path: '/orders', label: 'Orders', icon: Package, badge: null },
-    { path: '/stock', label: 'Stock', icon: Boxes, badge: null },
-    { path: '/return', label: 'Return', icon: RotateCcw, badge: null },
-    { path: '/documents', label: 'All Documents', icon: FileText, badge: null },
+    { path: '/', label: t('nav.dashboard'), icon: LayoutDashboard, badge: null },
+    { path: '/upload', label: t('nav.uploadLabel'), icon: UploadCloud, badge: 'AI' },
+    { path: '/orders', label: t('nav.orders'), icon: Package, badge: null },
+    { path: '/stock', label: t('nav.stock'), icon: Boxes, badge: null },
+    { path: '/return', label: t('nav.return'), icon: RotateCcw, badge: null },
+    { path: '/documents', label: t('nav.allDocuments'), icon: FileText, badge: null },
   ];
 
   return (
@@ -43,14 +46,14 @@ export default function Sidebar({ healthInfo }) {
             <div>
               <div className="flex items-center gap-1.5">
                 <h1 className="font-extrabold text-base text-white tracking-tight">
-                  ParcelAI
+                  {t('nav.parcelAI')}
                 </h1>
                 <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 uppercase tracking-wider">
                   PRO
                 </span>
               </div>
               <p className="text-[11px] text-slate-400 font-medium flex items-center gap-1 mt-0.5">
-                <Sparkles className="w-3 h-3 text-indigo-400" /> Label Intelligence
+                <Sparkles className="w-3 h-3 text-indigo-400" /> {t('nav.labelIntelligence')}
               </p>
             </div>
           </div>
@@ -59,7 +62,7 @@ export default function Sidebar({ healthInfo }) {
         {/* Navigation Links */}
         <div className="space-y-1">
           <p className="px-3 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-2">
-            Main Navigation
+            {t('sidebar.mainNavigation')}
           </p>
 
           <nav className="space-y-1.5">
@@ -104,18 +107,18 @@ export default function Sidebar({ healthInfo }) {
       <div className="bg-slate-950/80 rounded-2xl p-4 border border-slate-800/90 text-xs space-y-3 shadow-inner">
         <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
           <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-            <Activity className="w-3.5 h-3.5 text-emerald-400" /> System Status
+            <Activity className="w-3.5 h-3.5 text-emerald-400" /> {t('sidebar.systemStatus')}
           </span>
           <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-            Online
+            {t('sidebar.online')}
           </span>
         </div>
 
         <div className="space-y-2 text-[11px]">
           <div className="flex items-center justify-between">
             <span className="text-slate-400 font-medium flex items-center gap-1.5">
-              <Cpu className="w-3.5 h-3.5 text-indigo-400" /> AI Engine
+              <Cpu className="w-3.5 h-3.5 text-indigo-400" /> {t('sidebar.aiEngine')}
             </span>
             <span className="text-indigo-300 font-mono font-bold bg-indigo-500/15 px-2 py-0.5 rounded border border-indigo-500/30 text-[10px]">
               {healthInfo?.model || 'Gemini 3.6 Flash'}
@@ -124,7 +127,7 @@ export default function Sidebar({ healthInfo }) {
 
           <div className="flex items-center justify-between">
             <span className="text-slate-400 font-medium flex items-center gap-1.5">
-              <Database className="w-3.5 h-3.5 text-sky-400" /> Database
+              <Database className="w-3.5 h-3.5 text-sky-400" /> {t('sidebar.database')}
             </span>
             <span className={`font-semibold px-2 py-0.5 rounded text-[10px] font-mono ${
               healthInfo?.supabase_connected
@@ -139,4 +142,5 @@ export default function Sidebar({ healthInfo }) {
     </aside>
   );
 }
+
 

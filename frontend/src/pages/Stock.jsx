@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import Layout from '../components/Layout';
+import AutoTranslate from '../components/AutoTranslate';
 import {
   getStockOverview,
   updateStockProductPrice,
@@ -19,6 +21,7 @@ import {
 } from 'lucide-react';
 
 export default function Stock() {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -97,7 +100,7 @@ export default function Stock() {
       // Reload fresh calculations
       await loadStockData();
     } catch (err) {
-      alert('Failed to save prices: ' + (err.response?.data?.error || err.message));
+      alert(t('stock.failedSavePrices') + (err.response?.data?.error || err.message));
       setEditPriceState(prev => ({
         ...prev,
         [skuId]: { ...prev[skuId], saving: false }
@@ -106,14 +109,14 @@ export default function Stock() {
   };
 
   const handleDeleteStockProduct = async (skuId) => {
-    if (!window.confirm(`Are you sure you want to delete stock product SKU "${skuId}"? This will permanently remove it and all associated order records from the database.`)) {
+    if (!window.confirm(t('stock.confirmDeleteStock', { sku: skuId }))) {
       return;
     }
     try {
       await deleteStockProduct(skuId);
       await loadStockData();
     } catch (err) {
-      alert('Delete failed: ' + (err.response?.data?.error || err.message));
+      alert(t('stock.deleteFailed') + (err.response?.data?.error || err.message));
     }
   };
 
@@ -137,7 +140,7 @@ export default function Stock() {
   });
 
   return (
-    <Layout>
+    <Layout title={t('nav.stock')}>
       <div className="space-y-6 w-full pb-12">
 
         {/* HEADER & CONTROLS */}
@@ -148,9 +151,9 @@ export default function Stock() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-                Inventory & stock <span className="font-normal text-purple-700">auditing</span>
+                {t('stock.title')} <span className="font-normal text-purple-700">{t('stock.titleHighlight')}</span>
               </h1>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">Manage SKU valuation, unit prices, and realized stock profit</p>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">{t('stock.subtitle')}</p>
             </div>
           </div>
 
@@ -161,7 +164,7 @@ export default function Stock() {
               <input
                 id="search-sku"
                 type="text"
-                placeholder="Search by SKU ID or product name..."
+                placeholder={t('stock.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full bg-purple-50/40 border border-purple-200/80 rounded-full pl-9 pr-4 py-2 text-xs text-slate-800 placeholder-purple-300 outline-none focus:border-purple-400 focus:bg-white focus:ring-2 focus:ring-purple-200 transition-all font-medium shadow-xs"
@@ -173,7 +176,7 @@ export default function Stock() {
               onClick={loadStockData}
               disabled={loading}
               className="p-2 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-full border border-purple-200/80 transition-all shadow-xs disabled:opacity-50 shrink-0 cursor-pointer"
-              title="Refresh Stock Data"
+              title={t('common.refresh')}
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             </button>
@@ -185,61 +188,61 @@ export default function Stock() {
           {/* Total Quantity */}
           <div className="ui-card p-4 space-y-1">
             <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
-              <span>Total Added Qty</span>
+              <span>{t('stock.totalAddedQty')}</span>
               <Package className="w-4 h-4 text-purple-600" />
             </div>
             <p className="text-2xl font-bold text-purple-900 font-mono">
               {stockSummary.total_quantity || 0}
             </p>
-            <p className="text-[10px] text-slate-500 font-medium">Initial stock logged</p>
+            <p className="text-[10px] text-slate-500 font-medium">{t('stock.initialStockLogged')}</p>
           </div>
 
           {/* Current Available Stock */}
           <div className="ui-card p-4 space-y-1">
             <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
-              <span>selling q.</span>
+              <span>{t('fields.sellingQ')}</span>
               <Boxes className="w-4 h-4 text-emerald-600" />
             </div>
             <p className="text-2xl font-bold text-emerald-700 font-mono">
               {stockSummary.total_available_quantity != null ? stockSummary.total_available_quantity : stockSummary.total_available_stock || 0}
             </p>
-            <p className="text-[10px] text-slate-500 font-medium">Physical stock in hand</p>
+            <p className="text-[10px] text-slate-500 font-medium">{t('stock.physicalStockInHand')}</p>
           </div>
 
           {/* Total Customer Returned Qty */}
           <div className="ui-card p-4 space-y-1">
             <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
-              <span>Cust. Returned Qty</span>
+              <span>{t('stock.custReturnedQty')}</span>
               <Inbox className="w-4 h-4 text-amber-600" />
             </div>
             <p className="text-2xl font-bold text-amber-700 font-mono">
               {stockSummary.total_customer_returned_quantity != null ? stockSummary.total_customer_returned_quantity : 0}
             </p>
-            <p className="text-[10px] text-slate-500 font-medium">Customer return units</p>
+            <p className="text-[10px] text-slate-500 font-medium">{t('stock.customerReturnUnits')}</p>
           </div>
 
           {/* Total RTO Returned Qty */}
           <div className="ui-card p-4 space-y-1">
             <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
-              <span>RTO Returned Qty</span>
+              <span>{t('stock.rtoReturnedQty')}</span>
               <Inbox className="w-4 h-4 text-purple-600" />
             </div>
             <p className="text-2xl font-bold text-purple-700 font-mono">
               {stockSummary.total_rto_returned_quantity || 0}
             </p>
-            <p className="text-[10px] text-slate-500 font-medium">RTO return units</p>
+            <p className="text-[10px] text-slate-500 font-medium">{t('stock.rtoReturnUnits')}</p>
           </div>
 
           {/* Inventory Cost */}
           <div className="ui-card p-4 space-y-1">
             <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
-              <span>Inventory Cost</span>
+              <span>{t('stock.inventoryCost')}</span>
               <Coins className="w-4 h-4 text-purple-600" />
             </div>
             <p className="text-2xl font-bold text-slate-900 font-mono">
               {formatCurrency(stockSummary.total_inventory_cost != null ? stockSummary.total_inventory_cost : stockSummary.total_purchase_cost)}
             </p>
-            <p className="text-[10px] text-slate-500 font-medium">Purchase cost of available stock</p>
+            <p className="text-[10px] text-slate-500 font-medium">{t('stock.purchaseCostAvailable')}</p>
           </div>
         </div>
 
@@ -248,16 +251,16 @@ export default function Stock() {
           {loading ? (
             <div className="py-20 text-center space-y-3">
               <RefreshCw className="w-6 h-6 animate-spin mx-auto text-sky-600" />
-              <p className="text-xs text-slate-500 font-mono font-medium">Loading stock records...</p>
+              <p className="text-xs text-slate-500 font-mono font-medium">{t('stock.loadingStock')}</p>
             </div>
           ) : filteredProducts.length === 0 ? (
             <div className="py-20 text-center space-y-3 bg-slate-50/50">
               <Inbox className="w-12 h-12 text-slate-400 mx-auto" />
-              <h4 className="font-semibold text-slate-800 text-base">No stock products found</h4>
+              <h4 className="font-semibold text-slate-800 text-base">{t('stock.noProductsFound')}</h4>
               <p className="text-xs text-slate-500 max-w-sm mx-auto font-medium">
                 {searchQuery
-                  ? `No products match "${searchQuery}"`
-                  : 'Order records will automatically aggregate into stock products here.'}
+                  ? t('stock.noProductsMatch', { query: searchQuery })
+                  : t('stock.noProductsHint')}
               </p>
             </div>
           ) : (
@@ -265,21 +268,21 @@ export default function Stock() {
               <table className="w-full text-left border-collapse text-xs min-w-[1250px]" id="stock-table">
                 <thead>
                   <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-semibold text-[11px]">
-                    <th className="py-4 px-3 border-r border-slate-100">SKU ID</th>
-                    <th className="py-4 px-3 border-r border-slate-100">Product Name</th>
-                    <th className="py-4 px-2 border-r border-slate-100 text-center" title="Initial/Total Stock Added">Total Qty</th>
-                    <th className="py-4 px-2 border-r border-slate-100 text-center" title="Successfully Sold & Kept Quantity">Sold Qty.</th>
-                    <th className="py-4 px-2 border-r border-slate-100 text-center" title="Customer Returned Quantity">Cust. Return</th>
-                    <th className="py-4 px-2 border-r border-slate-100 text-center" title="RTO Returned Quantity">RTO Return</th>
-                    <th className="py-4 px-2 border-r border-slate-100 text-center" title="Current Physical Available Stock in Hand">Current Stock</th>
-                    <th className="py-4 px-2 border-r border-slate-100 text-center">Purchase Price</th>
-                    <th className="py-4 px-2 border-r border-slate-100 text-center">Selling Price</th>
-                    <th className="py-4 px-3 border-r border-slate-100 text-right">Inventory Cost</th>
-                    <th className="py-4 px-3 border-r border-slate-100 text-right">Inventory Value</th>
-                    <th className="py-4 px-3 border-r border-slate-100 text-right" title="Profit from sold items = (Selling Price - Purchase Price) * Sold Qty">Realized Profit</th>
-                    <th className="py-4 px-3 border-r border-slate-100 text-right" title="Loss from Customer Return delivery charges">Return Loss</th>
-                    <th className="py-4 px-3 border-r border-slate-100 text-right" title="Net Profit = Realized Profit - Return Loss">Net Profit</th>
-                    <th className="py-4 px-3 text-center">Action</th>
+                    <th className="py-4 px-3 border-r border-slate-100">{t('fields.skuId')}</th>
+                    <th className="py-4 px-3 border-r border-slate-100">{t('fields.productName')}</th>
+                    <th className="py-4 px-2 border-r border-slate-100 text-center">{t('stock.totalQty')}</th>
+                    <th className="py-4 px-2 border-r border-slate-100 text-center">{t('stock.soldQty')}</th>
+                    <th className="py-4 px-2 border-r border-slate-100 text-center">{t('stock.custReturn')}</th>
+                    <th className="py-4 px-2 border-r border-slate-100 text-center">{t('stock.rtoReturn')}</th>
+                    <th className="py-4 px-2 border-r border-slate-100 text-center">{t('stock.currentStock')}</th>
+                    <th className="py-4 px-2 border-r border-slate-100 text-center">{t('fields.purchasePrice')}</th>
+                    <th className="py-4 px-2 border-r border-slate-100 text-center">{t('fields.sellingPrice')}</th>
+                    <th className="py-4 px-3 border-r border-slate-100 text-right">{t('stock.inventoryCost')}</th>
+                    <th className="py-4 px-3 border-r border-slate-100 text-right">{t('stock.inventoryValue')}</th>
+                    <th className="py-4 px-3 border-r border-slate-100 text-right">{t('stock.realizedProfit')}</th>
+                    <th className="py-4 px-3 border-r border-slate-100 text-right">{t('stock.returnLoss')}</th>
+                    <th className="py-4 px-3 border-r border-slate-100 text-right">{t('stock.netProfit')}</th>
+                    <th className="py-4 px-3 text-center">{t('common.action')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -310,7 +313,7 @@ export default function Stock() {
                         {/* Product Name */}
                         <td className="py-3.5 px-3 border-r border-slate-100">
                           <span className="text-xs text-slate-800 font-semibold line-clamp-2">
-                            {p.product_name || '-'}
+                            {p.product_name ? <AutoTranslate text={p.product_name} /> : '-'}
                           </span>
                         </td>
 
@@ -391,7 +394,7 @@ export default function Stock() {
                             <button
                               onClick={() => handleSavePrice(p.sku_id, p.product_name)}
                               disabled={editState.saving}
-                              title="Save price for SKU"
+                              title={t('stock.savePriceForSku')}
                               className={`p-1 rounded-full border transition-all cursor-pointer ${editState.saved
                                   ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
                                   : 'bg-purple-100 hover:bg-purple-200 text-purple-900 border-purple-300 shadow-xs'
@@ -453,7 +456,7 @@ export default function Stock() {
                           <button
                             onClick={() => handleDeleteStockProduct(p.sku_id)}
                             className="p-1 rounded-full text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition-all cursor-pointer"
-                            title="Delete stock product and orders from database"
+                            title={t('stock.deleteStockProduct')}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -471,3 +474,4 @@ export default function Stock() {
     </Layout>
   );
 }
+

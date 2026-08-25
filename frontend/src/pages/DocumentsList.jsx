@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Layout from '../components/Layout';
 import ExportModal from '../components/ExportModal';
 import { getDocuments, deleteDocument } from '../services/api';
@@ -20,6 +21,7 @@ import {
 } from 'lucide-react';
 
 export default function DocumentsList() {
+  const { t } = useTranslation();
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -56,7 +58,7 @@ export default function DocumentsList() {
   };
 
   const handleSingleDelete = async (id, fileName) => {
-    if (!window.confirm(`Are you sure you want to delete "${fileName || 'this document'}"?`)) {
+    if (!window.confirm(t('documents.deleteConfirm', { name: fileName || t('documents.documentFile') }))) {
       return;
     }
     setDeletingId(id);
@@ -65,7 +67,7 @@ export default function DocumentsList() {
       setSelectedIds(prev => prev.filter(item => item !== id));
       loadDocs();
     } catch (err) {
-      alert('Failed to delete document: ' + (err.response?.data?.error || err.message));
+      alert(t('documents.failedDelete') + (err.response?.data?.error || err.message));
     } finally {
       setDeletingId(null);
     }
@@ -73,7 +75,7 @@ export default function DocumentsList() {
 
   const handleBulkDelete = async () => {
     if (selectedIds.length === 0) return;
-    if (window.confirm(`Are you sure you want to delete ${selectedIds.length} selected document(s)?`)) {
+    if (window.confirm(t('documents.bulkDeleteConfirm', { count: selectedIds.length }))) {
       setBulkDeleting(true);
       try {
         for (const id of selectedIds) {
@@ -82,7 +84,7 @@ export default function DocumentsList() {
         setSelectedIds([]);
         loadDocs();
       } catch (err) {
-        alert('Failed to delete selected documents: ' + (err.response?.data?.error || err.message));
+        alert(t('documents.failedBulkDelete') + (err.response?.data?.error || err.message));
       } finally {
         setBulkDeleting(false);
       }
@@ -99,7 +101,7 @@ export default function DocumentsList() {
   });
 
   return (
-    <Layout title="All Shipping Label Documents">
+    <Layout title={t('nav.documents')}>
       <div className="space-y-6 pb-12">
         
         {/* Top Control Bar */}
@@ -111,9 +113,9 @@ export default function DocumentsList() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-                  Parsed label <span className="font-normal text-purple-700">repository</span>
+                  {t('documents.title')} <span className="font-normal text-purple-700">{t('documents.titleHighlight')}</span>
                 </h1>
-                <p className="text-xs text-slate-500 font-medium mt-0.5">Search, filter, batch export, or manage structured document extractions</p>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">{t('documents.subtitle')}</p>
               </div>
             </div>
 
@@ -122,7 +124,7 @@ export default function DocumentsList() {
                 to="/upload"
                 className="pill-button-dark flex items-center gap-2 px-6 py-2.5 text-xs font-extrabold shadow-md"
               >
-                <UploadCloud className="w-4 h-4 text-purple-300" /> Upload Label
+                <UploadCloud className="w-4 h-4 text-purple-300" /> {t('documents.uploadLabel')}
               </Link>
             </div>
           </div>
@@ -143,7 +145,7 @@ export default function DocumentsList() {
                       : 'text-purple-800/80 hover:text-purple-950 hover:bg-white/80'
                   }`}
                 >
-                  {st === 'ALL' ? 'All Records' : st.replace('_', ' ')}
+                  {st === 'ALL' ? t('documents.allRecords') : st === 'COMPLETED' ? t('status.completed') : st === 'NEEDS_REVIEW' ? t('status.needsReview') : t('status.failed')}
                 </button>
               ))}
             </div>
@@ -155,7 +157,7 @@ export default function DocumentsList() {
                 <input
                   id="search-input"
                   type="text"
-                  placeholder="Search filename..."
+                  placeholder={t('documents.searchPlaceholder')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full bg-purple-50/40 border border-purple-200/80 rounded-full pl-9 pr-4 py-2.5 text-xs text-slate-800 placeholder-purple-300 outline-none focus:border-purple-400 focus:bg-white focus:ring-2 focus:ring-purple-200 transition-all font-medium shadow-xs"
@@ -169,7 +171,7 @@ export default function DocumentsList() {
                     onClick={() => setIsExportModalOpen(true)}
                     className="pill-button-dark flex items-center gap-1.5 px-4 py-2 text-xs font-bold shadow-sm"
                   >
-                    <Download className="w-3.5 h-3.5 text-purple-300" /> Export ({selectedIds.length})
+                    <Download className="w-3.5 h-3.5 text-purple-300" /> {t('documents.exportSelected')} ({selectedIds.length})
                   </button>
 
                   <button
@@ -177,14 +179,14 @@ export default function DocumentsList() {
                     disabled={bulkDeleting}
                     className="flex items-center gap-1.5 px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 border border-rose-200 rounded-full text-xs font-bold transition-colors shadow-xs"
                   >
-                    <Trash2 className="w-3.5 h-3.5" /> {bulkDeleting ? 'Deleting...' : `Delete (${selectedIds.length})`}
+                    <Trash2 className="w-3.5 h-3.5" /> {bulkDeleting ? t('documents.deleting') : `${t('documents.deleteSelected')} (${selectedIds.length})`}
                   </button>
                 </div>
               )}
 
               <button
                 onClick={loadDocs}
-                title="Refresh Documents"
+                title={t('common.refresh')}
                 className="p-2.5 text-purple-600 hover:text-purple-900 bg-purple-50 border border-purple-200/80 hover:bg-purple-100 rounded-full transition-all shadow-xs shrink-0 cursor-pointer"
               >
                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -199,11 +201,11 @@ export default function DocumentsList() {
           {loading ? (
             <div className="py-20 text-center text-slate-500 text-xs space-y-3 font-mono">
               <RefreshCw className="w-6 h-6 animate-spin mx-auto text-purple-600" />
-              Loading document catalog...
+              {t('documents.loadingCatalog')}
             </div>
           ) : filteredDocs.length === 0 ? (
             <div className="py-20 text-center text-slate-500 text-xs bg-purple-50/20 font-medium">
-              No matching documents found.
+              {t('documents.noMatchingDocs')}
             </div>
           ) : (
             <div className="overflow-x-auto bg-white">
@@ -218,12 +220,12 @@ export default function DocumentsList() {
                         className="rounded border-purple-300 text-purple-600 focus:ring-0 cursor-pointer"
                       />
                     </th>
-                    <th className="py-4 px-4 border-r border-purple-100/60">Document File</th>
-                    <th className="py-4 px-4 border-r border-purple-100/60">Status</th>
-                    <th className="py-4 px-4 border-r border-purple-100/60 text-center">Confidence Score</th>
-                    <th className="py-4 px-4 border-r border-purple-100/60 text-center">Processing Speed</th>
-                    <th className="py-4 px-4 border-r border-purple-100/60">Created Date</th>
-                    <th className="py-4 px-4 text-right">Actions</th>
+                    <th className="py-4 px-4 border-r border-purple-100/60">{t('documents.documentFile')}</th>
+                    <th className="py-4 px-4 border-r border-purple-100/60">{t('fields.status')}</th>
+                    <th className="py-4 px-4 border-r border-purple-100/60 text-center">{t('documents.confidenceScore')}</th>
+                    <th className="py-4 px-4 border-r border-purple-100/60 text-center">{t('documents.processingSpeed')}</th>
+                    <th className="py-4 px-4 border-r border-purple-100/60">{t('documents.createdDate')}</th>
+                    <th className="py-4 px-4 text-right">{t('common.action')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-sans">
@@ -271,12 +273,12 @@ export default function DocumentsList() {
                               to={`/document/${doc.id}`}
                               className="inline-flex items-center gap-1 px-3.5 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/80 rounded-full text-xs font-bold transition-all shadow-xs"
                             >
-                              Inspect <ExternalLink className="w-3.5 h-3.5" />
+                              {t('documents.inspect')} <ExternalLink className="w-3.5 h-3.5" />
                             </Link>
                             <button
                               onClick={() => handleSingleDelete(doc.id, doc.file_name)}
                               disabled={deletingId === doc.id}
-                              title="Delete document"
+                              title={t('common.delete')}
                               className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-full transition-all border border-transparent hover:border-rose-200 disabled:opacity-50"
                             >
                               <Trash2 className={`w-4 h-4 ${deletingId === doc.id ? 'animate-spin' : ''}`} />

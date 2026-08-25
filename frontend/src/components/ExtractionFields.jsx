@@ -1,4 +1,5 @@
 import React from 'react';
+import AutoTranslate from './AutoTranslate';
 import {
   ShoppingBag,
   Truck,
@@ -60,6 +61,8 @@ export default function ExtractionFields({
 
   const renderField = (fieldName, value, label) => {
     const isNull = value === null || value === undefined || value === '';
+    const strVal = isNull ? 'null' : String(value);
+    
     return (
       <div
         key={fieldName}
@@ -68,7 +71,7 @@ export default function ExtractionFields({
         <div className="flex flex-col pr-2 min-w-0 flex-1">
           <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{label}</span>
           <span className={`font-mono text-xs break-words mt-0.5 ${isNull ? 'text-slate-400 italic' : 'text-slate-800 font-semibold'}`}>
-            {isNull ? 'null' : String(value)}
+            {isNull ? 'null' : <AutoTranslate text={strVal} />}
           </span>
         </div>
         {onEditField && (
@@ -244,8 +247,8 @@ export default function ExtractionFields({
                   {items.map((item, idx) => (
                     <tr key={idx} className="hover:bg-purple-50/30 transition-colors">
                       <td className="py-3 px-3 font-bold text-purple-700">{item.sku_id || 'N/A'}</td>
-                      <td className="py-3 px-3 text-slate-800 font-semibold">{item.product_name || 'N/A'}</td>
-                      <td className="py-3 px-3 text-slate-500 max-w-xs truncate">{item.description || '-'}</td>
+                      <td className="py-3 px-3 text-slate-800 font-semibold">{item.product_name ? <AutoTranslate text={item.product_name} /> : 'N/A'}</td>
+                      <td className="py-3 px-3 text-slate-500 max-w-xs truncate">{item.description ? <AutoTranslate text={item.description} /> : '-'}</td>
                       <td className="py-3 px-3 text-center font-bold text-emerald-700">{item.quantity !== null ? item.quantity : 1}</td>
                       <td className="py-3 px-3 text-right text-slate-700">{item.price !== null && item.price !== undefined ? `₹${item.price}` : '-'}</td>
                       <td className="py-3 px-3 text-right text-slate-900 font-bold">{item.total !== null && item.total !== undefined ? `₹${item.total}` : '-'}</td>
