@@ -225,7 +225,7 @@ export default function DocumentsList() {
                     <th className="py-4 px-4 border-r border-purple-100/60 text-center">{t('documents.confidenceScore')}</th>
                     <th className="py-4 px-4 border-r border-purple-100/60 text-center">{t('documents.processingSpeed')}</th>
                     <th className="py-4 px-4 border-r border-purple-100/60">{t('documents.createdDate')}</th>
-                    <th className="py-4 px-4 text-right">{t('common.action')}</th>
+                    <th className="py-4 px-4 text-right">{t('documents.actions')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-sans">

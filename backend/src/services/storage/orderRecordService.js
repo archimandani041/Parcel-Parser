@@ -33,6 +33,12 @@ export const orderRecordService = {
   async createFromExtraction(structuredJson, documentId) {
     if (!structuredJson) return [];
 
+    // Skip if document was flagged as invalid
+    if (structuredJson.is_valid_document === false) {
+      console.warn('[OrderRecords] Skipping — document marked as invalid.');
+      return [];
+    }
+
     const supabase = getSupabaseClient();
     if (!supabase) {
       throw new Error('[OrderRecords] Supabase client is not configured.');
@@ -50,22 +56,32 @@ export const orderRecordService = {
 
     for (let index = 0; index < labelObjects.length; index++) {
       const labelObj = labelObjects[index];
-      const order = labelObj.order || {};
-      const customer = labelObj.customer || (index === 0 ? structuredJson.customer : {}) || {};
+
+      // New simplified schema: order_id and customer_name are directly on the label
       const items = Array.isArray(labelObj.items) && labelObj.items.length > 0
         ? labelObj.items
-        : (index === 0 && Array.isArray(structuredJson.items) ? structuredJson.items : []);
+        : [];
 
-      let orderId = order.order_id || order.order_number || null;
-      if (!orderId) {
-        if (index === 0 && structuredJson.order?.order_id) {
-          orderId = structuredJson.order.order_id;
-        } else {
-          orderId = `ORD_${documentId ? documentId.slice(0, 8) : Date.now()}_P${index + 1}`;
-        }
+      // Get order_id — check new flat structure first, then old nested structure
+      let orderId = labelObj.order_id || labelObj.order?.order_id || labelObj.order?.order_number || null;
+      if (!orderId && index === 0 && structuredJson.order?.order_id) {
+        orderId = structuredJson.order.order_id;
       }
 
-      const customerName = customer.name || null;
+      // Get customer_name — check new flat structure first, then old nested structure
+      const customerName = labelObj.customer_name || labelObj.customer?.name || null;
+
+      // Skip labels that have NO useful data at all (prevents ghost records)
+      const hasItems = items.length > 0 && items.some(i => i.sku_id || i.product_name);
+      if (!orderId && !customerName && !hasItems) {
+        console.warn(`[OrderRecords] Skipping label #${index + 1} — no order_id, no customer_name, no items.`);
+        continue;
+      }
+
+      // Generate a fallback order ID only if we have other data worth saving
+      if (!orderId) {
+        orderId = `ORD_${documentId ? documentId.slice(0, 8) : Date.now()}_P${index + 1}`;
+      }
 
       // Aggregate SKUs and Product Names
       const skuList = items.map(i => {
@@ -93,15 +109,21 @@ export const orderRecordService = {
       const skuIdStr = skuList.length > 0 ? skuList.join(' | ') : null;
       const productNameStr = productNameList.length > 0 ? productNameList.join(' | ') : null;
 
-      let totalQty = 0;
+      // Quantity: sum up items that have explicit quantities, don't assume 1 for items without quantity
+      let totalQty = null;
+      let hasAnyQty = false;
       items.forEach(i => {
         const q = parseInt(i.quantity, 10);
-        totalQty += (!isNaN(q) && q > 0) ? q : 1;
+        if (!isNaN(q) && q > 0) {
+          totalQty = (totalQty || 0) + q;
+          hasAnyQty = true;
+        }
       });
-      if (totalQty === 0) totalQty = 1;
+      // Only default to null if no quantities were found at all
+      if (!hasAnyQty) totalQty = null;
 
       const purchasePrice = items.find(i => i.purchase_price != null)?.purchase_price ?? null;
-      const sellingPrice = items.find(i => i.selling_price != null)?.selling_price ?? items.find(i => i.price != null)?.price ?? null;
+      const sellingPrice = items.find(i => i.selling_price != null)?.selling_price ?? null;
 
       const recordData = {
         order_id: orderId,

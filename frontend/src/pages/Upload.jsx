@@ -163,13 +163,30 @@ export default function Upload() {
 
       clearInterval(interval);
       setUploadProgress(100);
-      setProcessingState('COMPLETED');
       setUploadedResults(res.documents || []);
 
-      if (res.documents && res.documents.length === 1) {
-        setTimeout(() => {
-          navigate(`/document/${res.documents[0].id}`);
-        }, 1200);
+      // Check if all documents were rejected as invalid
+      const allDocs = res.documents || [];
+      const invalidDocs = allDocs.filter(d => d.is_invalid_document || (d.status === 'FAILED' && d.error_message));
+      const failedDocs = allDocs.filter(d => d.status === 'FAILED');
+
+      if (invalidDocs.length > 0 && invalidDocs.length === allDocs.length) {
+        // All documents were invalid — show error
+        setProcessingState('FAILED');
+        const reasons = invalidDocs.map(d => d.error_message || 'Invalid document').join('; ');
+        setErrorMessage(reasons);
+      } else if (failedDocs.length > 0 && failedDocs.length === allDocs.length) {
+        // All documents failed extraction
+        setProcessingState('FAILED');
+        const reasons = failedDocs.map(d => d.error_message || 'Extraction failed').join('; ');
+        setErrorMessage(reasons);
+      } else {
+        setProcessingState('COMPLETED');
+        if (allDocs.length === 1) {
+          setTimeout(() => {
+            navigate(`/document/${allDocs[0].id}`);
+          }, 1200);
+        }
       }
 
     } catch (err) {
@@ -519,6 +536,8 @@ export default function Upload() {
                       setSelectedFiles([]);
                       setProcessingState('IDLE');
                       setUploadProgress(0);
+                      setErrorMessage(null);
+                      setUploadedResults([]);
                     }}
                     className="px-5 py-2.5 bg-purple-50 hover:bg-purple-100 text-purple-800 text-xs font-bold rounded-full transition-colors border border-purple-200"
                   >
@@ -532,6 +551,36 @@ export default function Upload() {
                       {t('upload.inspectExtractedLabel')} <ArrowRight className="w-4 h-4 text-emerald-700" />
                     </button>
                   )}
+                </div>
+              )}
+
+              {processingState === 'FAILED' && (
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => {
+                      setSelectedFiles([]);
+                      setProcessingState('IDLE');
+                      setUploadProgress(0);
+                      setErrorMessage(null);
+                      setUploadedResults([]);
+                    }}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-800 text-xs font-bold rounded-full transition-colors border border-rose-200 cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    {t('upload.clearAndRetry', { defaultValue: 'Clear & Upload New' })}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setProcessingState('IDLE');
+                      setUploadProgress(0);
+                      setErrorMessage(null);
+                      setUploadedResults([]);
+                    }}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-bold rounded-full transition-colors border border-amber-200 cursor-pointer"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    {t('upload.retryExtraction', { defaultValue: 'Retry Extraction' })}
+                  </button>
                 </div>
               )}
 

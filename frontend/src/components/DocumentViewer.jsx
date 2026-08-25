@@ -1,27 +1,34 @@
 import React, { useState } from 'react';
-import { ZoomIn, ZoomOut, RotateCw, RefreshCw, ExternalLink, FileText } from 'lucide-react';
+import { ZoomIn, ZoomOut, RotateCw, RefreshCw, ExternalLink, FileText, AlertTriangle } from 'lucide-react';
 
 export default function DocumentViewer({ fileUrl, fileName, fileType, activePage = 1 }) {
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
+  const [useLocalFallback, setUseLocalFallback] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.25, 3));
   const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.25, 0.5));
   const handleReset = () => {
     setZoom(1);
     setRotation(0);
+    setLoadError(false);
+    setUseLocalFallback(false);
   };
   const handleRotate = () => setRotation(prev => (prev + 90) % 360);
 
   const getFullFileUrl = (url) => {
-    if (!url) return '';
+    if (useLocalFallback && fileName) {
+      return `/uploads/${encodeURIComponent(fileName)}`;
+    }
+    if (!url) {
+      return fileName ? `/uploads/${encodeURIComponent(fileName)}` : '';
+    }
     if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('blob:')) {
       return url;
     }
-    const apiBase = import.meta.env.VITE_API_BASE_URL || '/api';
-    const baseUrl = apiBase.startsWith('http') ? apiBase.replace(/\/api\/?$/, '') : '';
     const cleanPath = url.startsWith('/') ? url : `/${url}`;
-    return `${baseUrl}${cleanPath}`;
+    return cleanPath;
   };
 
   const resolvedUrl = getFullFileUrl(fileUrl);
@@ -43,6 +50,18 @@ export default function DocumentViewer({ fileUrl, fileName, fileType, activePage
         </div>
 
         <div className="flex items-center gap-1.5 bg-slate-900 border border-slate-800 rounded-lg p-1">
+          {loadError && fileName && (
+            <button
+              onClick={() => {
+                setUseLocalFallback(true);
+                setLoadError(false);
+              }}
+              className="text-[11px] px-2.5 py-1 bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 rounded font-medium border border-amber-500/30 mr-2 flex items-center gap-1"
+            >
+              <AlertTriangle className="w-3 h-3 text-amber-400" /> Use Local Server View
+            </button>
+          )}
+
           <button
             onClick={handleZoomOut}
             title="Zoom Out"
@@ -75,7 +94,7 @@ export default function DocumentViewer({ fileUrl, fileName, fileType, activePage
           >
             <RefreshCw className="w-4 h-4" />
           </button>
-          {fileUrl && (
+          {resolvedUrl && (
             <a
               href={pdfUrlWithPage}
               target="_blank"
@@ -96,6 +115,7 @@ export default function DocumentViewer({ fileUrl, fileName, fileType, activePage
             key={pdfUrlWithPage}
             src={pdfUrlWithPage}
             title={`PDF Document Viewer - Page ${activePage}`}
+            onError={() => setLoadError(true)}
             className="w-full h-full min-h-[500px] rounded-lg border border-slate-800"
           />
         ) : (
@@ -103,6 +123,13 @@ export default function DocumentViewer({ fileUrl, fileName, fileType, activePage
             <img
               src={resolvedUrl}
               alt="Parcel Label Document"
+              onError={() => {
+                if (!useLocalFallback && fileName) {
+                  setUseLocalFallback(true);
+                } else {
+                  setLoadError(true);
+                }
+              }}
               style={{
                 transform: `scale(${zoom}) rotate(${rotation}deg)`,
                 maxHeight: '650px',

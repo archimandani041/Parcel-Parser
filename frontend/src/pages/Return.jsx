@@ -133,17 +133,33 @@ export default function Return() {
     try {
       // Call Gemini Vision Parser API in-memory (scan-only, no DB record creation)
       const res = await scanReturnLabelFile(selectedFile);
+
+      // Handle API-level failure (e.g. invalid document)
+      if (res.success === false && res.error) {
+        setReturnModalError(res.error);
+        setUploadStep('ERROR');
+        return;
+      }
+
       const doc = res.documents && res.documents[0];
       const json = doc?.structured_json || {};
 
+      // Check if document was rejected as invalid
+      if (json.is_valid_document === false) {
+        setReturnModalError(json.rejection_reason || 'This image does not contain a valid shipping label or order document.');
+        setUploadStep('ERROR');
+        return;
+      }
+
       let extractedId = null;
-      if (json.order?.order_id) extractedId = json.order.order_id;
-      else if (json.order?.order_number) extractedId = json.order.order_number;
-      else if (json.order_id) extractedId = json.order_id;
-      else if (json.orderId) extractedId = json.orderId;
-      else if (Array.isArray(json.labels) && json.labels.length > 0) {
+      // New simplified schema: order_id directly on label
+      if (Array.isArray(json.labels) && json.labels.length > 0) {
         const l = json.labels[0];
-        extractedId = l.order?.order_id || l.order?.order_number || l.order_id || null;
+        extractedId = l.order_id || l.order?.order_id || l.order?.order_number || null;
+      }
+      // Fallback to old schema / top-level
+      if (!extractedId) {
+        extractedId = json.order_id || json.order?.order_id || json.order?.order_number || json.orderId || null;
       }
 
       if (!extractedId || !extractedId.trim()) {

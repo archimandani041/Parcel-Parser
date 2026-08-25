@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import path from 'path';
+import fs from 'fs';
 import { sanitizeExtractedJson } from '../gemini/geminiParser.js';
 import { cleanOrphanedStock } from './stockService.js';
 
@@ -42,8 +43,20 @@ export const dbService = {
   },
 
   async uploadLabelFile(fileBuffer, originalFileName, mimeType) {
+    // Always save local copy in uploads/ directory for guaranteed static serving
+    try {
+      const uploadsDir = path.join(process.cwd(), 'uploads');
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+      const localPath = path.join(uploadsDir, originalFileName);
+      fs.writeFileSync(localPath, fileBuffer);
+    } catch (fsErr) {
+      console.warn('[Supabase Storage] Local copy write error:', fsErr.message);
+    }
+
     if (!isSupabaseConfigured) {
-      throw new Error('[Supabase Storage] Supabase credentials are not configured.');
+      return `/uploads/${encodeURIComponent(originalFileName)}`;
     }
 
     try {
@@ -59,31 +72,18 @@ export const dbService = {
         });
 
       if (error) {
-        console.error('[Supabase Storage] Error uploading file:', error.message);
-        // Return a mock path or throwing error if storage fails
-        return {
-          file_name: originalFileName,
-          file_url: `https://padtrgfqevjzpkzicnip.supabase.co/storage/v1/object/public/parcel-labels/${storagePath}`,
-          file_path: storagePath,
-          file_type: mimeType,
-          file_size: fileBuffer.length
-        };
+        console.warn(`[Supabase Storage] Storage upload warning (${error.message}). Falling back to local serving.`);
+        return `/uploads/${encodeURIComponent(originalFileName)}`;
       }
 
       const { data: publicUrlData } = supabase.storage
         .from('parcel-labels')
         .getPublicUrl(storagePath);
 
-      return {
-        file_name: originalFileName,
-        file_url: publicUrlData?.publicUrl || `/uploads/${originalFileName}`,
-        file_path: storagePath,
-        file_type: mimeType,
-        file_size: fileBuffer.length
-      };
+      return publicUrlData?.publicUrl || `/uploads/${encodeURIComponent(originalFileName)}`;
     } catch (err) {
-      console.error('[Supabase Storage] Exception in uploadLabelFile:', err.message);
-      return `/uploads/${originalFileName}`;
+      console.warn(`[Supabase Storage] Exception (${err.message}). Falling back to local serving.`);
+      return `/uploads/${encodeURIComponent(originalFileName)}`;
     }
   },
 

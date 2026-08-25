@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import { dbService } from '../services/storage/supabaseService.js';
 import { parseDocumentWithGemini } from '../services/gemini/geminiParser.js';
 import { validateExtractionResult } from '../services/validation/validationService.js';
@@ -28,8 +30,19 @@ export async function processUploads(req, res, next) {
 
       console.log(`[Upload Controller] Processing: ${fileName} (${fileType}, ${fileSize} bytes, PDF: ${isPdf})`);
 
+      // Save local disk copy for guaranteed static serving
+      try {
+        const uploadsDir = path.join(process.cwd(), 'uploads');
+        if (!fs.existsSync(uploadsDir)) {
+          fs.mkdirSync(uploadsDir, { recursive: true });
+        }
+        fs.writeFileSync(path.join(uploadsDir, fileName), file.buffer);
+      } catch (fsErr) {
+        console.warn(`[Upload Controller] Failed to write local upload copy: ${fsErr.message}`);
+      }
+
       // 1. Upload file to Supabase Storage (or local storage fallback)
-      let fileUrl = `/uploads/${fileName}`;
+      let fileUrl = `/uploads/${encodeURIComponent(fileName)}`;
       try {
         fileUrl = await dbService.uploadFile(file.buffer, fileName, fileType);
       } catch (uploadErr) {
@@ -55,18 +68,45 @@ export async function processUploads(req, res, next) {
         // 3. Call Gemini API Multimodal Parser
         const geminiResult = await parseDocumentWithGemini(file.buffer, fileType, fileName);
 
-        // 4. Perform Deterministic Validation & Scoring
+        // 4. Check if document was rejected (invalid/unrecognizable document)
+        if (geminiResult.structured_json?.is_valid_document === false) {
+          const rejectionMsg = geminiResult.structured_json.rejection_reason ||
+            'This file does not contain any recognizable order, invoice, or shipping label information.';
+
+          console.warn(`[Upload Controller] Document rejected: ${fileName} — ${rejectionMsg}`);
+
+          await dbService.updateDocumentStatus(
+            docRecord.id,
+            'FAILED',
+            0,
+            geminiResult.processing_time,
+            rejectionMsg
+          );
+
+          processedResults.push({
+            id: docRecord.id,
+            file_name: fileName,
+            file_url: fileUrl,
+            status: 'FAILED',
+            error_message: rejectionMsg,
+            is_invalid_document: true,
+            structured_json: geminiResult.structured_json
+          });
+          continue;
+        }
+
+        // 5. Perform Deterministic Validation & Scoring
         const validation = validateExtractionResult(geminiResult.structured_json);
 
-        // 5. Store Extraction Results in Supabase DB
+        // 6. Store Extraction Results in Supabase DB
         await dbService.saveExtraction(
           docRecord.id,
           geminiResult.raw_response,
           validation.validatedJson
         );
 
-        // 6. Update Document Status & Metrics
-        const updatedDoc = await dbService.updateDocumentStatus(
+        // 7. Update Document Status & Metrics
+        await dbService.updateDocumentStatus(
           docRecord.id,
           validation.status,
           validation.overallConfidence,
@@ -74,12 +114,16 @@ export async function processUploads(req, res, next) {
           validation.warnings.length > 0 ? validation.warnings.join('; ') : null
         );
 
-        // 7. Create order records from extraction
-        try {
-          await orderRecordService.createFromExtraction(validation.validatedJson, docRecord.id);
-          console.log(`[Upload Controller] Order records created for ${fileName}`);
-        } catch (orderErr) {
-          console.warn(`[Upload Controller] Order record creation failed:`, orderErr.message);
+        // 8. Create order records from extraction (only if extraction succeeded)
+        if (validation.status !== 'FAILED') {
+          try {
+            await orderRecordService.createFromExtraction(validation.validatedJson, docRecord.id);
+            console.log(`[Upload Controller] Order records created for ${fileName}`);
+          } catch (orderErr) {
+            console.warn(`[Upload Controller] Order record creation failed:`, orderErr.message);
+          }
+        } else {
+          console.warn(`[Upload Controller] Skipping order creation for ${fileName} — extraction FAILED`);
         }
 
         processedResults.push({
@@ -149,6 +193,22 @@ export async function scanReturnLabel(req, res, next) {
 
     // Call Gemini API Multimodal Parser purely in memory
     const geminiResult = await parseDocumentWithGemini(file.buffer, fileType, fileName);
+
+    // Check for invalid document
+    if (geminiResult.structured_json?.is_valid_document === false) {
+      return res.status(200).json({
+        success: false,
+        error: geminiResult.structured_json.rejection_reason ||
+          'This image does not contain a recognizable shipping label or order document.',
+        documents: [{
+          file_name: fileName,
+          status: 'FAILED',
+          confidence: 0,
+          is_invalid_document: true,
+          structured_json: geminiResult.structured_json
+        }]
+      });
+    }
 
     // Perform Deterministic Validation & Scoring
     const validation = validateExtractionResult(geminiResult.structured_json);
