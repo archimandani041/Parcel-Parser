@@ -35,6 +35,19 @@ export const uploadParcelLabels = async (files, onUploadProgress) => {
   return response.data;
 };
 
+export const scanReturnLabelFile = async (file) => {
+  const formData = new FormData();
+  formData.append('files', file);
+
+  const response = await api.post('/upload/scan-only', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  });
+
+  return response.data;
+};
+
 export const getDocuments = async () => {
   const response = await api.get('/documents');
   return response.data;

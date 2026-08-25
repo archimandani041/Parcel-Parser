@@ -7,7 +7,7 @@ import {
   updateReturnDeliveryCharge,
   undoReturnOrderRecord,
   getOrderRecords,
-  uploadParcelLabels,
+  scanReturnLabelFile,
   returnOrderRecord
 } from '../services/api';
 import {
@@ -131,8 +131,8 @@ export default function Return() {
     setReturnModalError(null);
 
     try {
-      // Call Gemini Vision Parser API
-      const res = await uploadParcelLabels([selectedFile]);
+      // Call Gemini Vision Parser API in-memory (scan-only, no DB record creation)
+      const res = await scanReturnLabelFile(selectedFile);
       const doc = res.documents && res.documents[0];
       const json = doc?.structured_json || {};
 

@@ -125,3 +125,49 @@ export async function processUploads(req, res, next) {
     next(err);
   }
 }
+
+/**
+ * Controller for scanning a return label image for Order ID matching ONLY.
+ * Does NOT persist document records or create order records in the database.
+ */
+export async function scanReturnLabel(req, res, next) {
+  try {
+    const files = req.files;
+
+    if (!files || files.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'No file uploaded for return label scan.'
+      });
+    }
+
+    const file = files[0];
+    const fileName = file.originalname;
+    const fileType = file.mimetype;
+
+    console.log(`[Upload Controller] Scanning return label in-memory: ${fileName} (${fileType})`);
+
+    // Call Gemini API Multimodal Parser purely in memory
+    const geminiResult = await parseDocumentWithGemini(file.buffer, fileType, fileName);
+
+    // Perform Deterministic Validation & Scoring
+    const validation = validateExtractionResult(geminiResult.structured_json);
+
+    // Return extracted JSON without saving to DB or creating order records
+    res.status(200).json({
+      success: true,
+      count: 1,
+      documents: [{
+        file_name: fileName,
+        status: validation.status,
+        confidence: validation.overallConfidence,
+        processing_time: geminiResult.processing_time,
+        structured_json: validation.validatedJson
+      }]
+    });
+
+  } catch (err) {
+    console.error(`[Upload Controller] Return label scan failed:`, err);
+    next(err);
+  }
+}
