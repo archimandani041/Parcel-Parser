@@ -4,30 +4,16 @@ import { useTranslation } from 'react-i18next';
 import Layout from '../components/Layout';
 import { uploadParcelLabels } from '../services/api';
 import { formatBytes } from '../utils/formatters';
-import { 
-  UploadCloud, 
-  FileText, 
-  X, 
-  CheckCircle2, 
-  AlertCircle, 
-  Loader2, 
-  Cpu, 
-  ShieldCheck,
-  ArrowRight,
-  Sparkles,
-  FileCheck2,
-  Trash2,
-  Camera,
-  RefreshCw,
-  Zap,
-  Image as ImageIcon
+import {
+  UploadCloud, FileText, X, CheckCircle2, AlertCircle, Loader2, Cpu, ShieldCheck,
+  ArrowRight, Sparkles, FileCheck2, Trash2, Camera, RefreshCw, Zap, Image as ImageIcon
 } from 'lucide-react';
 
 export default function Upload() {
   const { t } = useTranslation();
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [processingState, setProcessingState] = useState('IDLE'); // IDLE, UPLOADING, ANALYZING, EXTRACTING, VALIDATING, COMPLETED, FAILED
+  const [processingState, setProcessingState] = useState('IDLE');
   const [errorMessage, setErrorMessage] = useState(null);
   const [uploadedResults, setUploadedResults] = useState([]);
   const fileInputRef = useRef(null);
@@ -35,455 +21,230 @@ export default function Upload() {
   const videoRef = useRef(null);
   const navigate = useNavigate();
 
-  // Camera Capture state
   const [showCameraModal, setShowCameraModal] = useState(false);
   const [cameraStream, setCameraStream] = useState(null);
-  const [facingMode, setFacingMode] = useState('environment'); // 'environment' | 'user'
+  const [facingMode, setFacingMode] = useState('environment');
   const [cameraError, setCameraError] = useState(null);
 
   const startCamera = async (mode = facingMode) => {
-    setCameraError(null);
-    setShowCameraModal(true);
+    setCameraError(null); setShowCameraModal(true);
     try {
-      if (cameraStream) {
-        cameraStream.getTracks().forEach(track => track.stop());
-      }
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: { ideal: mode },
-          width: { ideal: 1920 },
-          height: { ideal: 1080 }
-        }
-      });
+      if (cameraStream) cameraStream.getTracks().forEach(track => track.stop());
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: mode }, width: { ideal: 1920 }, height: { ideal: 1080 } } });
       setCameraStream(stream);
-      setTimeout(() => {
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
-      }, 100);
-    } catch (err) {
-      console.error('Camera Access Error:', err);
-      setCameraError(t('upload.cameraDeniedError'));
-    }
+      setTimeout(() => { if (videoRef.current) videoRef.current.srcObject = stream; }, 100);
+    } catch (err) { console.error('Camera Access Error:', err); setCameraError(t('upload.cameraDeniedError')); }
   };
 
-  const stopCamera = () => {
-    if (cameraStream) {
-      cameraStream.getTracks().forEach(track => track.stop());
-      setCameraStream(null);
-    }
-    setShowCameraModal(false);
-    setCameraError(null);
-  };
-
-  const toggleFacingMode = () => {
-    const nextMode = facingMode === 'environment' ? 'user' : 'environment';
-    setFacingMode(nextMode);
-    startCamera(nextMode);
-  };
+  const stopCamera = () => { if (cameraStream) { cameraStream.getTracks().forEach(track => track.stop()); setCameraStream(null); } setShowCameraModal(false); setCameraError(null); };
+  const toggleFacingMode = () => { const next = facingMode === 'environment' ? 'user' : 'environment'; setFacingMode(next); startCamera(next); };
 
   const captureCameraPhoto = () => {
     if (!videoRef.current) return;
     const video = videoRef.current;
     const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth || 1280;
-    canvas.height = video.videoHeight || 720;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
+    canvas.width = video.videoWidth || 1280; canvas.height = video.videoHeight || 720;
+    canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
     canvas.toBlob((blob) => {
       if (!blob) return;
-      const fileName = `parcel_label_camera_${Date.now()}.jpg`;
-      const file = new File([blob], fileName, { type: 'image/jpeg' });
+      const file = new File([blob], `parcel_label_camera_${Date.now()}.jpg`, { type: 'image/jpeg' });
       Object.assign(file, { _isPdf: false });
-
-      setSelectedFiles(prev => [...prev, file]);
-      stopCamera();
+      setSelectedFiles(prev => [...prev, file]); stopCamera();
     }, 'image/jpeg', 0.92);
   };
 
   const handleFileSelect = (files) => {
-    const validFiles = Array.from(files).filter(file => {
-      const isAllowed = file.type.startsWith('image/') || file.type === 'application/pdf' || file.name.match(/\.(jpg|jpeg|png|webp|bmp|tiff|tif|pdf)$/i);
-      return isAllowed;
-    });
-
-    if (validFiles.length < files.length) {
-      setErrorMessage(t('upload.fileSkippedError'));
-    } else {
-      setErrorMessage(null);
-    }
-
-    // Annotate each file with isPdf flag
-    const annotated = validFiles.map(f => Object.assign(f, {
-      _isPdf: f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf')
-    }));
-
+    const validFiles = Array.from(files).filter(file => file.type.startsWith('image/') || file.type === 'application/pdf' || file.name.match(/\.(jpg|jpeg|png|webp|bmp|tiff|tif|pdf)$/i));
+    if (validFiles.length < files.length) setErrorMessage(t('upload.fileSkippedError')); else setErrorMessage(null);
+    const annotated = validFiles.map(f => Object.assign(f, { _isPdf: f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf') }));
     setSelectedFiles(prev => [...prev, ...annotated]);
   };
 
-  const handleDrop = (e) => {
-    e.preventDefault();
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      handleFileSelect(e.dataTransfer.files);
-    }
-  };
-
-  const removeFile = (index) => {
-    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
-  };
+  const handleDrop = (e) => { e.preventDefault(); if (e.dataTransfer.files?.length > 0) handleFileSelect(e.dataTransfer.files); };
+  const removeFile = (index) => setSelectedFiles(prev => prev.filter((_, i) => i !== index));
 
   const handleStartUpload = async () => {
     if (selectedFiles.length === 0) return;
-
-    setProcessingState('UPLOADING');
-    setUploadProgress(10);
-    setErrorMessage(null);
-
+    setProcessingState('UPLOADING'); setUploadProgress(10); setErrorMessage(null);
     try {
       const interval = setInterval(() => {
         setUploadProgress(prev => {
-          if (prev < 40) {
-            setProcessingState('ANALYZING');
-            return prev + 15;
-          } else if (prev < 75) {
-            setProcessingState('EXTRACTING');
-            return prev + 10;
-          } else if (prev < 90) {
-            setProcessingState('VALIDATING');
-            return prev + 5;
-          }
+          if (prev < 40) { setProcessingState('ANALYZING'); return prev + 15; }
+          else if (prev < 75) { setProcessingState('EXTRACTING'); return prev + 10; }
+          else if (prev < 90) { setProcessingState('VALIDATING'); return prev + 5; }
           return prev;
         });
       }, 600);
-
-      const res = await uploadParcelLabels(selectedFiles, (percent) => {
-        setUploadProgress(Math.min(percent, 95));
-      });
-
-      clearInterval(interval);
-      setUploadProgress(100);
-      setUploadedResults(res.documents || []);
-
-      // Check if all documents were rejected as invalid
+      const res = await uploadParcelLabels(selectedFiles, (percent) => setUploadProgress(Math.min(percent, 95)));
+      clearInterval(interval); setUploadProgress(100); setUploadedResults(res.documents || []);
       const allDocs = res.documents || [];
       const invalidDocs = allDocs.filter(d => d.is_invalid_document || (d.status === 'FAILED' && d.error_message));
       const failedDocs = allDocs.filter(d => d.status === 'FAILED');
-
-      if (invalidDocs.length > 0 && invalidDocs.length === allDocs.length) {
-        // All documents were invalid — show error
-        setProcessingState('FAILED');
-        const reasons = invalidDocs.map(d => d.error_message || 'Invalid document').join('; ');
-        setErrorMessage(reasons);
-      } else if (failedDocs.length > 0 && failedDocs.length === allDocs.length) {
-        // All documents failed extraction
-        setProcessingState('FAILED');
-        const reasons = failedDocs.map(d => d.error_message || 'Extraction failed').join('; ');
-        setErrorMessage(reasons);
-      } else {
-        setProcessingState('COMPLETED');
-        if (allDocs.length === 1) {
-          setTimeout(() => {
-            navigate(`/document/${allDocs[0].id}`);
-          }, 1200);
-        }
-      }
-
-    } catch (err) {
-      console.error('Upload Error:', err);
-      setProcessingState('FAILED');
-      setErrorMessage(err.response?.data?.error || err.message || t('upload.failedProcessError'));
-    }
+      if (invalidDocs.length > 0 && invalidDocs.length === allDocs.length) { setProcessingState('FAILED'); setErrorMessage(invalidDocs.map(d => d.error_message || 'Invalid document').join('; ')); }
+      else if (failedDocs.length > 0 && failedDocs.length === allDocs.length) { setProcessingState('FAILED'); setErrorMessage(failedDocs.map(d => d.error_message || 'Extraction failed').join('; ')); }
+      else { setProcessingState('COMPLETED'); if (allDocs.length === 1) setTimeout(() => navigate(`/document/${allDocs[0].id}`), 1200); }
+    } catch (err) { console.error('Upload Error:', err); setProcessingState('FAILED'); setErrorMessage(err.response?.data?.error || err.message || t('upload.failedProcessError')); }
   };
 
   const steps = [
-    { id: 'UPLOADING', label: t('upload.step1') },
-    { id: 'ANALYZING', label: t('upload.step2') },
-    { id: 'EXTRACTING', label: t('upload.step3') },
-    { id: 'VALIDATING', label: t('upload.step4') },
-    { id: 'COMPLETED', label: t('upload.step5') }
+    { id: 'UPLOADING', label: t('upload.step1') }, { id: 'ANALYZING', label: t('upload.step2') },
+    { id: 'EXTRACTING', label: t('upload.step3') }, { id: 'VALIDATING', label: t('upload.step4') }, { id: 'COMPLETED', label: t('upload.step5') }
   ];
 
   const getStepStatusClass = (stepId, currentStep) => {
     const order = ['IDLE', 'UPLOADING', 'ANALYZING', 'EXTRACTING', 'VALIDATING', 'COMPLETED'];
-    const currentIndex = order.indexOf(currentStep);
-    const stepIndex = order.indexOf(stepId);
-
-    if (currentStep === 'FAILED') return 'text-slate-400 border-slate-200 bg-slate-100';
-    if (currentIndex > stepIndex || currentStep === 'COMPLETED') {
-      return 'text-emerald-800 border-emerald-300 bg-emerald-100/90 font-bold';
-    }
-    if (currentIndex === stepIndex) {
-      return 'text-purple-900 border-purple-300 bg-purple-100 font-bold ring-2 ring-purple-300/60 animate-pulse';
-    }
-    return 'text-slate-400 border-purple-100 bg-purple-50/30';
+    const ci = order.indexOf(currentStep), si = order.indexOf(stepId);
+    if (currentStep === 'FAILED') return { background: 'var(--color-surface-muted)', color: 'var(--color-text-muted)', border: '1px solid var(--color-border-light)' };
+    if (ci > si || currentStep === 'COMPLETED') return { background: 'var(--color-success-light)', color: 'var(--color-success)', border: '1px solid var(--color-success-border)', fontWeight: 700 };
+    if (ci === si) return { background: 'var(--color-accent-light)', color: 'var(--color-accent)', border: '1px solid var(--color-accent-muted)', fontWeight: 700 };
+    return { background: 'var(--color-surface-muted)', color: 'var(--color-text-muted)', border: '1px solid var(--color-border-light)' };
   };
 
   return (
     <Layout title={t('nav.upload')}>
       <div className="w-full space-y-8 pb-12">
-        
-        {/* Header Intro */}
+
+        {/* Header */}
         <div className="text-center space-y-3">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 bg-purple-100 border border-purple-200 rounded-full text-xs font-bold text-purple-800 shadow-xs">
-            <Sparkles className="w-3.5 h-3.5 text-purple-600 fill-purple-600" /> {t('upload.badge')}
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-bold"
+            style={{ background: 'var(--color-accent-light)', border: '1px solid var(--color-accent-muted)', color: 'var(--color-accent)' }}>
+            <Sparkles className="w-3.5 h-3.5 fill-current" /> {t('upload.badge')}
           </div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">
-            {t('upload.title')}
-          </h1>
-          <p className="text-slate-500 text-xs sm:text-sm max-w-xl mx-auto leading-relaxed font-medium">
-            {t('upload.subtitle')}
-          </p>
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight font-serif" style={{ color: 'var(--color-brown-dark)' }}>{t('upload.title')}</h1>
+          <p className="text-xs sm:text-sm max-w-xl mx-auto leading-relaxed font-medium" style={{ color: 'var(--color-text-tertiary)' }}>{t('upload.subtitle')}</p>
         </div>
 
-        {/* Error Alert */}
+        {/* Error */}
         {errorMessage && (
-          <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 text-xs text-rose-800 flex items-center justify-between shadow-md">
-            <div className="flex items-center gap-3">
-              <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
-              <span className="font-semibold">{errorMessage}</span>
-            </div>
-            <button onClick={() => setErrorMessage(null)} className="text-rose-500 hover:text-rose-800 p-1 rounded-lg">
-              <X className="w-4 h-4" />
-            </button>
+          <div className="rounded-2xl p-4 text-xs flex items-center justify-between shadow-md"
+            style={{ background: 'var(--color-danger-light)', border: '1px solid var(--color-danger-border)', color: 'var(--color-danger)' }}>
+            <div className="flex items-center gap-3"><AlertCircle className="w-5 h-5 shrink-0" /><span className="font-semibold">{errorMessage}</span></div>
+            <button onClick={() => setErrorMessage(null)} className="p-1 rounded-lg"><X className="w-4 h-4" /></button>
           </div>
         )}
 
-        {/* ACTION CARDS: FILE UPLOAD + DIRECT CAMERA UPLOAD */}
+        {/* Upload Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          
-          {/* Card 1: Drag & Drop / File Upload */}
-          <div
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
-            className="ui-card border-2 border-dashed border-purple-200 hover:border-purple-400 bg-white hover:bg-purple-50/40 rounded-3xl p-8 text-center cursor-pointer transition-all duration-300 shadow-xl shadow-purple-900/5 group relative overflow-hidden flex flex-col items-center justify-center min-h-[250px]"
-          >
-            <input
-              type="file"
-              ref={fileInputRef}
-              multiple
-              accept="image/jpeg,image/png,image/webp,image/bmp,image/tiff,application/pdf,.jpg,.jpeg,.png,.webp,.bmp,.tiff,.tif,.pdf"
-              onChange={(e) => handleFileSelect(e.target.files)}
-              className="hidden"
-            />
-
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-purple-400 via-violet-500 to-indigo-500 flex items-center justify-center mb-4 text-white group-hover:scale-105 transition-transform shadow-md shadow-purple-300/40">
+          <div onDragOver={(e) => e.preventDefault()} onDrop={handleDrop} onClick={() => fileInputRef.current?.click()}
+            className="ui-card rounded-3xl p-8 text-center cursor-pointer transition-all duration-300 group relative overflow-hidden flex flex-col items-center justify-center min-h-[250px]"
+            style={{ border: '2px dashed var(--color-border-strong)' }}>
+            <input type="file" ref={fileInputRef} multiple accept="image/jpeg,image/png,image/webp,image/bmp,image/tiff,application/pdf,.jpg,.jpeg,.png,.webp,.bmp,.tiff,.tif,.pdf" onChange={(e) => handleFileSelect(e.target.files)} className="hidden" />
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 text-white group-hover:scale-105 transition-transform"
+              style={{ background: 'var(--color-brown-dark)', boxShadow: '0 8px 24px rgba(61,35,20,0.2)' }}>
               <UploadCloud className="w-8 h-8" />
             </div>
-
-            <h3 className="text-base font-bold text-slate-900 mb-1">
-              {t('upload.browseOrDrag')}
-            </h3>
-            <p className="text-xs text-slate-500 mb-4 max-w-xs font-medium">
-              {t('upload.browseSubtitle')}
-            </p>
-
-            <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-purple-50 border border-purple-200/80 rounded-full text-[11px] text-purple-700 font-mono font-semibold">
-              <FileCheck2 className="w-3.5 h-3.5 text-purple-600" />
-              {t('upload.supportedFormats')}
+            <h3 className="text-base font-bold mb-1" style={{ color: 'var(--color-brown-dark)' }}>{t('upload.browseOrDrag')}</h3>
+            <p className="text-xs mb-4 max-w-xs font-medium" style={{ color: 'var(--color-text-tertiary)' }}>{t('upload.browseSubtitle')}</p>
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-mono font-semibold"
+              style={{ background: 'var(--color-surface-muted)', border: '1px solid var(--color-border-light)', color: 'var(--color-text-secondary)' }}>
+              <FileCheck2 className="w-3.5 h-3.5" /> {t('upload.supportedFormats')}
             </div>
           </div>
 
-          {/* Card 2: Direct Camera Image Capture */}
-          <div
-            className="ui-card border-2 border-purple-200/90 bg-gradient-to-br from-purple-50/60 via-violet-50/30 to-white rounded-3xl p-8 text-center transition-all duration-300 shadow-xl shadow-purple-900/5 relative overflow-hidden flex flex-col items-center justify-center min-h-[250px]"
-          >
-            <input
-              type="file"
-              ref={mobileCameraInputRef}
-              accept="image/*"
-              capture="environment"
-              onChange={(e) => e.target.files && handleFileSelect(e.target.files)}
-              className="hidden"
-            />
-
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-400 via-orange-500 to-amber-600 flex items-center justify-center mb-4 text-white shadow-md shadow-amber-300/40">
+          <div className="ui-card rounded-3xl p-8 text-center transition-all duration-300 relative overflow-hidden flex flex-col items-center justify-center min-h-[250px]"
+            style={{ background: 'var(--color-surface-warm)', border: '1px solid var(--color-border)' }}>
+            <input type="file" ref={mobileCameraInputRef} accept="image/*" capture="environment" onChange={(e) => e.target.files && handleFileSelect(e.target.files)} className="hidden" />
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 text-white"
+              style={{ background: 'var(--color-brown-dark)', boxShadow: '0 8px 24px rgba(61,35,20,0.2)' }}>
               <Camera className="w-8 h-8" />
             </div>
-
-            <h3 className="text-base font-bold text-slate-900 mb-1">
-              {t('upload.directCamera')}
-            </h3>
-            <p className="text-xs text-slate-500 mb-4 max-w-xs font-medium">
-              {t('upload.directCameraSubtitle')}
-            </p>
-
+            <h3 className="text-base font-bold mb-1" style={{ color: 'var(--color-brown-dark)' }}>{t('upload.directCamera')}</h3>
+            <p className="text-xs mb-4 max-w-xs font-medium" style={{ color: 'var(--color-text-tertiary)' }}>{t('upload.directCameraSubtitle')}</p>
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => startCamera('environment')}
-                className="flex items-center gap-2 px-5 py-2.5 bg-purple-900 hover:bg-purple-950 text-white text-xs font-bold rounded-full shadow-md shadow-purple-900/20 transition-all hover:scale-105 cursor-pointer"
-              >
-                <Camera className="w-4 h-4 text-amber-400" />
-                {t('upload.openLiveCamera')}
+              <button type="button" onClick={() => startCamera('environment')}
+                className="flex items-center gap-2 px-5 py-2.5 text-white text-xs font-bold rounded-xl shadow-md transition-all hover:scale-105 cursor-pointer"
+                style={{ background: 'var(--color-brown-dark)' }}>
+                <Camera className="w-4 h-4" style={{ color: 'var(--color-accent-muted)' }} /> {t('upload.openLiveCamera')}
               </button>
-
-              <button
-                type="button"
-                onClick={() => mobileCameraInputRef.current?.click()}
-                className="flex items-center gap-1.5 px-4 py-2.5 bg-amber-100 hover:bg-amber-200 text-amber-950 text-xs font-bold rounded-full border border-amber-300 transition-all cursor-pointer"
-                title={t('upload.snapPhoto')}
-              >
-                <Zap className="w-3.5 h-3.5 text-amber-700" />
-                {t('upload.snapPhoto')}
+              <button type="button" onClick={() => mobileCameraInputRef.current?.click()}
+                className="flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer"
+                style={{ background: 'var(--color-accent-light)', color: 'var(--color-accent)', border: '1px solid var(--color-accent-muted)' }}>
+                <Zap className="w-3.5 h-3.5" /> {t('upload.snapPhoto')}
               </button>
             </div>
           </div>
-
         </div>
 
-        {/* LIVE CAMERA VIEWFINDER MODAL */}
+        {/* Camera Modal */}
         {showCameraModal && (
-          <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl max-w-2xl w-full p-6 text-white space-y-4 relative overflow-hidden">
-              
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(45,24,16,0.8)', backdropFilter: 'blur(8px)' }}>
+            <div className="max-w-2xl w-full p-6 text-white space-y-4 relative overflow-hidden rounded-3xl shadow-2xl" style={{ background: 'var(--color-brown-dark)', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <div className="flex items-center justify-between pb-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-400">
-                    <Camera className="w-4 h-4" />
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'rgba(150,62,27,0.2)', border: '1px solid rgba(150,62,27,0.3)' }}>
+                    <Camera className="w-4 h-4" style={{ color: 'var(--color-accent)' }} />
                   </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-100">{t('upload.liveScannerTitle')}</h3>
-                    <p className="text-[10px] text-slate-400">{t('upload.liveScannerSubtitle')}</p>
-                  </div>
+                  <div><h3 className="text-sm font-bold">{t('upload.liveScannerTitle')}</h3><p className="text-[10px]" style={{ color: 'rgba(255,255,255,0.5)' }}>{t('upload.liveScannerSubtitle')}</p></div>
                 </div>
-
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={toggleFacingMode}
-                    className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-full border border-slate-700 transition-all cursor-pointer text-xs flex items-center gap-1.5"
-                    title="Switch Camera (Front/Rear)"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Flip</span>
+                  <button onClick={toggleFacingMode} className="p-2 rounded-full transition-all cursor-pointer text-xs flex items-center gap-1.5" style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)' }}>
+                    <RefreshCw className="w-3.5 h-3.5" /><span className="hidden sm:inline">Flip</span>
                   </button>
-
-                  <button
-                    onClick={stopCamera}
-                    className="p-2 bg-slate-800 hover:bg-rose-950/60 text-slate-400 hover:text-rose-400 rounded-full border border-slate-700 hover:border-rose-900 transition-all cursor-pointer"
-                  >
+                  <button onClick={stopCamera} className="p-2 rounded-full transition-all cursor-pointer" style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.5)' }}>
                     <X className="w-4.5 h-4.5" />
                   </button>
                 </div>
               </div>
-
               {cameraError ? (
-                <div className="py-16 text-center space-y-3 bg-slate-950/60 rounded-2xl border border-slate-800">
-                  <AlertCircle className="w-10 h-10 text-rose-400 mx-auto" />
-                  <p className="text-xs text-rose-300 font-medium px-4">{cameraError}</p>
-                  <button
-                    onClick={() => startCamera()}
-                    className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-full text-xs font-bold cursor-pointer"
-                  >
-                    {t('upload.retryCamera')}
-                  </button>
+                <div className="py-16 text-center space-y-3 rounded-2xl" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <AlertCircle className="w-10 h-10 mx-auto" style={{ color: 'var(--color-danger)' }} />
+                  <p className="text-xs px-4" style={{ color: '#FF8A80' }}>{cameraError}</p>
+                  <button onClick={() => startCamera()} className="px-4 py-2 text-white rounded-full text-xs font-bold cursor-pointer" style={{ background: 'var(--color-accent)' }}>{t('upload.retryCamera')}</button>
                 </div>
               ) : (
-                <div className="relative aspect-video bg-black rounded-2xl overflow-hidden border border-slate-800 shadow-inner flex items-center justify-center">
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    playsInline
-                    muted
-                    className="w-full h-full object-cover"
-                  />
-
-                  {/* Viewfinder Target Guidelines */}
-                  <div className="absolute inset-8 border-2 border-purple-400/60 rounded-2xl pointer-events-none flex items-center justify-center">
-                    <div className="absolute top-2 left-2 w-4 h-4 border-t-2 border-l-2 border-purple-400" />
-                    <div className="absolute top-2 right-2 w-4 h-4 border-t-2 border-r-2 border-purple-400" />
-                    <div className="absolute bottom-2 left-2 w-4 h-4 border-b-2 border-l-2 border-purple-400" />
-                    <div className="absolute bottom-2 right-2 w-4 h-4 border-b-2 border-r-2 border-purple-400" />
-                    <span className="text-[10px] font-mono text-purple-200/80 bg-slate-900/60 px-2 py-0.5 rounded-full border border-purple-400/30">
-                      {t('upload.alignParcelLabel')}
-                    </span>
+                <div className="relative aspect-video bg-black rounded-2xl overflow-hidden flex items-center justify-center" style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
+                  <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
+                  <div className="absolute inset-8 rounded-2xl pointer-events-none flex items-center justify-center" style={{ border: '2px solid rgba(150,62,27,0.5)' }}>
+                    <div className="absolute top-2 left-2 w-4 h-4" style={{ borderTop: '2px solid var(--color-accent)', borderLeft: '2px solid var(--color-accent)' }} />
+                    <div className="absolute top-2 right-2 w-4 h-4" style={{ borderTop: '2px solid var(--color-accent)', borderRight: '2px solid var(--color-accent)' }} />
+                    <div className="absolute bottom-2 left-2 w-4 h-4" style={{ borderBottom: '2px solid var(--color-accent)', borderLeft: '2px solid var(--color-accent)' }} />
+                    <div className="absolute bottom-2 right-2 w-4 h-4" style={{ borderBottom: '2px solid var(--color-accent)', borderRight: '2px solid var(--color-accent)' }} />
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full" style={{ color: 'rgba(255,255,255,0.7)', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(150,62,27,0.3)' }}>{t('upload.alignParcelLabel')}</span>
                   </div>
                 </div>
               )}
-
               <div className="flex items-center justify-between pt-2">
-                <button
-                  onClick={stopCamera}
-                  className="px-5 py-2 rounded-full text-xs font-semibold text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition-all cursor-pointer"
-                >
-                  {t('common.cancel')}
-                </button>
-
+                <button onClick={stopCamera} className="px-5 py-2 rounded-full text-xs font-semibold cursor-pointer" style={{ color: 'rgba(255,255,255,0.5)', background: 'rgba(255,255,255,0.08)' }}>{t('common.cancel')}</button>
                 {!cameraError && (
-                  <button
-                    onClick={captureCameraPhoto}
-                    className="flex items-center gap-2 px-7 py-3 bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-bold text-xs rounded-full shadow-lg shadow-purple-500/25 transition-all hover:scale-105 cursor-pointer"
-                  >
-                    <Camera className="w-4 h-4" />
-                    {t('upload.capturePhotoAndExtract')}
+                  <button onClick={captureCameraPhoto} className="pill-button-dark flex items-center gap-2 px-7 py-3 text-white font-bold text-xs shadow-lg transition-all hover:scale-105 cursor-pointer">
+                    <Camera className="w-4 h-4" /> {t('upload.capturePhotoAndExtract')}
                   </button>
                 )}
               </div>
-
             </div>
           </div>
         )}
 
-        {/* Selected Files Preview List */}
+        {/* Selected Files */}
         {selectedFiles.length > 0 && (
-          <div className="ui-card p-6 sm:p-8 space-y-6 shadow-xl">
-            
-            <div className="flex items-center justify-between border-b border-purple-100 pb-4">
-              <div>
-                <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-purple-600" /> {t('upload.selectedDocuments')} ({selectedFiles.length})
-                </h4>
-                <p className="text-xs text-slate-500 font-medium">{t('upload.readyForAi')}</p>
-              </div>
-
+          <div className="ui-card rounded-3xl p-6 space-y-4 shadow-lg" style={{ background: 'var(--color-surface)' }}>
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: 'var(--color-brown-dark)' }}>
+                <FileText className="w-4 h-4" style={{ color: 'var(--color-accent)' }} /> {t('upload.selectedDocuments')} ({selectedFiles.length})
+              </h3>
               {processingState === 'IDLE' && (
-                <button
-                  onClick={() => setSelectedFiles([])}
-                  className="text-xs font-bold text-slate-500 hover:text-rose-600 flex items-center gap-1 transition-colors px-3 py-1.5 rounded-full hover:bg-rose-50 border border-transparent hover:border-rose-200"
-                >
-                  <Trash2 className="w-3.5 h-3.5" /> {t('documents.deleteAll')}
-                </button>
+                <button onClick={() => setSelectedFiles([])} className="text-xs font-semibold hover:underline cursor-pointer" style={{ color: 'var(--color-text-tertiary)' }}>{t('upload.clearAll')}</button>
               )}
             </div>
 
-            {/* File List */}
-            <div className="space-y-3">
-              {selectedFiles.map((file, idx) => {
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              {selectedFiles.map((file, index) => {
                 const ext = file.name.split('.').pop()?.toUpperCase() || 'FILE';
-                const isPdf = file._isPdf || file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
                 return (
-                  <div key={idx} className="flex items-center justify-between bg-purple-50/40 border border-purple-200/80 p-4 rounded-2xl hover:bg-purple-100/50 transition-all">
-                    <div className="flex items-center gap-3.5 truncate pr-4">
-                      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-bold text-xs uppercase shrink-0 font-mono border ${
-                        isPdf
-                          ? 'bg-rose-100 border-rose-200 text-rose-700'
-                          : 'bg-purple-100 border-purple-200 text-purple-700'
-                      }`}>
-                        {ext}
-                      </div>
+                  <div key={index} className="flex items-center justify-between p-3 rounded-2xl transition-all"
+                    style={{ background: 'var(--color-surface-warm)', border: '1px solid var(--color-border-light)' }}>
+                    <div className="flex items-center gap-3 overflow-hidden">
+                      <div className="w-8 h-8 rounded-xl flex items-center justify-center font-mono text-[10px] font-bold shrink-0"
+                        style={ext === 'PDF' ? { background: 'var(--color-danger-light)', color: 'var(--color-danger)', border: '1px solid var(--color-danger-border)' }
+                          : { background: 'var(--color-accent-light)', border: '1px solid var(--color-accent-muted)', color: 'var(--color-accent)' }}>{ext}</div>
                       <div className="truncate">
-                        <p className="text-xs font-bold text-slate-800 truncate">{file.name}</p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <p className="text-[10px] text-slate-500 font-mono font-medium">{formatBytes(file.size)}</p>
-                          {isPdf && (
-                            <span className="text-[9px] font-bold text-rose-700 bg-rose-100 border border-rose-200 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                              PDF · Text+Vision Extraction
-                            </span>
-                          )}
-                        </div>
+                        <p className="text-xs font-bold truncate" style={{ color: 'var(--color-text-primary)' }}>{file.name}</p>
+                        <p className="text-[10px] font-mono" style={{ color: 'var(--color-text-tertiary)' }}>{(file.size / 1024).toFixed(1)} KB</p>
                       </div>
                     </div>
-
                     {processingState === 'IDLE' && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeFile(idx);
-                        }}
-                        className="text-slate-400 hover:text-rose-600 p-2 rounded-full hover:bg-purple-100 transition-colors"
-                      >
-                        <X className="w-4 h-4" />
+                      <button onClick={() => removeFile(index)} className="p-1 rounded-full hover:bg-slate-200/50 transition-colors cursor-pointer shrink-0" style={{ color: 'var(--color-text-tertiary)' }}>
+                        <X className="w-3.5 h-3.5" />
                       </button>
                     )}
                   </div>
@@ -491,116 +252,66 @@ export default function Upload() {
               })}
             </div>
 
-            {/* Processing Progress Stepper */}
+            {/* Processing Progress Bar */}
             {processingState !== 'IDLE' && (
-              <div className="pt-5 border-t border-purple-100 space-y-4">
+              <div className="space-y-3 pt-2">
                 <div className="flex items-center justify-between text-xs font-bold">
-                  <span className="text-purple-800 flex items-center gap-2">
-                    {processingState === 'COMPLETED' ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                    ) : (
-                      <Loader2 className="w-4 h-4 animate-spin text-purple-600" />
-                    )}
-                    {t('upload.pipelineState')}: <span className="text-slate-900 uppercase font-mono">{processingState}</span>
+                  <span className="flex items-center gap-2" style={{ color: 'var(--color-accent)' }}>
+                    {processingState === 'COMPLETED' ? <CheckCircle2 className="w-4 h-4" style={{ color: 'var(--color-success)' }} /> : <Loader2 className="w-4 h-4 animate-spin" />}
+                    {uploadProgressMessage || t('upload.extractingWithAi')}
                   </span>
-                  <span className="text-purple-700 font-mono font-bold">{uploadProgress}%</span>
+                  <span className="font-mono font-bold" style={{ color: 'var(--color-accent)' }}>{uploadProgress}%</span>
                 </div>
-
-                <div className="w-full h-2.5 bg-purple-100 rounded-full overflow-hidden border border-purple-200">
-                  <div
-                    className="h-full bg-gradient-to-r from-purple-400 via-violet-500 to-indigo-500 transition-all duration-300 shadow-md"
-                    style={{ width: `${uploadProgress}%` }}
-                  />
+                <div className="w-full h-2.5 rounded-full overflow-hidden" style={{ background: 'var(--color-surface-muted)', border: '1px solid var(--color-border-light)' }}>
+                  <div className="h-full transition-all duration-300" style={{ width: `${uploadProgress}%`, background: 'linear-gradient(90deg, var(--color-accent), var(--color-accent-hover))', boxShadow: '0 0 8px rgba(150,62,27,0.2)' }} />
                 </div>
-
-                {/* Processing Steps Horizontal Bar */}
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-2">
                   {steps.map((step) => (
-                    <div
-                      key={step.id}
-                      className={`p-2.5 rounded-xl border text-[11px] text-center transition-all ${getStepStatusClass(step.id, processingState)}`}
-                    >
-                      {step.label}
-                    </div>
+                    <div key={step.id} className="p-2.5 rounded-xl text-[11px] text-center transition-all" style={getStepStatusClass(step.id, processingState)}>{step.label}</div>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Action Buttons */}
+            {/* Actions */}
             <div className="flex items-center justify-end gap-3 pt-3">
               {processingState === 'COMPLETED' && (
                 <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => {
-                      setSelectedFiles([]);
-                      setProcessingState('IDLE');
-                      setUploadProgress(0);
-                      setErrorMessage(null);
-                      setUploadedResults([]);
-                    }}
-                    className="px-5 py-2.5 bg-purple-50 hover:bg-purple-100 text-purple-800 text-xs font-bold rounded-full transition-colors border border-purple-200"
-                  >
-                    {t('upload.uploadMore')}
-                  </button>
+                  <button onClick={() => { setSelectedFiles([]); setProcessingState('IDLE'); setUploadProgress(0); setErrorMessage(null); setUploadedResults([]); }}
+                    className="px-5 py-2.5 text-xs font-bold rounded-xl transition-colors"
+                    style={{ background: 'var(--color-surface-muted)', color: 'var(--color-text-secondary)', border: '1px solid var(--color-border-light)' }}>{t('upload.uploadMore')}</button>
                   {uploadedResults.length > 0 && (
-                    <button
-                      onClick={() => navigate(`/document/${uploadedResults[0].id}`)}
-                      className="flex items-center gap-2 px-6 py-2.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-950 text-xs font-bold rounded-full transition-all border border-emerald-300 shadow-xs cursor-pointer"
-                    >
-                      {t('upload.inspectExtractedLabel')} <ArrowRight className="w-4 h-4 text-emerald-700" />
+                    <button onClick={() => navigate(`/document/${uploadedResults[0].id}`)}
+                      className="flex items-center gap-2 px-6 py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer"
+                      style={{ background: 'var(--color-surface-muted)', color: 'var(--color-brown-dark)', border: '1px solid var(--color-border-light)' }}>
+                      {t('upload.inspectExtractedLabel')} <ArrowRight className="w-4 h-4" />
                     </button>
                   )}
                 </div>
               )}
-
               {processingState === 'FAILED' && (
                 <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => {
-                      setSelectedFiles([]);
-                      setProcessingState('IDLE');
-                      setUploadProgress(0);
-                      setErrorMessage(null);
-                      setUploadedResults([]);
-                    }}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-800 text-xs font-bold rounded-full transition-colors border border-rose-200 cursor-pointer"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    {t('upload.clearAndRetry', { defaultValue: 'Clear & Upload New' })}
+                  <button onClick={() => { setSelectedFiles([]); setProcessingState('IDLE'); setUploadProgress(0); setErrorMessage(null); setUploadedResults([]); }}
+                    className="flex items-center gap-2 px-5 py-2.5 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                    style={{ background: 'var(--color-danger-light)', color: 'var(--color-danger)', border: '1px solid var(--color-danger-border)' }}>
+                    <Trash2 className="w-3.5 h-3.5" /> {t('upload.clearAndRetry', { defaultValue: 'Clear & Upload New' })}
                   </button>
-                  <button
-                    onClick={() => {
-                      setProcessingState('IDLE');
-                      setUploadProgress(0);
-                      setErrorMessage(null);
-                      setUploadedResults([]);
-                    }}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-bold rounded-full transition-colors border border-amber-200 cursor-pointer"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    {t('upload.retryExtraction', { defaultValue: 'Retry Extraction' })}
+                  <button onClick={() => { setProcessingState('IDLE'); setUploadProgress(0); setErrorMessage(null); setUploadedResults([]); }}
+                    className="flex items-center gap-2 px-5 py-2.5 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                    style={{ background: 'var(--color-warning-light)', color: 'var(--color-warning)', border: '1px solid var(--color-warning-border)' }}>
+                    <RefreshCw className="w-3.5 h-3.5" /> {t('upload.retryExtraction', { defaultValue: 'Retry Extraction' })}
                   </button>
                 </div>
               )}
-
               {processingState === 'IDLE' && (
-                <button
-                  onClick={handleStartUpload}
-                  className="pill-button-pastel flex items-center gap-2.5 px-8 py-3.5 font-bold text-xs shadow-xl hover:scale-105"
-                >
-                  <Cpu className="w-4 h-4 text-purple-100" />
-                  {t('upload.runAiExtraction')}
+                <button onClick={handleStartUpload} className="pill-button-dark flex items-center gap-2.5 px-8 py-3.5 font-bold text-xs hover:scale-105">
+                  <Cpu className="w-4 h-4" /> {t('upload.runAiExtraction')}
                 </button>
               )}
             </div>
-
           </div>
         )}
-
       </div>
     </Layout>
   );
 }
-
-

@@ -1,12 +1,12 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { 
-  LayoutDashboard, 
-  UploadCloud, 
-  FileText, 
-  Sparkles, 
-  Boxes, 
+import {
+  LayoutDashboard,
+  UploadCloud,
+  FileText,
+  Sparkles,
+  Boxes,
   RotateCcw,
   Database,
   Cpu,
@@ -28,18 +28,20 @@ export default function Sidebar({ healthInfo }) {
   ];
 
   return (
-    <aside className="w-64 bg-slate-900/95 border-r border-slate-800/80 flex flex-col justify-between p-4 min-h-screen relative z-20 shrink-0">
+    <aside className="w-64 flex flex-col justify-between p-4 min-h-screen relative z-20 shrink-0"
+      style={{ background: 'var(--color-brown-dark)', borderRight: '1px solid rgba(255,255,255,0.08)' }}>
       <div>
         {/* Brand Header */}
-        <div className="px-3 py-3 mb-6 border-b border-slate-800/80">
+        <div className="px-3 py-3 mb-6" style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
           <div className="flex items-center gap-3">
             <div className="relative">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 via-indigo-600 to-violet-700 flex items-center justify-center shadow-lg shadow-indigo-500/30 ring-1 ring-white/20">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg"
+                style={{ background: 'var(--color-accent)', boxShadow: '0 4px 12px rgba(150,62,27,0.3)' }}>
                 <Boxes className="w-5 h-5 text-white" />
               </div>
               <span className="absolute -top-1 -right-1 flex h-3 w-3">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500 border-2 border-slate-900"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" style={{ border: '2px solid var(--color-brown-dark)' }}></span>
               </span>
             </div>
 
@@ -48,12 +50,14 @@ export default function Sidebar({ healthInfo }) {
                 <h1 className="font-extrabold text-base text-white tracking-tight">
                   {t('nav.parcelAI')}
                 </h1>
-                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 uppercase tracking-wider">
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider"
+                  style={{ background: 'rgba(150,62,27,0.25)', color: 'var(--color-accent-muted)', border: '1px solid rgba(150,62,27,0.35)' }}>
                   PRO
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 font-medium flex items-center gap-1 mt-0.5">
-                <Sparkles className="w-3 h-3 text-indigo-400" /> {t('nav.labelIntelligence')}
+              <p className="text-[11px] font-medium flex items-center gap-1 mt-0.5"
+                style={{ color: 'rgba(255,255,255,0.5)' }}>
+                <Sparkles className="w-3 h-3" style={{ color: 'var(--color-accent)' }} /> {t('nav.labelIntelligence')}
               </p>
             </div>
           </div>
@@ -61,7 +65,8 @@ export default function Sidebar({ healthInfo }) {
 
         {/* Navigation Links */}
         <div className="space-y-1">
-          <p className="px-3 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-2">
+          <p className="px-3 text-[10px] font-extrabold uppercase tracking-wider mb-2"
+            style={{ color: 'rgba(255,255,255,0.4)' }}>
             {t('sidebar.mainNavigation')}
           </p>
 
@@ -73,26 +78,43 @@ export default function Sidebar({ healthInfo }) {
                   key={item.path}
                   to={item.path}
                   className={({ isActive }) =>
-                    `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 group relative ${
-                      isActive
-                        ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-lg shadow-indigo-600/25 border border-indigo-500/40'
-                        : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60 border border-transparent'
+                    `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 group border ${isActive
+                      ? 'shadow-md'
+                      : 'border-transparent hover:bg-white/5 hover:text-white'
                     }`
                   }
+                  style={({ isActive }) => isActive ? {
+                    background: 'var(--color-accent)',
+                    borderColor: 'rgba(255,255,255,0.15)',
+                    boxShadow: '0 4px 14px rgba(150,62,27,0.3)'
+                  } : {
+                    color: 'rgba(255,255,255,0.55)'
+                  }}
                 >
                   {({ isActive }) => (
                     <>
                       <div className="flex items-center gap-3">
-                        <Icon className={`w-4 h-4 transition-transform group-hover:scale-110 ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-indigo-400'}`} />
-                        <span>{item.label}</span>
+                        <Icon className={`w-4 h-4 transition-transform group-hover:scale-110`}
+                          style={{ color: isActive ? '#ffffff' : 'rgba(255,255,255,0.4)' }} />
+                        <span style={{ color: isActive ? '#ffffff' : undefined }}>{item.label}</span>
                       </div>
 
                       {item.badge ? (
-                        <span className="px-1.5 py-0.5 text-[9px] font-extrabold bg-indigo-400/20 text-indigo-300 rounded border border-indigo-400/30">
+                        <span className="px-1.5 py-0.5 text-[9px] font-extrabold rounded"
+                          style={isActive ? {
+                            background: 'rgba(255,255,255,0.2)',
+                            color: '#ffffff',
+                            border: '1px solid rgba(255,255,255,0.2)'
+                          } : {
+                            background: 'rgba(150,62,27,0.2)',
+                            color: 'var(--color-accent-muted)',
+                            border: '1px solid rgba(150,62,27,0.3)'
+                          }}>
                           {item.badge}
                         </span>
                       ) : (
-                        <ChevronRight className={`w-3.5 h-3.5 transition-transform opacity-0 group-hover:opacity-100 ${isActive ? 'opacity-100 text-indigo-200' : 'text-slate-500'}`} />
+                        <ChevronRight className={`w-3.5 h-3.5 transition-transform opacity-0 group-hover:opacity-100`}
+                          style={{ color: isActive ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.3)' }} />
                       )}
                     </>
                   )}
@@ -104,12 +126,16 @@ export default function Sidebar({ healthInfo }) {
       </div>
 
       {/* System Operational Widget */}
-      <div className="bg-slate-950/80 rounded-2xl p-4 border border-slate-800/90 text-xs space-y-3 shadow-inner">
-        <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
-          <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+      <div className="rounded-2xl p-4 text-xs space-y-3"
+        style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="flex items-center justify-between pb-2"
+          style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+          <span className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5"
+            style={{ color: 'rgba(255,255,255,0.6)' }}>
             <Activity className="w-3.5 h-3.5 text-emerald-400" /> {t('sidebar.systemStatus')}
           </span>
-          <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+          <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-400 px-2 py-0.5 rounded-full"
+            style={{ background: 'rgba(46,125,50,0.15)', border: '1px solid rgba(46,125,50,0.2)' }}>
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
             {t('sidebar.online')}
           </span>
@@ -117,23 +143,29 @@ export default function Sidebar({ healthInfo }) {
 
         <div className="space-y-2 text-[11px]">
           <div className="flex items-center justify-between">
-            <span className="text-slate-400 font-medium flex items-center gap-1.5">
-              <Cpu className="w-3.5 h-3.5 text-indigo-400" /> {t('sidebar.aiEngine')}
+            <span className="font-medium flex items-center gap-1.5"
+              style={{ color: 'rgba(255,255,255,0.5)' }}>
+              <Cpu className="w-3.5 h-3.5" style={{ color: 'var(--color-accent)' }} /> {t('sidebar.aiEngine')}
             </span>
-            <span className="text-indigo-300 font-mono font-bold bg-indigo-500/15 px-2 py-0.5 rounded border border-indigo-500/30 text-[10px]">
+            <span className="font-mono font-bold px-2 py-0.5 rounded text-[10px]"
+              style={{ background: 'rgba(150,62,27,0.2)', color: 'var(--color-accent-muted)', border: '1px solid rgba(150,62,27,0.3)' }}>
               {healthInfo?.model || 'Gemini 3.6 Flash'}
             </span>
           </div>
 
           <div className="flex items-center justify-between">
-            <span className="text-slate-400 font-medium flex items-center gap-1.5">
+            <span className="font-medium flex items-center gap-1.5"
+              style={{ color: 'rgba(255,255,255,0.5)' }}>
               <Database className="w-3.5 h-3.5 text-sky-400" /> {t('sidebar.database')}
             </span>
-            <span className={`font-semibold px-2 py-0.5 rounded text-[10px] font-mono ${
-              healthInfo?.supabase_connected
-                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                : 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
-            }`}>
+            <span className={`font-semibold px-2 py-0.5 rounded text-[10px] font-mono ${healthInfo?.supabase_connected
+                ? 'text-emerald-400'
+                : 'text-amber-400'
+              }`}
+              style={{
+                background: healthInfo?.supabase_connected ? 'rgba(46,125,50,0.15)' : 'rgba(230,81,0,0.15)',
+                border: healthInfo?.supabase_connected ? '1px solid rgba(46,125,50,0.2)' : '1px solid rgba(230,81,0,0.2)'
+              }}>
               {healthInfo?.supabase_connected ? 'Supabase' : 'Local SQLite'}
             </span>
           </div>
@@ -142,5 +174,3 @@ export default function Sidebar({ healthInfo }) {
     </aside>
   );
 }
-
-

@@ -176,7 +176,7 @@ export default function Return() {
       const ordersRes = await getOrderRecords();
       const allOrders = ordersRes.records || [];
 
-      const match = allOrders.find(o => 
+      const match = allOrders.find(o =>
         (o.order_id && o.order_id.trim().toLowerCase() === cleanExtractedId.toLowerCase()) ||
         (o.id && o.id.trim().toLowerCase() === cleanExtractedId.toLowerCase())
       );
@@ -213,7 +213,7 @@ export default function Return() {
 
     try {
       const targetId = matchedOrder.id || matchedOrder.order_id;
-      
+
       // Save return in Supabase for existing Order ID
       await returnOrderRecord(targetId, returnType);
 
@@ -412,49 +412,45 @@ export default function Return() {
 
         {/* Toast Notification */}
         {toastMessage && (
-          <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white text-xs font-semibold px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2 border border-slate-700 animate-in fade-in slide-in-from-bottom-4 duration-200">
+          <div className="fixed bottom-6 right-6 z-50 text-white text-xs font-semibold px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2 animate-in fade-in slide-in-from-bottom-4 duration-200" style={{ background: 'var(--color-brown-dark)', border: '1px solid rgba(255,255,255,0.1)' }}>
             <Check className="w-4 h-4 text-emerald-400" />
             <span>{toastMessage}</span>
           </div>
         )}
 
         {/* HEADER & CONTROLS */}
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 bg-white/70 backdrop-blur-md p-6 rounded-3xl border border-purple-100/80 shadow-sm">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 p-6 rounded-3xl" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border-light)', boxShadow: 'var(--shadow-sm)' }}>
           <div className="flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-2xl bg-amber-100 border border-amber-200 flex items-center justify-center text-amber-700 shadow-sm shrink-0">
+            <div className="w-11 h-11 rounded-2xl flex items-center justify-center shadow-sm shrink-0" style={{ background: 'var(--color-accent-light)', border: '1px solid var(--color-accent-muted)', color: 'var(--color-accent)' }}>
               <RotateCcw className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-                {t('returns.title')} <span className="font-normal text-amber-700">{t('returns.titleHighlight')}</span>
+              <h1 className="text-2xl font-bold tracking-tight font-serif" style={{ color: 'var(--color-brown-dark)' }}>
+                {t('returns.title')} <span className="font-normal" style={{ color: 'var(--color-accent)' }}>{t('returns.titleHighlight')}</span>
               </h1>
             </div>
           </div>
 
           <div className="flex items-center gap-3 flex-wrap xl:flex-nowrap shrink-0">
             {/* Category Switcher Pill [ Customer Return ] [ RTO Return ] */}
-            <div className="bg-purple-100/60 p-1 rounded-full border border-purple-200/80 flex items-center gap-1 shadow-inner shrink-0">
+            <div className="p-1 rounded-xl flex items-center gap-1 shrink-0" style={{ background: 'var(--color-surface-muted)', border: '1px solid var(--color-border-light)' }}>
               <button
                 id="customer-return-tab-btn"
                 onClick={() => setActiveCategory('customer')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold transition-all duration-200 cursor-pointer ${activeCategory === 'customer'
-                    ? 'bg-amber-200/90 text-amber-950 border border-amber-300 shadow-xs'
-                    : 'text-purple-800/80 hover:text-purple-950 hover:bg-white/60'
-                  }`}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer"
+                style={activeCategory === 'customer' ? { background: 'var(--color-brown-dark)', color: '#fff', boxShadow: 'var(--shadow-xs)' } : { color: 'var(--color-text-secondary)' }}
               >
-                <RotateCcw className="w-3.5 h-3.5 text-amber-800" />
+                <RotateCcw className="w-3.5 h-3.5" />
                 {t('orders.customerReturn')}
               </button>
 
               <button
                 id="rto-return-tab-btn"
                 onClick={() => setActiveCategory('rto')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold transition-all duration-200 cursor-pointer ${activeCategory === 'rto'
-                    ? 'bg-purple-200/90 text-purple-950 border border-purple-300 shadow-xs'
-                    : 'text-purple-800/80 hover:text-purple-950 hover:bg-white/60'
-                  }`}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer"
+                style={activeCategory === 'rto' ? { background: 'var(--color-brown-dark)', color: '#fff', boxShadow: 'var(--shadow-xs)' } : { color: 'var(--color-text-secondary)' }}
               >
-                <Truck className="w-3.5 h-3.5 text-purple-700" />
+                <Truck className="w-3.5 h-3.5" />
                 {t('orders.rtoReturn')}
               </button>
             </div>
@@ -465,22 +461,23 @@ export default function Return() {
                 setShowUploadModal(true);
                 setUploadStep('SELECT_METHOD');
               }}
-              className="flex items-center gap-2 px-4.5 py-2.5 bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white text-xs font-bold rounded-full shadow-md shadow-purple-500/25 hover:shadow-lg hover:shadow-purple-500/35 transition-all hover:scale-105 cursor-pointer shrink-0"
+              className="pill-button-dark flex items-center gap-2 px-5 py-2.5 text-xs font-bold hover:scale-105 cursor-pointer shrink-0"
             >
-              <UploadCloud className="w-4 h-4 text-white" />
+              <UploadCloud className="w-4 h-4" />
               <span>{t('returns.uploadReturnLabel')}</span>
             </button>
 
             {/* Search Input */}
             <div className="relative flex-1 min-w-[180px] sm:w-60">
-              <Search className="w-4 h-4 text-purple-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--color-text-muted)' }} />
               <input
                 id="search-return-input"
                 type="text"
                 placeholder={t('orders.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-purple-50/40 border border-purple-200/80 rounded-full pl-9 pr-4 py-2.5 text-xs text-slate-800 placeholder-purple-300 outline-none focus:border-purple-400 focus:bg-white focus:ring-2 focus:ring-purple-200 transition-all font-medium shadow-xs"
+                className="w-full rounded-xl pl-9 pr-4 py-2.5 text-xs transition-all font-medium"
+                style={{ background: 'var(--color-surface-muted)', border: '1px solid var(--color-border-light)', color: 'var(--color-text-primary)' }}
               />
             </div>
 
@@ -488,7 +485,8 @@ export default function Return() {
             <button
               onClick={loadReturnData}
               disabled={loading}
-              className="p-2.5 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-full border border-purple-200/80 transition-all shadow-xs disabled:opacity-50 cursor-pointer shrink-0"
+              className="p-2.5 rounded-xl transition-all disabled:opacity-50 cursor-pointer shrink-0"
+              style={{ background: 'var(--color-surface-muted)', border: '1px solid var(--color-border-light)', color: 'var(--color-text-secondary)' }}
               title={t('common.refresh')}
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -501,14 +499,14 @@ export default function Return() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {/* Total Customer Returns */}
             <div className="ui-card p-5 space-y-1.5">
-              <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
+              <div className="flex items-center justify-between text-xs font-semibold" style={{ color: 'var(--color-text-muted)' }}>
                 <span>{t('returns.customerReturns')}</span>
-                <RotateCcw className="w-4 h-4 text-amber-600" />
+                <RotateCcw className="w-4 h-4" style={{ color: 'var(--color-warning)' }} />
               </div>
-              <p className="text-2xl font-bold text-amber-700 font-mono">
+              <p className="text-2xl font-bold font-mono" style={{ color: 'var(--color-warning)' }}>
                 {summary.total_customer_returns || customerReturns.length || 0}
               </p>
-              <p className="text-[10px] text-slate-500 font-medium">{t('returns.customerReturnParcels')}</p>
+              <p className="text-[10px] font-medium" style={{ color: 'var(--color-text-muted)' }}>{t('returns.customerReturnParcels')}</p>
             </div>
 
             {/* Total Returned Quantity */}
@@ -543,26 +541,26 @@ export default function Return() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Total RTO Returns */}
             <div className="ui-card p-5 space-y-1.5">
-              <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
+              <div className="flex items-center justify-between text-xs font-semibold" style={{ color: 'var(--color-text-muted)' }}>
                 <span>{t('returns.rtoReturns')}</span>
-                <Truck className="w-4 h-4 text-purple-600" />
+                <Truck className="w-4 h-4" style={{ color: 'var(--color-info)' }} />
               </div>
-              <p className="text-2xl font-bold text-purple-700 font-mono">
+              <p className="text-2xl font-bold font-mono" style={{ color: 'var(--color-info)' }}>
                 {summary.total_rto_returns || rtoReturns.length || 0}
               </p>
-              <p className="text-[10px] text-slate-500 font-medium">{t('returns.rtoReturnParcels')}</p>
+              <p className="text-[10px] font-medium" style={{ color: 'var(--color-text-muted)' }}>{t('returns.rtoReturnParcels')}</p>
             </div>
 
             {/* Total RTO Quantity */}
             <div className="ui-card p-5 space-y-1.5">
-              <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
+              <div className="flex items-center justify-between text-xs font-semibold" style={{ color: 'var(--color-text-muted)' }}>
                 <span>{t('stock.rtoReturnedQty')}</span>
-                <Package className="w-4 h-4 text-purple-600" />
+                <Package className="w-4 h-4" style={{ color: 'var(--color-info)' }} />
               </div>
-              <p className="text-2xl font-bold text-slate-900 font-mono">
+              <p className="text-2xl font-bold font-mono" style={{ color: 'var(--color-text-primary)' }}>
                 {summary.total_rto_returned_quantity || rtoReturns.reduce((acc, r) => acc + (r.quantity || 1), 0)}
               </p>
-              <p className="text-[10px] text-slate-500 font-medium">{t('returns.restoredToAvailableStock')}</p>
+              <p className="text-[10px] font-medium" style={{ color: 'var(--color-text-muted)' }}>{t('returns.restoredToAvailableStock')}</p>
             </div>
           </div>
         )}
@@ -570,7 +568,7 @@ export default function Return() {
         {/* TABLE VIEW FOR ACTIVE CATEGORY */}
         {activeCategory === 'customer' ? (
           /* CUSTOMER RETURNS TABLE */
-          <div className="ui-card overflow-hidden shadow-xl border border-slate-200/80 rounded-3xl">
+          <div className="ui-card overflow-hidden rounded-3xl" style={{ boxShadow: 'var(--shadow-lg)', border: '1px solid var(--color-border-light)' }}>
             {loading ? (
               <div className="py-20 text-center space-y-3">
                 <RefreshCw className="w-6 h-6 animate-spin mx-auto text-amber-600" />
@@ -620,7 +618,7 @@ export default function Return() {
 
                           {/* SKU ID */}
                           <td className="py-3.5 px-3 border-r border-slate-100">
-                            <span className="font-mono text-xs font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">
+                            <span className="font-mono text-xs font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-300">
                               {r.sku_id}
                             </span>
                           </td>
@@ -665,8 +663,8 @@ export default function Return() {
                                 disabled={itemState.saving}
                                 title={t('common.save')}
                                 className={`p-1.5 rounded-lg border transition-all cursor-pointer ${itemState.saved
-                                    ? 'bg-emerald-100 text-emerald-700 border-emerald-300'
-                                    : 'bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200'
+                                  ? 'bg-emerald-100 text-emerald-700 border-emerald-300'
+                                  : 'bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200'
                                   }`}
                               >
                                 {itemState.saving ? (
@@ -713,10 +711,10 @@ export default function Return() {
           </div>
         ) : (
           /* RTO RETURNS TABLE */
-          <div className="ui-card overflow-hidden shadow-xl border border-slate-200/80 rounded-3xl">
+          <div className="ui-card overflow-hidden rounded-3xl" style={{ boxShadow: 'var(--shadow-lg)', border: '1px solid var(--color-border-light)' }}>
             {loading ? (
               <div className="py-20 text-center space-y-3">
-                <RefreshCw className="w-6 h-6 animate-spin mx-auto text-purple-600" />
+                <RefreshCw className="w-6 h-6 animate-spin mx-auto text-amber-700" />
                 <p className="text-xs text-slate-500 font-mono font-medium">{t('returns.loadingRtoReturns')}</p>
               </div>
             ) : filteredRtoReturns.length === 0 ? (
@@ -747,15 +745,15 @@ export default function Return() {
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {filteredRtoReturns.map((r) => (
-                      <tr key={r.id || r.order_id} className="hover:bg-purple-50/40 transition-colors">
+                      <tr key={r.id || r.order_id} className="hover:bg-amber-50/30 transition-colors">
                         {/* Order ID */}
-                        <td className="py-3.5 px-3 border-r border-slate-100 font-mono text-xs font-bold text-purple-900 select-all">
+                        <td className="py-3.5 px-3 border-r border-slate-100 font-mono text-xs font-bold text-amber-950 select-all">
                           {r.order_id}
                         </td>
 
                         {/* SKU ID */}
                         <td className="py-3.5 px-3 border-r border-slate-100">
-                          <span className="font-mono text-xs font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">
+                          <span className="font-mono text-xs font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-300">
                             {r.sku_id}
                           </span>
                         </td>
@@ -784,7 +782,7 @@ export default function Return() {
 
                         {/* Return Type Badge */}
                         <td className="py-3.5 px-3 border-r border-slate-100 text-center">
-                          <span className="font-bold text-[10px] tracking-wider uppercase text-purple-800 bg-purple-100 px-3 py-1 rounded-full border border-purple-300">
+                          <span className="font-bold text-[10px] tracking-wider uppercase text-amber-900 bg-amber-100 px-3 py-1 rounded-full border border-amber-400">
                             RTO
                           </span>
                         </td>
@@ -816,8 +814,8 @@ export default function Return() {
 
         {/* CONFIRMATION MODAL FOR UNDO RETURN */}
         {confirmUndoOrder && (
-          <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
-            <div className="bg-white border border-purple-100 rounded-3xl shadow-2xl max-w-md w-full p-6 space-y-5 animate-in zoom-in-95 duration-200">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-150" style={{ background: 'rgba(45,24,16,0.5)', backdropFilter: 'blur(4px)' }}>
+            <div className="rounded-3xl shadow-2xl max-w-md w-full p-6 space-y-5 animate-in zoom-in-95 duration-200" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border-light)' }}>
               <div className="flex items-start gap-4">
                 <div className="w-11 h-11 rounded-2xl bg-amber-100 border border-amber-200 text-amber-700 flex items-center justify-center shrink-0 shadow-xs">
                   <AlertTriangle className="w-5 h-5" />
@@ -830,10 +828,10 @@ export default function Return() {
                 </div>
               </div>
 
-              <div className="bg-purple-50/60 rounded-2xl p-3.5 border border-purple-100 space-y-1.5 text-xs text-slate-600 font-medium">
+              <div className="rounded-2xl p-3.5 space-y-1.5 text-xs font-medium" style={{ background: 'var(--color-surface-muted)', border: '1px solid var(--color-border-light)', color: 'var(--color-text-secondary)' }}>
                 <div className="flex justify-between">
                   <span>{t('fields.skuId')}:</span>
-                  <span className="font-mono font-bold text-purple-950">{confirmUndoOrder.sku_id}</span>
+                  <span className="font-mono font-bold" style={{ color: 'var(--color-brown-dark)' }}>{confirmUndoOrder.sku_id}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>{t('returns.returnedCategory')}:</span>
@@ -841,7 +839,7 @@ export default function Return() {
                     {confirmUndoOrder.return_type === 'RTO_RETURN' ? t('orders.rtoReturn') : t('orders.customerReturn')}
                   </span>
                 </div>
-                <p className="text-[11px] text-purple-900/80 pt-1 border-t border-purple-200/50">
+                <p className="text-[11px] pt-1" style={{ color: 'var(--color-text-secondary)', borderTop: '1px solid var(--color-border-light)' }}>
                   {t('returns.undoReturnRestoreNotice')}
                 </p>
               </div>
@@ -855,7 +853,8 @@ export default function Return() {
                 </button>
                 <button
                   onClick={handleConfirmUndoReturn}
-                  className="px-5 py-2 rounded-full text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-md transition-all cursor-pointer"
+                  className="px-5 py-2 rounded-xl text-xs font-bold text-white shadow-md transition-all cursor-pointer"
+                  style={{ background: 'var(--color-accent)' }}
                 >
                   {t('returns.confirmUndoReturn')}
                 </button>
@@ -866,18 +865,18 @@ export default function Return() {
 
         {/* UPLOAD RETURN LABEL POPUP MODAL */}
         {showUploadModal && (
-          <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
-            <div className="bg-white border border-purple-100 rounded-3xl shadow-2xl max-w-xl w-full p-6 sm:p-7 space-y-6 relative max-h-[90vh] overflow-y-auto my-auto">
-              
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200" style={{ background: 'rgba(45,24,16,0.7)', backdropFilter: 'blur(8px)' }}>
+            <div className="rounded-3xl shadow-2xl max-w-xl w-full p-6 sm:p-7 space-y-6 relative max-h-[90vh] overflow-y-auto my-auto" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border-light)' }}>
+
               {/* Modal Header */}
-              <div className="flex items-center justify-between border-b border-purple-100 pb-4">
+              <div className="flex items-center justify-between pb-4" style={{ borderBottom: '1px solid var(--color-border-light)' }}>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-violet-600 via-purple-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-purple-500/30 shrink-0">
+                  <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-white shadow-md shrink-0" style={{ background: 'var(--color-brown-dark)', boxShadow: '0 4px 12px rgba(61,35,20,0.25)' }}>
                     <UploadCloud className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-slate-900 tracking-tight">{t('returns.uploadReturnLabel')}</h3>
-                    <p className="text-xs text-slate-500 font-medium font-sans">{t('upload.subtitle')}</p>
+                    <h3 className="text-lg font-bold tracking-tight font-serif" style={{ color: 'var(--color-brown-dark)' }}>{t('returns.uploadReturnLabel')}</h3>
+                    <p className="text-xs font-medium" style={{ color: 'var(--color-text-muted)' }}>{t('upload.subtitle')}</p>
                   </div>
                 </div>
 
@@ -898,7 +897,8 @@ export default function Return() {
                     {/* Option 1: Upload Image */}
                     <div
                       onClick={() => uploadFileInputRef.current?.click()}
-                      className="border-2 border-dashed border-purple-200 hover:border-purple-400 bg-purple-50/40 hover:bg-purple-50/90 rounded-2xl p-6 text-center cursor-pointer transition-all duration-200 group flex flex-col items-center justify-center space-y-3"
+                      className="rounded-2xl p-6 text-center cursor-pointer transition-all duration-200 group flex flex-col items-center justify-center space-y-3"
+                      style={{ border: '2px dashed var(--color-border-strong)', background: 'var(--color-surface-muted)' }}
                     >
                       <input
                         type="file"
@@ -907,7 +907,7 @@ export default function Return() {
                         onChange={(e) => e.target.files?.[0] && handleFileSelectForUpload(e.target.files[0])}
                         className="hidden"
                       />
-                      <div className="w-12 h-12 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center group-hover:scale-110 transition-transform shadow-xs">
+                      <div className="w-12 h-12 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform" style={{ background: 'var(--color-accent-light)', color: 'var(--color-accent)', border: '1px solid var(--color-accent-muted)' }}>
                         <UploadCloud className="w-6 h-6" />
                       </div>
                       <div>
@@ -937,9 +937,9 @@ export default function Return() {
               {uploadStep === 'IMAGE_PREVIEW' && (
                 <div className="space-y-5">
                   <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">{t('upload.preview')}:</p>
-                  
+
                   {imagePreview && (
-                    <div className="relative aspect-video max-h-56 bg-slate-900 rounded-2xl overflow-hidden border border-purple-100 flex items-center justify-center p-2">
+                    <div className="relative aspect-video max-h-56 rounded-2xl overflow-hidden flex items-center justify-center p-2" style={{ background: 'var(--color-brown-dark)', border: '1px solid var(--color-border-light)' }}>
                       <img src={imagePreview} alt="Selected Return Label" className="h-full object-contain rounded-xl" />
                     </div>
                   )}
@@ -953,7 +953,7 @@ export default function Return() {
                     </button>
                     <button
                       onClick={handleProcessImage}
-                      className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-bold text-xs rounded-full shadow-md shadow-purple-500/25 transition-all hover:scale-105 cursor-pointer"
+                      className="pill-button-dark flex items-center gap-2 px-6 py-2.5 font-bold text-xs hover:scale-105 cursor-pointer"
                     >
                       <span>{t('returns.continueAndProcess')}</span>
                       <ArrowRight className="w-4 h-4 text-white" />
@@ -988,13 +988,14 @@ export default function Return() {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={toggleFacingMode}
-                        className="px-3 py-2 text-xs font-bold text-purple-800 bg-purple-100 hover:bg-purple-200 rounded-full transition-colors cursor-pointer"
+                        className="px-3 py-2 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                        style={{ background: 'var(--color-surface-muted)', color: 'var(--color-text-secondary)', border: '1px solid var(--color-border-light)' }}
                       >
                         Flip Camera
                       </button>
                       <button
                         onClick={capturePhoto}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 text-white text-xs font-bold rounded-full shadow-md cursor-pointer"
+                        className="pill-button-dark flex items-center gap-2 px-5 py-2.5 text-xs font-bold cursor-pointer"
                       >
                         <Camera className="w-4 h-4 text-white" /> {t('returns.captureImage')}
                       </button>
@@ -1007,7 +1008,7 @@ export default function Return() {
               {uploadStep === 'CAMERA_PREVIEW' && (
                 <div className="space-y-5">
                   <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">{t('upload.preview')}:</p>
-                  
+
                   {imagePreview && (
                     <div className="relative aspect-video max-h-56 bg-slate-900 rounded-2xl overflow-hidden border border-amber-200 flex items-center justify-center p-2">
                       <img src={imagePreview} alt="Captured Return Label" className="h-full object-contain rounded-xl" />
@@ -1017,13 +1018,14 @@ export default function Return() {
                   <div className="flex items-center justify-between pt-2">
                     <button
                       onClick={() => startCamera('environment')}
-                      className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-purple-800 bg-purple-100 hover:bg-purple-200 rounded-full transition-colors cursor-pointer"
+                      className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                      style={{ background: 'var(--color-surface-muted)', color: 'var(--color-text-secondary)', border: '1px solid var(--color-border-light)' }}
                     >
                       <RefreshCcw className="w-3.5 h-3.5" /> {t('returns.retakePhoto')}
                     </button>
                     <button
                       onClick={handleProcessImage}
-                      className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-bold text-xs rounded-full shadow-md shadow-purple-500/25 transition-all hover:scale-105 cursor-pointer"
+                      className="pill-button-dark flex items-center gap-2 px-6 py-2.5 font-bold text-xs hover:scale-105 cursor-pointer"
                     >
                       <span>{t('returns.continueAndProcess')}</span>
                       <ArrowRight className="w-4 h-4 text-white" />
@@ -1034,7 +1036,7 @@ export default function Return() {
 
               {/* STEP 3: PARSING SPINNER */}
               {uploadStep === 'PARSING' && (
-                <div className="py-12 text-center space-y-4 bg-purple-50/40 rounded-2xl border border-purple-100">
+                <div className="py-12 text-center space-y-4 rounded-2xl" style={{ background: 'var(--color-surface-muted)', border: '1px solid var(--color-border-light)' }}>
                   <Loader2 className="w-10 h-10 text-amber-600 animate-spin mx-auto" />
                   <div>
                     <h4 className="text-sm font-bold text-slate-900">{t('returns.extractingOrderId')}</h4>
@@ -1063,7 +1065,8 @@ export default function Return() {
                   <div className="flex items-center justify-center gap-3 pt-2">
                     <button
                       onClick={() => setUploadStep('SELECT_METHOD')}
-                      className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-full shadow-md transition-colors cursor-pointer"
+                      className="px-6 py-2.5 text-white font-bold text-xs rounded-xl shadow-md transition-colors cursor-pointer"
+                      style={{ background: 'var(--color-brown-dark)' }}
                     >
                       {t('common.back')}
                     </button>
@@ -1096,7 +1099,7 @@ export default function Return() {
 
                       <div className="bg-white/80 p-2.5 rounded-xl border border-emerald-100">
                         <span className="text-[11px] text-slate-500 font-medium block">{t('fields.skuId')}</span>
-                        <span className="font-mono font-bold text-purple-950">{matchedOrder.sku_id || 'N/A'}</span>
+                        <span className="font-mono font-bold" style={{ color: 'var(--color-brown-dark)' }}>{matchedOrder.sku_id || 'N/A'}</span>
                       </div>
 
                       <div className="bg-white/80 p-2.5 rounded-xl border border-emerald-100">
@@ -1121,7 +1124,8 @@ export default function Return() {
                       value={customDeliveryCharge}
                       onChange={(e) => setCustomDeliveryCharge(e.target.value)}
                       placeholder="10"
-                      className="w-full sm:w-48 bg-white border border-purple-200 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-purple-400 focus:outline-none"
+                      className="w-full sm:w-48 border rounded-xl px-3.5 py-2 text-xs font-bold focus:outline-none"
+                      style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border-light)', color: 'var(--color-text-primary)' }}
                     />
                     <p className="text-[11px] text-slate-400 mt-1">{t('returns.deliveryChargeRtoNote')}</p>
                   </div>
@@ -1146,11 +1150,12 @@ export default function Return() {
                         type="button"
                         disabled={processingReturn}
                         onClick={() => handleSaveReturnFromModal('RTO_RETURN')}
-                        className="flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-purple-300 bg-purple-50 hover:bg-purple-100 text-purple-950 transition-all group cursor-pointer shadow-xs disabled:opacity-50"
+                        className="flex flex-col items-center justify-center p-4 rounded-2xl transition-all group cursor-pointer disabled:opacity-50"
+                        style={{ border: '2px solid var(--color-border)', background: 'var(--color-surface-muted)', color: 'var(--color-brown-dark)' }}
                       >
-                        <Truck className="w-6 h-6 text-purple-700 mb-1.5 group-hover:scale-110 transition-transform" />
+                        <Truck className="w-6 h-6 mb-1.5 group-hover:scale-110 transition-transform" style={{ color: 'var(--color-accent)' }} />
                         <span className="text-xs font-extrabold">{t('orders.rtoReturn')}</span>
-                        <span className="text-[10px] text-purple-800 font-medium text-center mt-0.5">{t('orders.returnToOriginZeroLoss')}</span>
+                        <span className="text-[10px] text-amber-900 font-medium text-center mt-0.5">{t('orders.returnToOriginZeroLoss')}</span>
                       </button>
                     </div>
                   </div>

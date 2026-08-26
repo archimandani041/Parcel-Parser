@@ -38,7 +38,7 @@ export default function DocumentViewer({ fileUrl, fileName, fileType, activePage
   return (
     <div className="flex flex-col h-full bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
       {/* Control Bar */}
-      <div className="flex items-center justify-between px-4 py-3 bg-slate-950/70 border-b border-slate-800">
+      <div className="flex items-center justify-between px-4 py-3 bg-stone-950/70 border-b border-slate-800">
         <div className="flex items-center gap-2 text-xs font-semibold text-slate-300 truncate max-w-[200px]">
           <FileText className="w-4 h-4 text-indigo-400 shrink-0" />
           <span className="truncate">{fileName || 'Label Document'}</span>
