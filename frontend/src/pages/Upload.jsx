@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Layout from '../components/Layout';
+import AIProcessingScanner from '../components/animations/AIProcessingScanner';
 import { uploadParcelLabels } from '../services/api';
 import { formatBytes } from '../utils/formatters';
 import {
@@ -100,6 +101,8 @@ export default function Upload() {
     return { background: 'var(--color-surface-muted)', color: 'var(--color-text-muted)', border: '1px solid var(--color-border-light)' };
   };
 
+  const uploadProgressMessage = processingState === 'UPLOADING' ? t('upload.step1') : processingState === 'ANALYZING' ? t('upload.step2') : processingState === 'EXTRACTING' ? t('upload.step3') : processingState === 'VALIDATING' ? t('upload.step4') : processingState === 'COMPLETED' ? t('upload.step5') : t('upload.extractingWithAi');
+
   return (
     <Layout title={t('nav.upload')}>
       <div className="w-full space-y-8 pb-12">
@@ -110,7 +113,7 @@ export default function Upload() {
             style={{ background: 'var(--color-accent-light)', border: '1px solid var(--color-accent-muted)', color: 'var(--color-accent)' }}>
             <Sparkles className="w-3.5 h-3.5 fill-current" /> {t('upload.badge')}
           </div>
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight font-serif" style={{ color: 'var(--color-brown-dark)' }}>{t('upload.title')}</h1>
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight font-serif" style={{ color: 'var(--color-navy)' }}>{t('upload.title')}</h1>
           <p className="text-xs sm:text-sm max-w-xl mx-auto leading-relaxed font-medium" style={{ color: 'var(--color-text-tertiary)' }}>{t('upload.subtitle')}</p>
         </div>
 
@@ -129,11 +132,11 @@ export default function Upload() {
             className="ui-card rounded-3xl p-8 text-center cursor-pointer transition-all duration-300 group relative overflow-hidden flex flex-col items-center justify-center min-h-[250px]"
             style={{ border: '2px dashed var(--color-border-strong)' }}>
             <input type="file" ref={fileInputRef} multiple accept="image/jpeg,image/png,image/webp,image/bmp,image/tiff,application/pdf,.jpg,.jpeg,.png,.webp,.bmp,.tiff,.tif,.pdf" onChange={(e) => handleFileSelect(e.target.files)} className="hidden" />
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 text-white group-hover:scale-105 transition-transform"
-              style={{ background: 'var(--color-brown-dark)', boxShadow: '0 8px 24px rgba(61,35,20,0.2)' }}>
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform"
+              style={{ background: 'linear-gradient(135deg, var(--color-navy), var(--color-deep-purple))', color: 'var(--color-blush-light)', boxShadow: '0 8px 24px rgba(29,26,57,0.2)' }}>
               <UploadCloud className="w-8 h-8" />
             </div>
-            <h3 className="text-base font-bold mb-1" style={{ color: 'var(--color-brown-dark)' }}>{t('upload.browseOrDrag')}</h3>
+            <h3 className="text-base font-bold mb-1" style={{ color: 'var(--color-navy)' }}>{t('upload.browseOrDrag')}</h3>
             <p className="text-xs mb-4 max-w-xs font-medium" style={{ color: 'var(--color-text-tertiary)' }}>{t('upload.browseSubtitle')}</p>
             <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-mono font-semibold"
               style={{ background: 'var(--color-surface-muted)', border: '1px solid var(--color-border-light)', color: 'var(--color-text-secondary)' }}>
@@ -144,17 +147,17 @@ export default function Upload() {
           <div className="ui-card rounded-3xl p-8 text-center transition-all duration-300 relative overflow-hidden flex flex-col items-center justify-center min-h-[250px]"
             style={{ background: 'var(--color-surface-warm)', border: '1px solid var(--color-border)' }}>
             <input type="file" ref={mobileCameraInputRef} accept="image/*" capture="environment" onChange={(e) => e.target.files && handleFileSelect(e.target.files)} className="hidden" />
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 text-white"
-              style={{ background: 'var(--color-brown-dark)', boxShadow: '0 8px 24px rgba(61,35,20,0.2)' }}>
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
+              style={{ background: 'linear-gradient(135deg, var(--color-rose), var(--color-plum))', color: 'var(--color-blush-light)', boxShadow: '0 8px 24px rgba(174,68,90,0.2)' }}>
               <Camera className="w-8 h-8" />
             </div>
-            <h3 className="text-base font-bold mb-1" style={{ color: 'var(--color-brown-dark)' }}>{t('upload.directCamera')}</h3>
+            <h3 className="text-base font-bold mb-1" style={{ color: 'var(--color-navy)' }}>{t('upload.directCamera')}</h3>
             <p className="text-xs mb-4 max-w-xs font-medium" style={{ color: 'var(--color-text-tertiary)' }}>{t('upload.directCameraSubtitle')}</p>
             <div className="flex items-center gap-2">
               <button type="button" onClick={() => startCamera('environment')}
-                className="flex items-center gap-2 px-5 py-2.5 text-white text-xs font-bold rounded-xl shadow-md transition-all hover:scale-105 cursor-pointer"
-                style={{ background: 'var(--color-brown-dark)' }}>
-                <Camera className="w-4 h-4" style={{ color: 'var(--color-accent-muted)' }} /> {t('upload.openLiveCamera')}
+                className="flex items-center gap-2 px-5 py-2.5 text-xs font-bold rounded-xl shadow-md transition-all hover:scale-105 cursor-pointer"
+                style={{ background: 'linear-gradient(135deg, var(--color-navy), var(--color-deep-purple))', color: 'var(--color-blush-light)', boxShadow: '0 4px 12px rgba(29,26,57,0.2)' }}>
+                <Camera className="w-4 h-4" /> {t('upload.openLiveCamera')}
               </button>
               <button type="button" onClick={() => mobileCameraInputRef.current?.click()}
                 className="flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer"
@@ -167,46 +170,46 @@ export default function Upload() {
 
         {/* Camera Modal */}
         {showCameraModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(45,24,16,0.8)', backdropFilter: 'blur(8px)' }}>
-            <div className="max-w-2xl w-full p-6 text-white space-y-4 relative overflow-hidden rounded-3xl shadow-2xl" style={{ background: 'var(--color-brown-dark)', border: '1px solid rgba(255,255,255,0.1)' }}>
-              <div className="flex items-center justify-between pb-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(29,26,57,0.85)', backdropFilter: 'blur(8px)' }}>
+            <div className="max-w-2xl w-full p-6 space-y-4 relative overflow-hidden rounded-3xl shadow-2xl" style={{ background: 'var(--color-navy)', border: '1px solid rgba(232,188,185,0.1)', color: 'var(--color-blush-light)' }}>
+              <div className="flex items-center justify-between pb-3" style={{ borderBottom: '1px solid rgba(232,188,185,0.1)' }}>
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'rgba(150,62,27,0.2)', border: '1px solid rgba(150,62,27,0.3)' }}>
-                    <Camera className="w-4 h-4" style={{ color: 'var(--color-accent)' }} />
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'rgba(174,68,90,0.2)', border: '1px solid rgba(174,68,90,0.3)' }}>
+                    <Camera className="w-4 h-4" style={{ color: 'var(--color-rose)' }} />
                   </div>
-                  <div><h3 className="text-sm font-bold">{t('upload.liveScannerTitle')}</h3><p className="text-[10px]" style={{ color: 'rgba(255,255,255,0.5)' }}>{t('upload.liveScannerSubtitle')}</p></div>
+                  <div><h3 className="text-sm font-bold">{t('upload.liveScannerTitle')}</h3><p className="text-[10px]" style={{ color: 'rgba(232,188,185,0.5)' }}>{t('upload.liveScannerSubtitle')}</p></div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button onClick={toggleFacingMode} className="p-2 rounded-full transition-all cursor-pointer text-xs flex items-center gap-1.5" style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)' }}>
+                  <button onClick={toggleFacingMode} className="p-2 rounded-full transition-all cursor-pointer text-xs flex items-center gap-1.5" style={{ background: 'rgba(232,188,185,0.1)', border: '1px solid rgba(232,188,185,0.15)', color: 'rgba(232,188,185,0.7)' }}>
                     <RefreshCw className="w-3.5 h-3.5" /><span className="hidden sm:inline">Flip</span>
                   </button>
-                  <button onClick={stopCamera} className="p-2 rounded-full transition-all cursor-pointer" style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.5)' }}>
+                  <button onClick={stopCamera} className="p-2 rounded-full transition-all cursor-pointer" style={{ background: 'rgba(232,188,185,0.1)', border: '1px solid rgba(232,188,185,0.15)', color: 'rgba(232,188,185,0.5)' }}>
                     <X className="w-4.5 h-4.5" />
                   </button>
                 </div>
               </div>
               {cameraError ? (
-                <div className="py-16 text-center space-y-3 rounded-2xl" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                  <AlertCircle className="w-10 h-10 mx-auto" style={{ color: 'var(--color-danger)' }} />
-                  <p className="text-xs px-4" style={{ color: '#FF8A80' }}>{cameraError}</p>
-                  <button onClick={() => startCamera()} className="px-4 py-2 text-white rounded-full text-xs font-bold cursor-pointer" style={{ background: 'var(--color-accent)' }}>{t('upload.retryCamera')}</button>
+                <div className="py-16 text-center space-y-3 rounded-2xl" style={{ background: 'rgba(69,25,82,0.3)', border: '1px solid rgba(232,188,185,0.05)' }}>
+                  <AlertCircle className="w-10 h-10 mx-auto" style={{ color: 'var(--color-rose)' }} />
+                  <p className="text-xs px-4" style={{ color: 'var(--color-blush)' }}>{cameraError}</p>
+                  <button onClick={() => startCamera()} className="px-4 py-2 rounded-full text-xs font-bold cursor-pointer" style={{ background: 'var(--color-rose)', color: 'var(--color-blush-light)' }}>{t('upload.retryCamera')}</button>
                 </div>
               ) : (
-                <div className="relative aspect-video bg-black rounded-2xl overflow-hidden flex items-center justify-center" style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
+                <div className="relative aspect-video rounded-2xl overflow-hidden flex items-center justify-center" style={{ background: 'var(--color-deep-purple)', border: '1px solid rgba(232,188,185,0.1)' }}>
                   <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
-                  <div className="absolute inset-8 rounded-2xl pointer-events-none flex items-center justify-center" style={{ border: '2px solid rgba(150,62,27,0.5)' }}>
-                    <div className="absolute top-2 left-2 w-4 h-4" style={{ borderTop: '2px solid var(--color-accent)', borderLeft: '2px solid var(--color-accent)' }} />
-                    <div className="absolute top-2 right-2 w-4 h-4" style={{ borderTop: '2px solid var(--color-accent)', borderRight: '2px solid var(--color-accent)' }} />
-                    <div className="absolute bottom-2 left-2 w-4 h-4" style={{ borderBottom: '2px solid var(--color-accent)', borderLeft: '2px solid var(--color-accent)' }} />
-                    <div className="absolute bottom-2 right-2 w-4 h-4" style={{ borderBottom: '2px solid var(--color-accent)', borderRight: '2px solid var(--color-accent)' }} />
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full" style={{ color: 'rgba(255,255,255,0.7)', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(150,62,27,0.3)' }}>{t('upload.alignParcelLabel')}</span>
+                  <div className="absolute inset-8 rounded-2xl pointer-events-none flex items-center justify-center" style={{ border: '2px solid rgba(174,68,90,0.5)' }}>
+                    <div className="absolute top-2 left-2 w-4 h-4" style={{ borderTop: '2px solid var(--color-rose)', borderLeft: '2px solid var(--color-rose)' }} />
+                    <div className="absolute top-2 right-2 w-4 h-4" style={{ borderTop: '2px solid var(--color-rose)', borderRight: '2px solid var(--color-rose)' }} />
+                    <div className="absolute bottom-2 left-2 w-4 h-4" style={{ borderBottom: '2px solid var(--color-rose)', borderLeft: '2px solid var(--color-rose)' }} />
+                    <div className="absolute bottom-2 right-2 w-4 h-4" style={{ borderBottom: '2px solid var(--color-rose)', borderRight: '2px solid var(--color-rose)' }} />
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full" style={{ color: 'var(--color-blush)', background: 'rgba(29,26,57,0.7)', border: '1px solid rgba(174,68,90,0.3)' }}>{t('upload.alignParcelLabel')}</span>
                   </div>
                 </div>
               )}
               <div className="flex items-center justify-between pt-2">
-                <button onClick={stopCamera} className="px-5 py-2 rounded-full text-xs font-semibold cursor-pointer" style={{ color: 'rgba(255,255,255,0.5)', background: 'rgba(255,255,255,0.08)' }}>{t('common.cancel')}</button>
+                <button onClick={stopCamera} className="px-5 py-2 rounded-full text-xs font-semibold cursor-pointer" style={{ color: 'rgba(232,188,185,0.5)', background: 'rgba(232,188,185,0.08)' }}>{t('common.cancel')}</button>
                 {!cameraError && (
-                  <button onClick={captureCameraPhoto} className="pill-button-dark flex items-center gap-2 px-7 py-3 text-white font-bold text-xs shadow-lg transition-all hover:scale-105 cursor-pointer">
+                  <button onClick={captureCameraPhoto} className="pill-button-dark flex items-center gap-2 px-7 py-3 font-bold text-xs shadow-lg transition-all hover:scale-105 cursor-pointer">
                     <Camera className="w-4 h-4" /> {t('upload.capturePhotoAndExtract')}
                   </button>
                 )}
@@ -219,8 +222,8 @@ export default function Upload() {
         {selectedFiles.length > 0 && (
           <div className="ui-card rounded-3xl p-6 space-y-4 shadow-lg" style={{ background: 'var(--color-surface)' }}>
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: 'var(--color-brown-dark)' }}>
-                <FileText className="w-4 h-4" style={{ color: 'var(--color-accent)' }} /> {t('upload.selectedDocuments')} ({selectedFiles.length})
+              <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: 'var(--color-navy)' }}>
+                <FileText className="w-4 h-4" style={{ color: 'var(--color-rose)' }} /> {t('upload.selectedDocuments')} ({selectedFiles.length})
               </h3>
               {processingState === 'IDLE' && (
                 <button onClick={() => setSelectedFiles([])} className="text-xs font-semibold hover:underline cursor-pointer" style={{ color: 'var(--color-text-tertiary)' }}>{t('upload.clearAll')}</button>
@@ -243,7 +246,7 @@ export default function Upload() {
                       </div>
                     </div>
                     {processingState === 'IDLE' && (
-                      <button onClick={() => removeFile(index)} className="p-1 rounded-full hover:bg-slate-200/50 transition-colors cursor-pointer shrink-0" style={{ color: 'var(--color-text-tertiary)' }}>
+                      <button onClick={() => removeFile(index)} className="p-1 rounded-full transition-colors cursor-pointer shrink-0" style={{ color: 'var(--color-text-tertiary)' }}>
                         <X className="w-3.5 h-3.5" />
                       </button>
                     )}
@@ -252,24 +255,15 @@ export default function Upload() {
               })}
             </div>
 
-            {/* Processing Progress Bar */}
+            {/* AI Scanning & Extraction Particle Arena */}
             {processingState !== 'IDLE' && (
-              <div className="space-y-3 pt-2">
-                <div className="flex items-center justify-between text-xs font-bold">
-                  <span className="flex items-center gap-2" style={{ color: 'var(--color-accent)' }}>
-                    {processingState === 'COMPLETED' ? <CheckCircle2 className="w-4 h-4" style={{ color: 'var(--color-success)' }} /> : <Loader2 className="w-4 h-4 animate-spin" />}
-                    {uploadProgressMessage || t('upload.extractingWithAi')}
-                  </span>
-                  <span className="font-mono font-bold" style={{ color: 'var(--color-accent)' }}>{uploadProgress}%</span>
-                </div>
-                <div className="w-full h-2.5 rounded-full overflow-hidden" style={{ background: 'var(--color-surface-muted)', border: '1px solid var(--color-border-light)' }}>
-                  <div className="h-full transition-all duration-300" style={{ width: `${uploadProgress}%`, background: 'linear-gradient(90deg, var(--color-accent), var(--color-accent-hover))', boxShadow: '0 0 8px rgba(150,62,27,0.2)' }} />
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-2">
-                  {steps.map((step) => (
-                    <div key={step.id} className="p-2.5 rounded-xl text-[11px] text-center transition-all" style={getStepStatusClass(step.id, processingState)}>{step.label}</div>
-                  ))}
-                </div>
+              <div className="space-y-4 pt-2">
+                <AIProcessingScanner
+                  processingState={processingState}
+                  uploadProgress={uploadProgress}
+                  extractedData={uploadedResults[0]?.extracted_json}
+                  compact={true}
+                />
               </div>
             )}
 
@@ -283,7 +277,7 @@ export default function Upload() {
                   {uploadedResults.length > 0 && (
                     <button onClick={() => navigate(`/document/${uploadedResults[0].id}`)}
                       className="flex items-center gap-2 px-6 py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer"
-                      style={{ background: 'var(--color-surface-muted)', color: 'var(--color-brown-dark)', border: '1px solid var(--color-border-light)' }}>
+                      style={{ background: 'var(--color-surface-muted)', color: 'var(--color-navy)', border: '1px solid var(--color-border-light)' }}>
                       {t('upload.inspectExtractedLabel')} <ArrowRight className="w-4 h-4" />
                     </button>
                   )}
@@ -298,7 +292,7 @@ export default function Upload() {
                   </button>
                   <button onClick={() => { setProcessingState('IDLE'); setUploadProgress(0); setErrorMessage(null); setUploadedResults([]); }}
                     className="flex items-center gap-2 px-5 py-2.5 text-xs font-bold rounded-xl transition-colors cursor-pointer"
-                    style={{ background: 'var(--color-warning-light)', color: 'var(--color-warning)', border: '1px solid var(--color-warning-border)' }}>
+                    style={{ background: 'var(--color-warning-light)', color: 'var(--color-amber)', border: '1px solid var(--color-warning-border)' }}>
                     <RefreshCw className="w-3.5 h-3.5" /> {t('upload.retryExtraction', { defaultValue: 'Retry Extraction' })}
                   </button>
                 </div>

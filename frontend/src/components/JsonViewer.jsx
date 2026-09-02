@@ -25,28 +25,30 @@ export default function JsonViewer({ json, jsonData, fileName = 'document.json' 
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between border-b border-amber-200 pb-3">
-        <div className="flex items-center gap-2 font-extrabold text-xs text-slate-900 uppercase tracking-wider">
-          <Code2 className="w-4 h-4 text-amber-700" /> Structured JSON Output Schema
+      <div className="flex items-center justify-between pb-3" style={{ borderBottom: '1px solid var(--color-border-light)' }}>
+        <div className="flex items-center gap-2 font-extrabold text-xs uppercase tracking-wider" style={{ color: 'var(--color-navy)' }}>
+          <Code2 className="w-4 h-4" style={{ color: 'var(--color-rose)' }} /> Structured JSON Output Schema
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={handleCopy}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-300 text-amber-900 hover:bg-amber-100 text-xs font-bold rounded-xl transition-all shadow-xs"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl transition-all shadow-xs"
+            style={{ background: 'var(--color-surface-muted)', border: '1px solid var(--color-border-light)', color: 'var(--color-navy)' }}
           >
-            {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+            {copied ? <Check className="w-3.5 h-3.5" style={{ color: 'var(--color-success)' }} /> : <Copy className="w-3.5 h-3.5" />}
             {copied ? 'Copied' : 'Copy JSON'}
           </button>
           <button
             onClick={handleDownload}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-300 text-amber-900 hover:bg-amber-100 text-xs font-bold rounded-xl transition-all shadow-xs"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl transition-all shadow-xs"
+            style={{ background: 'var(--color-surface-muted)', border: '1px solid var(--color-border-light)', color: 'var(--color-navy)' }}
           >
-            <Download className="w-3.5 h-3.5 text-amber-700" /> Download
+            <Download className="w-3.5 h-3.5" style={{ color: 'var(--color-rose)' }} /> Download
           </button>
         </div>
       </div>
 
-      <div className="bg-amber-50/30 rounded-2xl border border-amber-200 p-4 font-mono text-xs text-amber-950 overflow-x-auto max-h-[600px] shadow-inner">
+      <div className="rounded-2xl p-4 font-mono text-xs overflow-x-auto max-h-[600px] shadow-inner" style={{ background: 'var(--color-surface-muted)', border: '1px solid var(--color-border-light)', color: 'var(--color-text-primary)' }}>
         <pre className="leading-relaxed whitespace-pre-wrap">{formattedJson}</pre>
       </div>
     </div>

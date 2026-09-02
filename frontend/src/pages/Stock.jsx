@@ -45,7 +45,7 @@ export default function Stock() {
   const formatCurrency = (val) => { if (val == null || isNaN(val)) return '₹0'; const num = Number(val); return num < 0 ? `-₹${Math.abs(num).toLocaleString('en-IN')}` : `₹${num.toLocaleString('en-IN')}`; };
   const filteredProducts = products.filter(p => { if (!searchQuery.trim()) return true; const q = searchQuery.toLowerCase().trim(); return (p.sku_id?.toLowerCase().includes(q)) || (p.product_name?.toLowerCase().includes(q)); });
 
-  const S = { accent: 'var(--color-accent)', brown: 'var(--color-brown-dark)', border: 'var(--color-border-light)', muted: 'var(--color-text-muted)', surface: 'var(--color-surface-muted)', text: 'var(--color-text-primary)', secondary: 'var(--color-text-secondary)' };
+  const S = { accent: 'var(--color-rose)', navy: 'var(--color-navy)', border: 'var(--color-border-light)', muted: 'var(--color-text-muted)', surface: 'var(--color-surface-muted)', text: 'var(--color-text-primary)', secondary: 'var(--color-text-secondary)' };
 
   return (
     <Layout title={t('nav.stock')}>
@@ -55,7 +55,7 @@ export default function Stock() {
           <div className="flex items-center gap-3.5">
             <div className="w-11 h-11 rounded-2xl flex items-center justify-center shadow-sm shrink-0" style={{ background: 'var(--color-accent-light)', border: '1px solid var(--color-accent-muted)', color: S.accent }}><Boxes className="w-5 h-5" /></div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight font-serif" style={{ color: S.brown }}>{t('stock.title')} <span className="font-normal" style={{ color: S.accent }}>{t('stock.titleHighlight')}</span></h1>
+              <h1 className="text-2xl font-bold tracking-tight font-serif" style={{ color: S.navy }}>{t('stock.title')} <span className="font-normal" style={{ color: S.accent }}>{t('stock.titleHighlight')}</span></h1>
               <p className="text-xs font-medium mt-0.5" style={{ color: S.muted }}>{t('stock.subtitle')}</p>
             </div>
           </div>
@@ -74,11 +74,11 @@ export default function Stock() {
         {/* Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3.5">
           {[
-            { label: t('stock.totalAddedQty'), value: stockSummary.total_quantity || 0, icon: Package, hint: t('stock.initialStockLogged'), color: S.accent },
+            { label: t('stock.totalAddedQty'), value: stockSummary.total_quantity || 0, icon: Package, hint: t('stock.initialStockLogged'), color: 'var(--color-rose)' },
             { label: t('fields.sellingQ'), value: stockSummary.total_available_quantity != null ? stockSummary.total_available_quantity : stockSummary.total_available_stock || 0, icon: Boxes, hint: t('stock.physicalStockInHand'), color: 'var(--color-success)' },
-            { label: t('stock.custReturnedQty'), value: stockSummary.total_customer_returned_quantity != null ? stockSummary.total_customer_returned_quantity : 0, icon: Inbox, hint: t('stock.customerReturnUnits'), color: 'var(--color-warning)' },
-            { label: t('stock.rtoReturnedQty'), value: stockSummary.total_rto_returned_quantity || 0, icon: Inbox, hint: t('stock.rtoReturnUnits'), color: 'var(--color-info)' },
-            { label: t('stock.inventoryCost'), value: formatCurrency(stockSummary.total_inventory_cost != null ? stockSummary.total_inventory_cost : stockSummary.total_purchase_cost), icon: Coins, hint: t('stock.purchaseCostAvailable'), color: S.brown }
+            { label: t('stock.custReturnedQty'), value: stockSummary.total_customer_returned_quantity != null ? stockSummary.total_customer_returned_quantity : 0, icon: Inbox, hint: t('stock.customerReturnUnits'), color: 'var(--color-amber)' },
+            { label: t('stock.rtoReturnedQty'), value: stockSummary.total_rto_returned_quantity || 0, icon: Inbox, hint: t('stock.rtoReturnUnits'), color: 'var(--color-deep-purple)' },
+            { label: t('stock.inventoryCost'), value: formatCurrency(stockSummary.total_inventory_cost != null ? stockSummary.total_inventory_cost : stockSummary.total_purchase_cost), icon: Coins, hint: t('stock.purchaseCostAvailable'), color: S.navy }
           ].map((card, i) => {
             const Icon = card.icon;
             return (
@@ -115,12 +115,12 @@ export default function Stock() {
                     const soldQty = p.successfully_sold_quantity != null ? p.successfully_sold_quantity : (p.realized_sales_quantity || 0);
                     return (
                       <tr key={p.sku_id} className="transition-colors">
-                        <td className="py-3.5 px-3"><span className="font-mono text-xs font-semibold px-2 py-0.5 rounded-full" style={{ color: S.accent, background: 'var(--color-accent-light)', border: '1px solid var(--color-accent-muted)' }}>{p.sku_id}</span></td>
+                        <td className="py-3.5 px-3"><span className="font-mono text-xs font-semibold px-2 py-0.5 rounded-full" style={{ color: 'var(--color-rose)', background: 'var(--color-accent-light)', border: '1px solid var(--color-accent-muted)' }}>{p.sku_id}</span></td>
                         <td className="py-3.5 px-3"><span className="text-xs font-semibold line-clamp-2" style={{ color: S.text }}>{p.product_name ? <AutoTranslate text={p.product_name} /> : '-'}</span></td>
                         <td className="py-3.5 px-2 text-center"><span className="font-mono text-xs font-semibold" style={{ color: S.text }}>{p.total_quantity}</span></td>
-                        <td className="py-3.5 px-2 text-center"><span className="font-mono text-xs font-semibold" style={{ color: 'var(--color-info)' }}>{soldQty}</span></td>
-                        <td className="py-3.5 px-2 text-center"><span className="font-mono text-xs font-semibold" style={{ color: 'var(--color-warning)' }}>{p.customer_returned_quantity || 0}</span></td>
-                        <td className="py-3.5 px-2 text-center"><span className="font-mono text-xs font-semibold" style={{ color: 'var(--color-info)' }}>{p.rto_returned_quantity || 0}</span></td>
+                        <td className="py-3.5 px-2 text-center"><span className="font-mono text-xs font-semibold" style={{ color: 'var(--color-deep-purple)' }}>{soldQty}</span></td>
+                        <td className="py-3.5 px-2 text-center"><span className="font-mono text-xs font-semibold" style={{ color: 'var(--color-amber)' }}>{p.customer_returned_quantity || 0}</span></td>
+                        <td className="py-3.5 px-2 text-center"><span className="font-mono text-xs font-semibold" style={{ color: 'var(--color-deep-purple)' }}>{p.rto_returned_quantity || 0}</span></td>
                         <td className="py-3.5 px-2 text-center"><span className="font-mono text-xs font-semibold px-2 py-0.5 rounded-full" style={{ color: 'var(--color-success)', background: 'var(--color-success-light)', border: '1px solid var(--color-success-border)' }}>{p.available_quantity != null ? p.available_quantity : p.current_available_stock}</span></td>
                         <td className="py-2 px-2 text-center">
                           <div className="flex items-center justify-center gap-1">
@@ -141,13 +141,13 @@ export default function Stock() {
                             </button>
                           </div>
                         </td>
-                        <td className="py-3.5 px-3 text-right"><span className="font-mono text-xs font-semibold" style={{ color: 'var(--color-warning)' }}>{formatCurrency(p.inventory_cost != null ? p.inventory_cost : p.product_cost)}</span></td>
+                        <td className="py-3.5 px-3 text-right"><span className="font-mono text-xs font-semibold" style={{ color: 'var(--color-amber)' }}>{formatCurrency(p.inventory_cost != null ? p.inventory_cost : p.product_cost)}</span></td>
                         <td className="py-3.5 px-3 text-right"><span className="font-mono text-xs font-semibold" style={{ color: 'var(--color-success)' }}>{formatCurrency(p.inventory_value != null ? p.inventory_value : p.selling_value)}</span></td>
-                        <td className="py-3.5 px-3 text-right"><span className="font-mono text-xs font-semibold" style={{ color: p.realized_sales_profit == null ? S.muted : p.realized_sales_profit >= 0 ? 'var(--color-info)' : 'var(--color-danger)' }}>{formatCurrency(p.realized_sales_profit)}</span></td>
-                        <td className="py-3.5 px-3 text-right"><span className="font-mono text-xs font-semibold" style={{ color: (p.return_loss > 0 || p.customer_return_loss > 0) ? 'var(--color-danger)' : S.muted }}>{formatCurrency(p.customer_return_loss || p.return_loss)}</span></td>
+                        <td className="py-3.5 px-3 text-right"><span className="font-mono text-xs font-semibold" style={{ color: p.realized_sales_profit == null ? S.muted : p.realized_sales_profit >= 0 ? 'var(--color-deep-purple)' : 'var(--color-rose)' }}>{formatCurrency(p.realized_sales_profit)}</span></td>
+                        <td className="py-3.5 px-3 text-right"><span className="font-mono text-xs font-semibold" style={{ color: (p.return_loss > 0 || p.customer_return_loss > 0) ? 'var(--color-rose)' : S.muted }}>{formatCurrency(p.customer_return_loss || p.return_loss)}</span></td>
                         <td className="py-3.5 px-3 text-right">
                           <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded-full"
-                            style={rawNet == null ? { color: S.muted } : rawNet >= 0 ? { color: 'var(--color-success)', background: 'var(--color-success-light)', border: '1px solid var(--color-success-border)' } : { color: 'var(--color-danger)', background: 'var(--color-danger-light)', border: '1px solid var(--color-danger-border)' }}>
+                            style={rawNet == null ? { color: S.muted } : rawNet >= 0 ? { color: 'var(--color-success)', background: 'var(--color-success-light)', border: '1px solid var(--color-success-border)' } : { color: 'var(--color-rose)', background: 'var(--color-danger-light)', border: '1px solid var(--color-danger-border)' }}>
                             {formatCurrency(rawNet)}
                           </span>
                         </td>

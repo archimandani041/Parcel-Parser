@@ -37,7 +37,7 @@ export default function DocumentDetail() {
   const handleSaveCorrection = async (fieldName, originalVal, correctedVal) => { await updateFieldCorrection(id, fieldName, originalVal, correctedVal); fetchDetail(); };
   const handleDelete = async () => { if (window.confirm(t('documents.deleteConfirmRecord', { defaultValue: 'Are you sure you want to delete this document extraction record?' }))) { await deleteDocument(id); navigate('/documents'); } };
 
-  const S = { accent: 'var(--color-accent)', brown: 'var(--color-brown-dark)', border: 'var(--color-border-light)', muted: 'var(--color-text-muted)', surface: 'var(--color-surface-muted)', text: 'var(--color-text-primary)', secondary: 'var(--color-text-secondary)' };
+  const S = { accent: 'var(--color-rose)', navy: 'var(--color-navy)', border: 'var(--color-border-light)', muted: 'var(--color-text-muted)', surface: 'var(--color-surface-muted)', text: 'var(--color-text-primary)', secondary: 'var(--color-text-secondary)' };
 
   if (loading) {
     return (
@@ -55,8 +55,8 @@ export default function DocumentDetail() {
       <Layout title={t('documents.notFound', { defaultValue: 'Document Not Found' })}>
         <div className="py-20 text-center space-y-4">
           <p className="font-medium" style={{ color: S.muted }}>{t('documents.notFoundSubtitle', { defaultValue: 'Document record not found or deleted.' })}</p>
-          <Link to="/documents" className="inline-flex items-center gap-2 px-5 py-2.5 text-white rounded-xl text-xs font-bold shadow-md"
-            style={{ background: S.brown }}><ArrowLeft className="w-4 h-4" /> {t('documents.backToDocs', { defaultValue: 'Back to Documents' })}</Link>
+          <Link to="/documents" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold shadow-md"
+            style={{ background: 'linear-gradient(135deg, var(--color-navy), var(--color-deep-purple))', color: 'var(--color-blush-light)' }}><ArrowLeft className="w-4 h-4" /> {t('documents.backToDocs', { defaultValue: 'Back to Documents' })}</Link>
         </div>
       </Layout>
     );
@@ -88,7 +88,7 @@ export default function DocumentDetail() {
               </button>
               <div>
                 <div className="flex items-center gap-2.5">
-                  <h1 className="text-xl font-extrabold tracking-tight truncate max-w-sm font-serif" style={{ color: S.brown }}>{documentData.file_name}</h1>
+                  <h1 className="text-xl font-extrabold tracking-tight truncate max-w-sm font-serif" style={{ color: S.navy }}>{documentData.file_name}</h1>
                   <span className={`inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-bold border ${badge.bgClass}`}>
                     <span className={`w-1.5 h-1.5 rounded-full ${badge.dotClass}`} />{badge.label}
                   </span>
@@ -136,7 +136,7 @@ export default function DocumentDetail() {
                     <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                       className="flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer"
                       style={activeTab === tab.id
-                        ? { background: S.brown, color: '#fff', boxShadow: 'var(--shadow-xs)' }
+                        ? { background: 'linear-gradient(135deg, var(--color-navy), var(--color-deep-purple))', color: 'var(--color-blush-light)', boxShadow: 'var(--shadow-xs)' }
                         : { color: S.secondary }}>
                       <Icon className="w-4 h-4" /> {tab.label}
                     </button>

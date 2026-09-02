@@ -48,7 +48,7 @@ export default function DocumentsList() {
     return matchesSearch && matchesStatus;
   });
 
-  const S = { accent: 'var(--color-accent)', brown: 'var(--color-brown-dark)', border: 'var(--color-border-light)', muted: 'var(--color-text-muted)', surface: 'var(--color-surface-muted)', text: 'var(--color-text-primary)', secondary: 'var(--color-text-secondary)' };
+  const S = { accent: 'var(--color-rose)', navy: 'var(--color-navy)', border: 'var(--color-border-light)', muted: 'var(--color-text-muted)', surface: 'var(--color-surface-muted)', text: 'var(--color-text-primary)', secondary: 'var(--color-text-secondary)' };
 
   return (
     <Layout title={t('nav.documents')}>
@@ -59,7 +59,7 @@ export default function DocumentsList() {
             <div className="flex items-center gap-3.5">
               <div className="w-11 h-11 rounded-2xl flex items-center justify-center shadow-sm shrink-0" style={{ background: 'var(--color-accent-light)', border: '1px solid var(--color-accent-muted)', color: S.accent }}><Layers className="w-5 h-5" /></div>
               <div>
-                <h1 className="text-2xl font-bold tracking-tight font-serif" style={{ color: S.brown }}>{t('documents.title')} <span className="font-normal" style={{ color: S.accent }}>{t('documents.titleHighlight')}</span></h1>
+                <h1 className="text-2xl font-bold tracking-tight font-serif" style={{ color: S.navy }}>{t('documents.title')} <span className="font-normal" style={{ color: S.accent }}>{t('documents.titleHighlight')}</span></h1>
                 <p className="text-xs font-medium mt-0.5" style={{ color: S.muted }}>{t('documents.subtitle')}</p>
               </div>
             </div>
@@ -74,7 +74,7 @@ export default function DocumentsList() {
               {['ALL', 'COMPLETED', 'NEEDS_REVIEW', 'FAILED'].map((st) => (
                 <button key={st} id={st === 'ALL' ? 'status-filter' : undefined} onClick={() => setStatusFilter(st)}
                   className="px-4 py-1.5 rounded-lg text-xs font-extrabold transition-all whitespace-nowrap cursor-pointer"
-                  style={statusFilter === st ? { background: S.brown, color: '#fff', boxShadow: 'var(--shadow-xs)' } : { color: S.secondary }}>
+                  style={statusFilter === st ? { background: 'linear-gradient(135deg, var(--color-navy), var(--color-deep-purple))', color: 'var(--color-blush-light)', boxShadow: 'var(--shadow-xs)' } : { color: S.secondary }}>
                   {st === 'ALL' ? t('documents.allRecords') : st === 'COMPLETED' ? t('status.completed') : st === 'NEEDS_REVIEW' ? t('status.needsReview') : t('status.failed')}
                 </button>
               ))}
@@ -89,7 +89,7 @@ export default function DocumentsList() {
                 <div className="flex items-center gap-2 flex-wrap">
                   <button id="master-export-btn" onClick={() => setIsExportModalOpen(true)} className="pill-button-dark flex items-center gap-1.5 px-4 py-2 text-xs font-bold"><Download className="w-3.5 h-3.5" /> {t('documents.exportSelected')} ({selectedIds.length})</button>
                   <button onClick={handleBulkDelete} disabled={bulkDeleting} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-colors"
-                    style={{ background: 'var(--color-danger-light)', color: 'var(--color-danger)', border: '1px solid var(--color-danger-border)' }}>
+                    style={{ background: 'var(--color-danger-light)', color: 'var(--color-rose)', border: '1px solid var(--color-danger-border)' }}>
                     <Trash2 className="w-3.5 h-3.5" /> {bulkDeleting ? t('documents.deleting') : `${t('documents.deleteSelected')} (${selectedIds.length})`}
                   </button>
                 </div>
@@ -138,7 +138,7 @@ export default function DocumentsList() {
                         <td className="py-3.5 px-4 text-right">
                           <div className="flex items-center justify-end gap-2">
                             <Link to={`/document/${doc.id}`} className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all"
-                              style={{ background: 'var(--color-surface-muted)', color: S.brown, border: '1px solid var(--color-border-light)' }}>
+                              style={{ background: 'var(--color-surface-muted)', color: S.navy, border: '1px solid var(--color-border-light)' }}>
                               {t('documents.inspect')} <ExternalLink className="w-3.5 h-3.5" />
                             </Link>
                             <button onClick={() => handleSingleDelete(doc.id, doc.file_name)} disabled={deletingId === doc.id} className="p-1.5 rounded-full transition-all disabled:opacity-50" style={{ color: S.muted }}>

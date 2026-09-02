@@ -53,32 +53,32 @@ export default function ExportModal({ isOpen, onClose, selectedDocumentIds = [] 
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/40 backdrop-blur-md p-4 animate-fade-in font-sans">
-      <div className="bg-white border border-amber-200 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-6 relative overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in font-sans" style={{ background: 'rgba(29,26,57,0.5)', backdropFilter: 'blur(8px)' }}>
+      <div className="rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-6 relative overflow-hidden" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border-light)' }}>
         
         {/* Glow Background */}
-        <div className="absolute top-0 right-0 w-48 h-48 bg-amber-200/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-0 right-0 w-48 h-48 rounded-full blur-3xl pointer-events-none" style={{ background: 'rgba(174,68,90,0.06)' }} />
 
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-amber-200 pb-4">
+        <div className="flex items-center justify-between pb-4" style={{ borderBottom: '1px solid var(--color-border-light)' }}>
           <div>
-            <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-              <Download className="w-4 h-4 text-amber-700" /> {t('export.title', { defaultValue: 'Export Shipping Label Data' })}
+            <h3 className="text-base font-extrabold flex items-center gap-2" style={{ color: 'var(--color-navy)' }}>
+              <Download className="w-4 h-4" style={{ color: 'var(--color-rose)' }} /> {t('export.title', { defaultValue: 'Export Shipping Label Data' })}
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5 font-medium">
+            <p className="text-xs mt-0.5 font-medium" style={{ color: 'var(--color-text-muted)' }}>
               {selectedDocumentIds.length > 0
                 ? t('export.selectedCount', { count: selectedDocumentIds.length, defaultValue: `Exporting ${selectedDocumentIds.length} selected document(s)` })
                 : t('export.allDocs', { defaultValue: 'Exporting all documents in catalog' })}
             </p>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-900 p-1.5 rounded-full hover:bg-amber-50 transition-colors">
+          <button onClick={onClose} className="p-1.5 rounded-full transition-colors" style={{ color: 'var(--color-text-muted)' }}>
             <X className="w-4.5 h-4.5" />
           </button>
         </div>
 
         {/* Format Selection List */}
         <div className="space-y-2.5">
-          <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">{t('export.selectFormat', { defaultValue: 'Select Target Format' })}</label>
+          <label className="text-[11px] font-bold uppercase tracking-wider block" style={{ color: 'var(--color-text-muted)' }}>{t('export.selectFormat', { defaultValue: 'Select Target Format' })}</label>
           <div className="space-y-2">
             {formats.map((f) => {
               const Icon = f.icon;
@@ -87,20 +87,21 @@ export default function ExportModal({ isOpen, onClose, selectedDocumentIds = [] 
                 <div
                   key={f.id}
                   onClick={() => setFormat(f.id)}
-                  className={`flex items-center gap-3.5 p-3.5 rounded-2xl border cursor-pointer transition-all ${
-                    isSelected
-                      ? 'bg-amber-50 border-amber-400 ring-2 ring-amber-200 shadow-sm'
-                      : 'bg-amber-50/15 border-amber-200/80 hover:border-amber-300 hover:bg-amber-50/30'
-                  }`}
+                  className="flex items-center gap-3.5 p-3.5 rounded-2xl border cursor-pointer transition-all"
+                  style={isSelected ? {
+                    background: 'var(--color-accent-light)', border: '2px solid var(--color-rose)', boxShadow: '0 0 0 3px rgba(174,68,90,0.08)'
+                  } : {
+                    background: 'var(--color-surface-muted)', border: '1px solid var(--color-border-light)'
+                  }}
                 >
-                  <div className={`p-2.5 rounded-xl ${isSelected ? 'bg-amber-700 text-white shadow-sm' : 'bg-amber-100 border border-amber-300 text-amber-800'}`}>
+                  <div className="p-2.5 rounded-xl shadow-sm" style={isSelected ? { background: 'linear-gradient(135deg, var(--color-navy), var(--color-deep-purple))', color: 'var(--color-blush-light)' } : { background: 'var(--color-surface-warm)', border: '1px solid var(--color-border-light)', color: 'var(--color-plum)' }}>
                     <Icon className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className={`text-xs font-extrabold ${isSelected ? 'text-amber-950' : 'text-slate-800'}`}>
+                    <h4 className="text-xs font-extrabold" style={{ color: isSelected ? 'var(--color-navy)' : 'var(--color-text-primary)' }}>
                       {f.label}
                     </h4>
-                    <p className="text-[11px] text-slate-500 mt-0.5">{f.desc}</p>
+                    <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{f.desc}</p>
                   </div>
                 </div>
               );
@@ -109,27 +110,28 @@ export default function ExportModal({ isOpen, onClose, selectedDocumentIds = [] 
         </div>
 
         {/* Options */}
-        <div className="bg-amber-50/30 p-4 rounded-2xl border border-amber-200 space-y-2">
-          <label className="flex items-center gap-3 text-xs text-slate-700 font-semibold cursor-pointer">
+        <div className="p-4 rounded-2xl space-y-2" style={{ background: 'var(--color-surface-muted)', border: '1px solid var(--color-border-light)' }}>
+          <label className="flex items-center gap-3 text-xs font-semibold cursor-pointer" style={{ color: 'var(--color-text-secondary)' }}>
             <input
               type="checkbox"
               checked={includeRaw}
               onChange={(e) => setIncludeRaw(e.target.checked)}
-              className="rounded border-amber-400 text-amber-700 focus:ring-0 bg-white cursor-pointer"
+              className="rounded cursor-pointer"
             />
             {t('export.includeRaw', { defaultValue: 'Include Raw Unstructured Gemini Responses' })}
           </label>
-          <p className="text-[10px] text-slate-500 font-mono pl-6">
+          <p className="text-[10px] font-mono pl-6" style={{ color: 'var(--color-text-muted)' }}>
             {t('export.includeRawDesc', { defaultValue: 'Appends original raw AI payloads to output document' })}
           </p>
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-end gap-3 pt-2 border-t border-amber-200">
+        <div className="flex items-center justify-end gap-3 pt-2" style={{ borderTop: '1px solid var(--color-border-light)' }}>
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-bold rounded-full transition-colors border border-amber-300/80"
+            className="px-4 py-2.5 text-xs font-bold rounded-full transition-colors"
+            style={{ background: 'var(--color-surface-muted)', color: 'var(--color-text-secondary)', border: '1px solid var(--color-border-light)' }}
           >
             {t('common.cancel')}
           </button>
@@ -146,11 +148,11 @@ export default function ExportModal({ isOpen, onClose, selectedDocumentIds = [] 
               </>
             ) : downloadSuccess ? (
               <>
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" /> {t('export.exported', { defaultValue: 'Exported!' })}
+                <CheckCircle2 className="w-4 h-4" style={{ color: 'var(--color-amber)' }} /> {t('export.exported', { defaultValue: 'Exported!' })}
               </>
             ) : (
               <>
-                <Download className="w-4 h-4 text-amber-300" /> {t('common.export')} {format.toUpperCase()}
+                <Download className="w-4 h-4" style={{ color: 'var(--color-blush)' }} /> {t('common.export')} {format.toUpperCase()}
               </>
             )}
           </button>
@@ -160,4 +162,3 @@ export default function ExportModal({ isOpen, onClose, selectedDocumentIds = [] 
     </div>
   );
 }
-

@@ -1,64 +1,77 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;0,14..32,900;1,14..32,400&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 /* ═══════════════════════════════════════════════════════════════
-   PROPERTY MANAGEMENT DESIGN SYSTEM — Warm, Elegant, Professional
-   Inspired by: High-end Real Estate Management Platforms
+   PARCELAI DESIGN SYSTEM — Premium, Elegant, Professional
+   Color Palette: #1D1A39 · #451952 · #662549 · #AE445A · #F39F5A · #E8BCB9
    ═══════════════════════════════════════════════════════════════ */
 
 /* ─── Design Tokens ─── */
 :root {
-  /* Primary Palette */
-  --color-bg: #FFF8F3;
-  --color-bg-warm: #FEF5ED;
+  /* Core Palette */
+  --color-navy: #1D1A39;
+  --color-deep-purple: #451952;
+  --color-plum: #662549;
+  --color-rose: #AE445A;
+  --color-amber: #F39F5A;
+  --color-blush: #E8BCB9;
+
+  /* Derived Shades */
+  --color-navy-light: #2A2650;
+  --color-navy-lighter: #353068;
+  --color-plum-light: #7D3560;
+  --color-rose-light: #C8627A;
+  --color-rose-muted: rgba(174, 68, 90, 0.12);
+  --color-amber-light: #F5B47A;
+  --color-amber-muted: rgba(243, 159, 90, 0.15);
+  --color-blush-light: #F2D8D6;
+  --color-blush-lighter: #F8ECEA;
+  --color-blush-bg: #FDF5F4;
+
+  /* Backgrounds */
+  --color-bg: #FDF5F4;
+  --color-bg-warm: #FAF0EF;
   --color-surface: #FFFFFF;
-  --color-surface-warm: #FFF3E8;
-  --color-surface-muted: #FAF0E6;
+  --color-surface-warm: #F8ECEA;
+  --color-surface-muted: #F5E7E5;
 
   /* Text */
-  --color-text-primary: #2D1810;
-  --color-text-secondary: #6B4C3B;
-  --color-text-tertiary: #9C8578;
-  --color-text-muted: #B8A79C;
+  --color-text-primary: #1D1A39;
+  --color-text-secondary: #451952;
+  --color-text-tertiary: #7D6B78;
+  --color-text-muted: #A8949F;
 
   /* Accent */
-  --color-accent: #963E1B;
-  --color-accent-hover: #7E3214;
-  --color-accent-light: #F7ECE7;
-  --color-accent-muted: #E8C3B5;
+  --color-accent: #AE445A;
+  --color-accent-hover: #943A4E;
+  --color-accent-light: rgba(174, 68, 90, 0.1);
+  --color-accent-muted: rgba(174, 68, 90, 0.25);
 
-  /* Supporting Colors */
-  --color-brown-dark: #3D2314;
-  --color-brown-medium: #6B4226;
-  --color-brown-light: #A87D5E;
-  --color-cream: #F5E6D3;
-  --color-cream-dark: #E8D5C0;
-
-  /* Semantic */
-  --color-success: #2E7D32;
-  --color-success-light: #E8F5E9;
-  --color-success-border: #C8E6C9;
-  --color-warning: #E65100;
-  --color-warning-light: #FFF3E0;
-  --color-warning-border: #FFE0B2;
-  --color-danger: #C62828;
-  --color-danger-light: #FFEBEE;
-  --color-danger-border: #FFCDD2;
-  --color-info: #1565C0;
-  --color-info-light: #E3F2FD;
-  --color-info-border: #BBDEFB;
+  /* Semantic (palette-derived) */
+  --color-success: #3D7A52;
+  --color-success-light: rgba(61, 122, 82, 0.1);
+  --color-success-border: rgba(61, 122, 82, 0.2);
+  --color-warning: #F39F5A;
+  --color-warning-light: rgba(243, 159, 90, 0.1);
+  --color-warning-border: rgba(243, 159, 90, 0.25);
+  --color-danger: #AE445A;
+  --color-danger-light: rgba(174, 68, 90, 0.08);
+  --color-danger-border: rgba(174, 68, 90, 0.2);
+  --color-info: #451952;
+  --color-info-light: rgba(69, 25, 82, 0.08);
+  --color-info-border: rgba(69, 25, 82, 0.18);
 
   /* Borders */
-  --color-border: #E8D5C0;
-  --color-border-light: #F0E2D1;
-  --color-border-strong: #D4BCA8;
+  --color-border: #E0C8C5;
+  --color-border-light: #EDD9D7;
+  --color-border-strong: #D4B0AC;
 
-  /* Shadows */
-  --shadow-xs: 0 1px 2px rgba(61, 35, 20, 0.04);
-  --shadow-sm: 0 2px 8px rgba(61, 35, 20, 0.06);
-  --shadow-md: 0 4px 16px rgba(61, 35, 20, 0.08);
-  --shadow-lg: 0 8px 32px rgba(61, 35, 20, 0.10);
-  --shadow-xl: 0 16px 48px rgba(61, 35, 20, 0.12);
+  /* Shadows — derived from navy */
+  --shadow-xs: 0 1px 2px rgba(29, 26, 57, 0.04);
+  --shadow-sm: 0 2px 8px rgba(29, 26, 57, 0.06);
+  --shadow-md: 0 4px 16px rgba(29, 26, 57, 0.08);
+  --shadow-lg: 0 8px 32px rgba(29, 26, 57, 0.10);
+  --shadow-xl: 0 16px 48px rgba(29, 26, 57, 0.12);
 
   /* Radius */
   --radius-sm: 0.5rem;
@@ -71,7 +84,7 @@
 
 @layer base {
   body {
-    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     background: var(--color-bg);
     color: var(--color-text-primary);
     min-height: 100vh;
@@ -82,12 +95,15 @@
   }
 
   .font-serif {
-    font-family: 'DM Serif Display', Georgia, 'Times New Roman', serif;
+    font-family: 'Inter', -apple-system, sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.02em;
   }
 
   .font-serif-italic {
-    font-family: 'DM Serif Display', Georgia, 'Times New Roman', serif;
+    font-family: 'Inter', -apple-system, sans-serif;
     font-style: italic;
+    font-weight: 700;
   }
 
   code,
@@ -98,8 +114,8 @@
 
   /* Selection */
   ::selection {
-    background: var(--color-accent-light);
-    color: var(--color-brown-dark);
+    background: rgba(174, 68, 90, 0.15);
+    color: var(--color-navy);
   }
 }
 
@@ -114,17 +130,17 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-cream-dark);
+  background: var(--color-blush);
   border-radius: var(--radius-full);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-brown-light);
+  background: var(--color-rose-light);
 }
 
 /* ─── Floating Navbar ─── */
 .floating-navbar {
-  background: rgba(255, 255, 255, 0.96);
+  background: rgba(253, 245, 244, 0.96);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--color-border-light);
@@ -151,13 +167,13 @@
 
 /* ─── Hero Section ─── */
 .pastel-light-hero {
-  background: linear-gradient(135deg, var(--color-bg-warm) 0%, var(--color-surface-warm) 50%, var(--color-bg) 100%);
+  background: linear-gradient(135deg, var(--color-blush-lighter) 0%, var(--color-blush-light) 50%, var(--color-bg) 100%);
   border: 1px solid var(--color-border-light);
 }
 
 /* ─── Page Background Wrapper ─── */
 .page-pastel-bg {
-  background: rgba(255, 255, 255, 0.45);
+  background: rgba(253, 245, 244, 0.6);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--color-border-light);
@@ -167,62 +183,60 @@
 
 /* ─── Button System ─── */
 
-/* Primary Coral/Orange Button */
-/* Primary Dark Espresso Button */
+/* Primary Dark Button (Navy) */
 .pill-button-dark {
-  background: var(--color-brown-dark);
-  color: #FFFFFF;
-  border: 1px solid var(--color-brown-dark);
+  background: linear-gradient(135deg, var(--color-navy) 0%, var(--color-deep-purple) 100%);
+  color: var(--color-blush-light);
+  border: 1px solid rgba(69, 25, 82, 0.3);
   border-radius: var(--radius-full);
   font-weight: 700;
-  transition: all 0.25s ease;
-  box-shadow: 0 4px 14px -3px rgba(61, 35, 20, 0.3);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 14px -3px rgba(29, 26, 57, 0.35);
 }
 
 .pill-button-dark:hover {
-  background: #2A170C;
-  border-color: #2A170C;
+  background: linear-gradient(135deg, var(--color-deep-purple) 0%, var(--color-plum) 100%);
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px -4px rgba(61, 35, 20, 0.4);
+  box-shadow: 0 6px 20px -4px rgba(29, 26, 57, 0.45);
 }
 
-/* Secondary Brown Button */
+/* Secondary Plum Button */
 .pill-button-pastel {
-  background: var(--color-brown-medium);
-  color: #FFFFFF;
-  border: 1px solid var(--color-brown-medium);
+  background: var(--color-plum);
+  color: var(--color-blush-light);
+  border: 1px solid var(--color-plum);
   border-radius: var(--radius-full);
   font-weight: 700;
-  transition: all 0.25s ease;
-  box-shadow: 0 4px 14px -3px rgba(107, 66, 38, 0.3);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 14px -3px rgba(102, 37, 73, 0.3);
 }
 
 .pill-button-pastel:hover {
-  background: var(--color-brown-dark);
-  border-color: var(--color-brown-dark);
+  background: var(--color-deep-purple);
+  border-color: var(--color-deep-purple);
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px -4px rgba(61, 35, 20, 0.4);
+  box-shadow: 0 6px 20px -4px rgba(69, 25, 82, 0.4);
 }
 
 /* Light / Ghost Button */
 .pill-button-light-pastel {
   background: var(--color-surface-warm);
-  color: var(--color-brown-dark);
+  color: var(--color-navy);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
   font-weight: 700;
-  transition: all 0.25s ease;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .pill-button-light-pastel:hover {
-  background: var(--color-cream);
+  background: var(--color-blush-light);
   border-color: var(--color-border-strong);
   transform: translateY(-1px);
 }
 
 /* ─── Glow Effect ─── */
 .glow-pastel {
-  box-shadow: 0 0 30px -8px rgba(150, 62, 27, 0.15);
+  box-shadow: 0 0 30px -8px rgba(174, 68, 90, 0.12);
 }
 
 /* ─── Smooth Animations ─── */
@@ -299,32 +313,32 @@ input[type="text"],
 input[type="number"],
 input[type="search"],
 select {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
 }
 
 input:focus,
 select:focus {
   outline: none;
-  border-color: var(--color-accent) !important;
-  box-shadow: 0 0 0 3px rgba(150, 62, 27, 0.12) !important;
+  border-color: var(--color-rose) !important;
+  box-shadow: 0 0 0 3px rgba(174, 68, 90, 0.12) !important;
 }
 
 /* ─── Checkbox Styling ─── */
 input[type="checkbox"] {
-  accent-color: var(--color-accent);
+  accent-color: var(--color-rose);
 }
 
 /* ─── Toast / Notification ─── */
 .toast-notification {
-  background: var(--color-brown-dark);
-  color: #FFFFFF;
+  background: var(--color-navy);
+  color: var(--color-blush-light);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-xl);
 }
 
 /* ─── Modal Backdrop ─── */
 .modal-backdrop {
-  background: rgba(45, 24, 16, 0.5);
+  background: rgba(29, 26, 57, 0.5);
   backdrop-filter: blur(8px);
 }
 
@@ -346,17 +360,17 @@ input[type="checkbox"] {
 }
 
 .bg-cream {
-  background: var(--color-cream);
+  background: var(--color-blush-light);
 }
 
 .text-brown {
-  color: var(--color-brown-dark);
+  color: var(--color-navy);
 }
 
 .text-brown-medium {
-  color: var(--color-brown-medium);
+  color: var(--color-deep-purple);
 }
 
 .text-brown-light {
-  color: var(--color-brown-light);
+  color: var(--color-plum);
 }

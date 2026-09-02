@@ -36,61 +36,66 @@ export default function DocumentViewer({ fileUrl, fileName, fileType, activePage
   const pdfUrlWithPage = (isPdf && resolvedUrl) ? `${resolvedUrl}#page=${activePage}` : resolvedUrl;
 
   return (
-    <div className="flex flex-col h-full bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+    <div className="flex flex-col h-full rounded-2xl overflow-hidden shadow-xl" style={{ background: 'var(--color-navy)', border: '1px solid var(--color-navy-light)' }}>
       {/* Control Bar */}
-      <div className="flex items-center justify-between px-4 py-3 bg-stone-950/70 border-b border-slate-800">
-        <div className="flex items-center gap-2 text-xs font-semibold text-slate-300 truncate max-w-[200px]">
-          <FileText className="w-4 h-4 text-indigo-400 shrink-0" />
+      <div className="flex items-center justify-between px-4 py-3" style={{ background: 'rgba(29,26,57,0.95)', borderBottom: '1px solid var(--color-navy-light)' }}>
+        <div className="flex items-center gap-2 text-xs font-semibold truncate max-w-[200px]" style={{ color: 'var(--color-blush)' }}>
+          <FileText className="w-4 h-4 shrink-0" style={{ color: 'var(--color-rose)' }} />
           <span className="truncate">{fileName || 'Label Document'}</span>
           {isPdf && activePage && (
-            <span className="text-[10px] bg-indigo-950 text-indigo-300 font-mono px-2 py-0.5 rounded-full border border-indigo-800/60 ml-1">
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full ml-1" style={{ background: 'rgba(174,68,90,0.2)', color: 'var(--color-blush)', border: '1px solid rgba(174,68,90,0.3)' }}>
               Page {activePage}
             </span>
           )}
         </div>
 
-        <div className="flex items-center gap-1.5 bg-slate-900 border border-slate-800 rounded-lg p-1">
+        <div className="flex items-center gap-1.5 rounded-lg p-1" style={{ background: 'var(--color-navy-light)', border: '1px solid rgba(232,188,185,0.1)' }}>
           {loadError && fileName && (
             <button
               onClick={() => {
                 setUseLocalFallback(true);
                 setLoadError(false);
               }}
-              className="text-[11px] px-2.5 py-1 bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 rounded font-medium border border-amber-500/30 mr-2 flex items-center gap-1"
+              className="text-[11px] px-2.5 py-1 rounded font-medium mr-2 flex items-center gap-1"
+              style={{ background: 'rgba(243,159,90,0.2)', color: 'var(--color-amber)', border: '1px solid rgba(243,159,90,0.3)' }}
             >
-              <AlertTriangle className="w-3 h-3 text-amber-400" /> Use Local Server View
+              <AlertTriangle className="w-3 h-3" style={{ color: 'var(--color-amber)' }} /> Use Local Server View
             </button>
           )}
 
           <button
             onClick={handleZoomOut}
             title="Zoom Out"
-            className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-md transition-colors"
+            className="p-1.5 rounded-md transition-colors"
+            style={{ color: 'var(--color-blush)' }}
           >
             <ZoomOut className="w-4 h-4" />
           </button>
-          <span className="text-xs text-slate-400 font-mono w-10 text-center select-none">
+          <span className="text-xs font-mono w-10 text-center select-none" style={{ color: 'var(--color-blush)' }}>
             {Math.round(zoom * 100)}%
           </span>
           <button
             onClick={handleZoomIn}
             title="Zoom In"
-            className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-md transition-colors"
+            className="p-1.5 rounded-md transition-colors"
+            style={{ color: 'var(--color-blush)' }}
           >
             <ZoomIn className="w-4 h-4" />
           </button>
-          <div className="w-px h-4 bg-slate-800 my-auto mx-0.5" />
+          <div className="w-px h-4 my-auto mx-0.5" style={{ background: 'rgba(232,188,185,0.15)' }} />
           <button
             onClick={handleRotate}
             title="Rotate Clockwise"
-            className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-md transition-colors"
+            className="p-1.5 rounded-md transition-colors"
+            style={{ color: 'var(--color-blush)' }}
           >
             <RotateCw className="w-4 h-4" />
           </button>
           <button
             onClick={handleReset}
             title="Reset View"
-            className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-md transition-colors"
+            className="p-1.5 rounded-md transition-colors"
+            style={{ color: 'var(--color-blush)' }}
           >
             <RefreshCw className="w-4 h-4" />
           </button>
@@ -100,7 +105,8 @@ export default function DocumentViewer({ fileUrl, fileName, fileType, activePage
               target="_blank"
               rel="noreferrer"
               title="Open Original File"
-              className="p-1.5 text-slate-400 hover:text-indigo-400 hover:bg-slate-800 rounded-md transition-colors ml-1"
+              className="p-1.5 rounded-md transition-colors ml-1"
+              style={{ color: 'var(--color-rose)' }}
             >
               <ExternalLink className="w-4 h-4" />
             </a>
@@ -109,14 +115,15 @@ export default function DocumentViewer({ fileUrl, fileName, fileType, activePage
       </div>
 
       {/* Main Preview Container */}
-      <div className="flex-1 flex items-center justify-center p-6 bg-slate-950/40 overflow-auto relative min-h-[450px]">
+      <div className="flex-1 flex items-center justify-center p-6 overflow-auto relative min-h-[450px]" style={{ background: 'var(--color-deep-purple)' }}>
         {isPdf ? (
           <iframe
             key={pdfUrlWithPage}
             src={pdfUrlWithPage}
             title={`PDF Document Viewer - Page ${activePage}`}
             onError={() => setLoadError(true)}
-            className="w-full h-full min-h-[500px] rounded-lg border border-slate-800"
+            className="w-full h-full min-h-[500px] rounded-lg"
+            style={{ border: '1px solid var(--color-navy-light)' }}
           />
         ) : (
           <div className="transition-transform duration-200 ease-out flex items-center justify-center">
@@ -135,7 +142,13 @@ export default function DocumentViewer({ fileUrl, fileName, fileType, activePage
                 maxHeight: '650px',
                 objectFit: 'contain'
               }}
-              className="rounded-lg border border-slate-800/80 shadow-2xl transition-all duration-300"
+              className="rounded-lg shadow-2xl transition-all duration-300"
+              style={{
+                transform: `scale(${zoom}) rotate(${rotation}deg)`,
+                maxHeight: '650px',
+                objectFit: 'contain',
+                border: '1px solid rgba(232,188,185,0.15)'
+              }}
             />
           </div>
         )}

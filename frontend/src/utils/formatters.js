@@ -39,39 +39,38 @@ export function getStatusBadgeConfig(status) {
     case 'COMPLETED':
       return {
         label: 'Completed',
-        bgClass: 'bg-emerald-100/90 text-emerald-800 border-emerald-200 shadow-sm',
-        dotClass: 'bg-emerald-500'
+        bgClass: 'bg-[rgba(61,122,82,0.1)] text-[#3D7A52] border-[rgba(61,122,82,0.2)] shadow-sm',
+        dotClass: 'bg-[#3D7A52]'
       };
     case 'NEEDS_REVIEW':
       return {
         label: 'Needs Review',
-        bgClass: 'bg-amber-100/90 text-amber-800 border-amber-200 shadow-sm',
-        dotClass: 'bg-amber-500'
+        bgClass: 'bg-[rgba(243,159,90,0.1)] text-[#1D1A39] border-[rgba(243,159,90,0.25)] shadow-sm',
+        dotClass: 'bg-[#F39F5A]'
       };
     case 'FAILED':
       return {
         label: 'Failed',
-        bgClass: 'bg-rose-100/90 text-rose-800 border-rose-200 shadow-sm',
-        dotClass: 'bg-rose-500'
+        bgClass: 'bg-[rgba(174,68,90,0.08)] text-[#AE445A] border-[rgba(174,68,90,0.2)] shadow-sm',
+        dotClass: 'bg-[#AE445A]'
       };
     case 'ANALYZING':
       return {
         label: 'Analyzing...',
-        bgClass: 'bg-purple-100/90 text-purple-800 border-purple-200 shadow-sm animate-pulse',
-        dotClass: 'bg-purple-500 animate-ping'
+        bgClass: 'bg-[rgba(69,25,82,0.08)] text-[#451952] border-[rgba(69,25,82,0.18)] shadow-sm animate-pulse',
+        dotClass: 'bg-[#451952] animate-ping'
       };
     case 'UPLOADING':
       return {
         label: 'Uploading...',
-        bgClass: 'bg-sky-100/90 text-sky-800 border-sky-200 shadow-sm',
-        dotClass: 'bg-sky-500'
+        bgClass: 'bg-[rgba(102,37,73,0.08)] text-[#662549] border-[rgba(102,37,73,0.18)] shadow-sm',
+        dotClass: 'bg-[#662549]'
       };
     default:
       return {
         label: status || 'Unknown',
-        bgClass: 'bg-slate-100 text-slate-700 border-slate-200',
-        dotClass: 'bg-slate-400'
+        bgClass: 'bg-[rgba(232,188,185,0.2)] text-[#1D1A39] border-[rgba(232,188,185,0.3)]',
+        dotClass: 'bg-[#A8949F]'
       };
   }
 }
-
