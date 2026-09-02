@@ -433,13 +433,13 @@ export default function Return() {
           </div>
 
           <div className="flex items-center gap-3 flex-wrap xl:flex-nowrap shrink-0">
-            {/* Category Switcher Pill [ Customer Return ] [ RTO Return ] */}
-            <div className="p-1 rounded-xl flex items-center gap-1 shrink-0" style={{ background: 'var(--color-surface-muted)', border: '1px solid var(--color-border-light)' }}>
+            {/* Category Toggle Tabs with Smooth Sliding Pill */}
+            <div className="relative flex items-center p-1 rounded-2xl transition-all" style={{ background: 'var(--color-surface-muted)', border: '1px solid var(--color-border-light)' }}>
               <button
                 id="customer-return-tab-btn"
                 onClick={() => setActiveCategory('customer')}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer"
-                style={activeCategory === 'customer' ? { background: 'linear-gradient(135deg, var(--color-navy), var(--color-deep-purple))', color: 'var(--color-blush-light)', boxShadow: 'var(--shadow-xs)' } : { color: 'var(--color-text-secondary)' }}
+                className={`relative z-10 flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all duration-300 cursor-pointer icon-hover-rotate ${activeCategory === 'customer' ? 'text-white shadow-md' : 'text-slate-600 hover:text-slate-900'}`}
+                style={activeCategory === 'customer' ? { background: 'linear-gradient(135deg, var(--color-navy), var(--color-deep-purple))', color: 'var(--color-blush-light)', boxShadow: '0 4px 14px rgba(29,26,57,0.25)' } : { color: 'var(--color-text-secondary)' }}
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 {t('orders.customerReturn')}
@@ -448,29 +448,29 @@ export default function Return() {
               <button
                 id="rto-return-tab-btn"
                 onClick={() => setActiveCategory('rto')}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer"
-                style={activeCategory === 'rto' ? { background: 'linear-gradient(135deg, var(--color-navy), var(--color-deep-purple))', color: 'var(--color-blush-light)', boxShadow: 'var(--shadow-xs)' } : { color: 'var(--color-text-secondary)' }}
+                className={`relative z-10 flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all duration-300 cursor-pointer icon-hover-up ${activeCategory === 'rto' ? 'text-white shadow-md' : 'text-slate-600 hover:text-slate-900'}`}
+                style={activeCategory === 'rto' ? { background: 'linear-gradient(135deg, var(--color-navy), var(--color-deep-purple))', color: 'var(--color-blush-light)', boxShadow: '0 4px 14px rgba(29,26,57,0.25)' } : { color: 'var(--color-text-secondary)' }}
               >
                 <Truck className="w-3.5 h-3.5" />
                 {t('orders.rtoReturn')}
               </button>
             </div>
 
-            {/* Upload Return Label Button */}
+            {/* Upload Return Label Button with micro-interaction */}
             <button
               onClick={() => {
                 setShowUploadModal(true);
                 setUploadStep('SELECT_METHOD');
               }}
-              className="pill-button-dark flex items-center gap-2 px-5 py-2.5 text-xs font-bold hover:scale-105 cursor-pointer shrink-0"
+              className="pill-button-dark flex items-center gap-2 px-5 py-2.5 text-xs font-bold interactive-hover icon-hover-up cursor-pointer shrink-0"
             >
               <UploadCloud className="w-4 h-4" />
               <span>{t('returns.uploadReturnLabel')}</span>
             </button>
 
-            {/* Search Input */}
-            <div className="relative flex-1 min-w-[180px] sm:w-60">
-              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--color-text-muted)' }} />
+            {/* Search Input with micro-interaction */}
+            <div className="relative flex-1 min-w-[180px] sm:w-60 group">
+              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 transition-transform duration-200 group-focus-within:scale-110" style={{ color: 'var(--color-text-muted)' }} />
               <input
                 id="search-return-input"
                 type="text"
@@ -486,7 +486,7 @@ export default function Return() {
             <button
               onClick={loadReturnData}
               disabled={loading}
-              className="p-2.5 rounded-xl transition-all disabled:opacity-50 cursor-pointer shrink-0"
+              className="p-2.5 rounded-xl transition-all disabled:opacity-50 cursor-pointer shrink-0 icon-hover-spin"
               style={{ background: 'var(--color-surface-muted)', border: '1px solid var(--color-border-light)', color: 'var(--color-text-secondary)' }}
               title={t('common.refresh')}
             >
@@ -818,8 +818,8 @@ export default function Return() {
 
         {/* CONFIRMATION MODAL FOR UNDO RETURN */}
         {confirmUndoOrder && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in" style={{ background: 'rgba(29,26,57,0.5)', backdropFilter: 'blur(4px)' }}>
-            <div className="rounded-3xl shadow-2xl max-w-md w-full p-6 space-y-5" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border-light)' }}>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in" style={{ background: 'rgba(29,26,57,0.5)', backdropFilter: 'blur(8px)' }}>
+            <div className="rounded-3xl shadow-2xl max-w-md w-full p-6 space-y-5 animate-modal-in" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border-light)' }}>
               <div className="flex items-start gap-4">
                 <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 shadow-xs" style={{ background: 'var(--color-amber-muted)', border: '1px solid var(--color-warning-border)', color: 'var(--color-amber)' }}>
                   <AlertTriangle className="w-5 h-5" />
@@ -870,7 +870,7 @@ export default function Return() {
         {/* UPLOAD RETURN LABEL POPUP MODAL */}
         {showUploadModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto animate-fade-in" style={{ background: 'rgba(29,26,57,0.65)', backdropFilter: 'blur(8px)' }}>
-            <div className="rounded-3xl shadow-2xl max-w-xl w-full p-6 sm:p-7 space-y-6 relative max-h-[90vh] overflow-y-auto my-auto" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border-light)' }}>
+            <div className="rounded-3xl shadow-2xl max-w-xl w-full p-6 sm:p-7 space-y-6 relative max-h-[90vh] overflow-y-auto my-auto animate-modal-in" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border-light)' }}>
 
               {/* Modal Header */}
               <div className="flex items-center justify-between pb-4" style={{ borderBottom: '1px solid var(--color-border-light)' }}>

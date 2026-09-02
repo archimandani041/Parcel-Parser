@@ -140,7 +140,7 @@ export default function Orders() {
                 </thead>
                 <tbody className="divide-y" style={{ borderColor: 'var(--color-border-light)' }}>
                   {records.map((rec) => (
-                    <tr key={rec.id} className="transition-colors duration-150">
+                    <tr key={rec.id} className="table-row-hover transition-colors duration-150">
                       {/* Order ID Badge */}
                       <td className="py-4 px-5">
                         <span className="inline-block font-mono text-xs font-bold px-2.5 py-1 rounded-xl select-all"
@@ -185,7 +185,7 @@ export default function Orders() {
                           <button
                             onClick={() => handleOpenUndoModal(rec)}
                             disabled={undoingId === rec.id}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-bold transition-all cursor-pointer disabled:opacity-50 shadow-2xs"
+                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-bold transition-all cursor-pointer disabled:opacity-50 shadow-2xs icon-hover-rotate"
                             style={{ background: 'var(--color-danger-light)', color: 'var(--color-rose)', border: '1px solid var(--color-danger-border)' }}
                           >
                             <RotateCcw className={`w-3.5 h-3.5 ${undoingId === rec.id ? 'animate-spin' : ''}`} />
@@ -195,7 +195,7 @@ export default function Orders() {
                           <button
                             onClick={() => setReturnModalOrder(rec)}
                             disabled={returningId === rec.id}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-bold transition-all cursor-pointer disabled:opacity-50 shadow-2xs"
+                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-bold transition-all cursor-pointer disabled:opacity-50 shadow-2xs icon-hover-rotate"
                             style={{ background: 'var(--color-amber-muted)', color: 'var(--color-navy)', border: '1px solid var(--color-warning-border)' }}
                           >
                             <RotateCcw className={`w-3.5 h-3.5 ${returningId === rec.id ? 'animate-spin' : ''}`} />
@@ -209,7 +209,7 @@ export default function Orders() {
                         <button
                           onClick={() => handleDelete(rec.id, rec.order_id)}
                           disabled={deletingId === rec.id}
-                          className="p-2 rounded-xl transition-all cursor-pointer disabled:opacity-50"
+                          className="p-2 rounded-xl transition-all cursor-pointer disabled:opacity-50 icon-hover-shake"
                           style={{ color: S.muted }}
                           title={t('common.delete')}
                         >

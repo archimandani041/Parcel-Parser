@@ -336,10 +336,104 @@ input[type="checkbox"] {
   box-shadow: var(--shadow-xl);
 }
 
-/* ─── Modal Backdrop ─── */
-.modal-backdrop {
-  background: rgba(29, 26, 57, 0.5);
-  backdrop-filter: blur(8px);
+/* ─── Micro-Interactions & Transitions (CollectUI Inspired) ─── */
+
+/* Modal Transitions (Opening 0 -> 1, scale 95% -> 100%) */
+@keyframes modalPopIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.95) translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-modal-in {
+  animation: modalPopIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Button & Card Micro-Interactions */
+.interactive-hover {
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.22s ease;
+}
+
+.interactive-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px -4px rgba(29, 26, 57, 0.12), 0 0 14px rgba(174, 68, 90, 0.15);
+}
+
+.interactive-hover:active {
+  transform: scale(0.97) translateY(0);
+}
+
+/* Context-Aware Icon Hover Micro-Animations */
+.icon-hover-up:hover svg,
+.icon-hover-up:hover .lucide {
+  transform: translateY(-2.5px);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.icon-hover-down:hover svg,
+.icon-hover-down:hover .lucide {
+  transform: translateY(2.5px);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.icon-hover-rotate:hover svg,
+.icon-hover-rotate:hover .lucide {
+  transform: rotate(30deg);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.icon-hover-spin:hover svg,
+.icon-hover-spin:hover .lucide {
+  transform: rotate(180deg);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes iconShake {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-8deg); }
+  75% { transform: rotate(8deg); }
+}
+
+.icon-hover-shake:hover svg,
+.icon-hover-shake:hover .lucide {
+  animation: iconShake 0.3s ease-in-out;
+}
+
+/* Table Row Micro-Interactions */
+.table-row-hover {
+  transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.table-row-hover:hover {
+  background-color: var(--color-surface-warm) !important;
+  box-shadow: inset 3px 0 0 var(--color-rose);
+}
+
+/* Input Focus Glow */
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--color-rose) !important;
+  box-shadow: 0 0 0 3.5px rgba(174, 68, 90, 0.15) !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Reduced Motion Override for Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* ─── Utility Classes ─── */

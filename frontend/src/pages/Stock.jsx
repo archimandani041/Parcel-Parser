@@ -114,7 +114,7 @@ export default function Stock() {
                     const rawNet = p.net_profit != null ? p.net_profit : p.profit;
                     const soldQty = p.successfully_sold_quantity != null ? p.successfully_sold_quantity : (p.realized_sales_quantity || 0);
                     return (
-                      <tr key={p.sku_id} className="transition-colors">
+                      <tr key={p.sku_id} className="table-row-hover transition-colors">
                         <td className="py-3.5 px-3"><span className="font-mono text-xs font-semibold px-2 py-0.5 rounded-full" style={{ color: 'var(--color-rose)', background: 'var(--color-accent-light)', border: '1px solid var(--color-accent-muted)' }}>{p.sku_id}</span></td>
                         <td className="py-3.5 px-3"><span className="text-xs font-semibold line-clamp-2" style={{ color: S.text }}>{p.product_name ? <AutoTranslate text={p.product_name} /> : '-'}</span></td>
                         <td className="py-3.5 px-2 text-center"><span className="font-mono text-xs font-semibold" style={{ color: S.text }}>{p.total_quantity}</span></td>
@@ -135,7 +135,7 @@ export default function Stock() {
                             <input type="number" step="any" placeholder="0" value={es.selling_price} onChange={(e) => setEditPriceState(prev => ({ ...prev, [p.sku_id]: { ...prev[p.sku_id], selling_price: e.target.value } }))}
                               className="w-16 rounded-lg px-1.5 py-1 text-xs text-right font-mono outline-none transition-all font-semibold" style={{ background: S.surface, border: `1px solid ${S.border}`, color: S.text }} />
                             <button onClick={() => handleSavePrice(p.sku_id, p.product_name)} disabled={es.saving}
-                              className="p-1 rounded-full transition-all cursor-pointer disabled:opacity-50"
+                              className="p-1 rounded-full transition-all cursor-pointer disabled:opacity-50 icon-hover-rotate"
                               style={es.saved ? { background: 'var(--color-success-light)', color: 'var(--color-success)', border: '1px solid var(--color-success-border)' } : { background: 'var(--color-accent-light)', color: S.accent, border: '1px solid var(--color-accent-muted)' }}>
                               {es.saved ? <Check className="w-3 h-3" /> : es.saving ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
                             </button>
@@ -151,7 +151,7 @@ export default function Stock() {
                             {formatCurrency(rawNet)}
                           </span>
                         </td>
-                        <td className="py-3.5 px-3 text-center"><button onClick={() => handleDeleteStockProduct(p.sku_id)} className="p-1 rounded-full transition-all cursor-pointer" style={{ color: S.muted }}><Trash2 className="w-3.5 h-3.5" /></button></td>
+                        <td className="py-3.5 px-3 text-center"><button onClick={() => handleDeleteStockProduct(p.sku_id)} className="p-1.5 rounded-full transition-all cursor-pointer hover:bg-rose-50 icon-hover-shake" style={{ color: S.muted }}><Trash2 className="w-3.5 h-3.5 hover:text-rose-600" /></button></td>
                       </tr>
                     );
                   })}

@@ -1,4 +1,5 @@
 import React from 'react';
+import LanguageSelector from './LanguageSelector';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -103,22 +104,8 @@ export default function Navbar({ title = 'Parcel Information Extractor', healthI
 
           {/* Right: Language Switcher & Quick Action */}
           <div className="flex items-center gap-2.5">
-            {/* Language Switcher Dropdown */}
-            <div className="relative flex items-center rounded-xl px-3 py-1.5 text-xs font-extrabold transition-all hover:border-accent"
-              style={{ background: 'var(--color-surface-muted)', border: '1px solid var(--color-border-light)', color: 'var(--color-text-secondary)' }}>
-              <Globe className="w-4 h-4 mr-1.5 shrink-0" style={{ color: 'var(--color-rose)' }} />
-              <select
-                id="language-switcher"
-                value={i18n.language || 'en'}
-                onChange={(e) => changeLanguage(e.target.value)}
-                className="bg-transparent font-extrabold text-xs outline-none cursor-pointer pr-1 py-0.5"
-                style={{ color: 'var(--color-navy)' }}
-              >
-                <option value="en" className="font-sans">English</option>
-                <option value="gu" className="font-sans">ગુજરાતી</option>
-                <option value="hi" className="font-sans">हिंदी</option>
-              </select>
-            </div>
+            {/* Custom Language Switcher Dropdown */}
+            <LanguageSelector />
 
             {/* Prominent Parse Label CTA Button */}
             <NavLink
