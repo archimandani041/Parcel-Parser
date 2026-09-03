@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import LanguageSelector from './LanguageSelector';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -10,17 +10,15 @@ import {
   Package,
   RotateCcw,
   Sparkles,
-  Globe,
   Scan
 } from 'lucide-react';
 
 export default function Navbar({ title = 'Parcel Information Extractor', healthInfo }) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const location = useLocation();
-
-  const changeLanguage = (lng) => {
-    i18n.changeLanguage(lng);
-  };
+  const navContainerRef = useRef(null);
+  const navItemRefs = useRef({});
+  const [pillStyle, setPillStyle] = useState({});
 
   const navItems = [
     { path: '/', label: t('nav.dashboard'), icon: LayoutDashboard },
@@ -30,6 +28,21 @@ export default function Navbar({ title = 'Parcel Information Extractor', healthI
     { path: '/return', label: t('nav.return'), icon: RotateCcw },
     { path: '/documents', label: t('nav.docs'), icon: FileText },
   ];
+
+  /* ─── Sliding Pill Indicator Logic ─── */
+  useEffect(() => {
+    const activeRef = navItemRefs.current[location.pathname];
+    const container = navContainerRef.current;
+    if (activeRef && container) {
+      const containerRect = container.getBoundingClientRect();
+      const itemRect = activeRef.getBoundingClientRect();
+      setPillStyle({
+        left: `${itemRect.left - containerRect.left}px`,
+        width: `${itemRect.width}px`,
+        opacity: 1,
+      });
+    }
+  }, [location.pathname]);
 
   return (
     <>
@@ -44,7 +57,7 @@ export default function Navbar({ title = 'Parcel Information Extractor', healthI
           }}>
 
           {/* Left: Brand Logo */}
-          <NavLink to="/" className="flex items-center gap-2.5 group shrink-0 transition-transform duration-200 hover:scale-102">
+          <NavLink to="/" className="flex items-center gap-2.5 group shrink-0 transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-md group-hover:rotate-3 transition-all duration-300"
               style={{
                 background: 'linear-gradient(135deg, var(--color-navy) 0%, var(--color-deep-purple) 100%)',
@@ -63,9 +76,21 @@ export default function Navbar({ title = 'Parcel Information Extractor', healthI
             </div>
           </NavLink>
 
-          {/* Center: Desktop Navigation Links */}
-          <nav className="hidden lg:flex items-center gap-1.5 p-1.5 rounded-2xl"
+          {/* Center: Desktop Navigation Links with Sliding Pill */}
+          <nav ref={navContainerRef} className="hidden lg:flex items-center gap-1 p-1.5 rounded-2xl relative"
             style={{ background: 'var(--color-surface-muted)', border: '1px solid var(--color-border-light)' }}>
+
+            {/* Sliding Active Pill Background */}
+            <div
+              className="absolute top-1.5 h-[calc(100%-12px)] rounded-xl transition-all duration-300 pointer-events-none"
+              style={{
+                ...pillStyle,
+                background: 'linear-gradient(135deg, var(--color-navy) 0%, var(--color-deep-purple) 100%)',
+                boxShadow: '0 4px 14px rgba(29, 26, 57, 0.25), 0 0 12px rgba(174, 68, 90, 0.2)',
+                transitionTimingFunction: 'var(--ease-spring)',
+              }}
+            />
+
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
@@ -73,18 +98,24 @@ export default function Navbar({ title = 'Parcel Information Extractor', healthI
                 <NavLink
                   key={item.path}
                   to={item.path}
-                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all duration-200 relative group cursor-pointer ${isActive ? 'shadow-md scale-102' : 'hover:bg-white/80'
-                    }`}
+                  ref={(el) => { navItemRefs.current[item.path] = el; }}
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all duration-200 relative z-10 group cursor-pointer ${
+                    isActive ? '' : 'hover:bg-white/60'
+                  }`}
                   style={isActive ? {
-                    background: 'linear-gradient(135deg, var(--color-navy) 0%, var(--color-deep-purple) 100%)',
                     color: 'var(--color-blush-light)',
-                    boxShadow: '0 4px 14px rgba(29, 26, 57, 0.25), 0 0 12px rgba(174, 68, 90, 0.2)'
                   } : {
                     color: 'var(--color-text-secondary)'
                   }}
                 >
-                  <Icon className={`w-4 h-4 transition-transform duration-200 ${isActive ? 'text-blush-light scale-110' : 'group-hover:-translate-y-0.5 group-hover:scale-110'}`} />
-                  <span className="transition-transform duration-200 group-hover:translate-x-0.5">{item.label}</span>
+                  <Icon className={`w-4 h-4 transition-all duration-200 ${
+                    isActive 
+                      ? 'text-blush-light' 
+                      : 'group-hover:-translate-y-0.5 group-hover:scale-110'
+                  }`} />
+                  <span className={`transition-transform duration-200 ${!isActive ? 'group-hover:translate-x-0.5' : ''}`}>
+                    {item.label}
+                  </span>
                   {item.badge && (
                     <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wider"
                       style={isActive ? {
@@ -110,7 +141,7 @@ export default function Navbar({ title = 'Parcel Information Extractor', healthI
             {/* Prominent Parse Label CTA Button */}
             <NavLink
               to="/upload"
-              className="pill-button-dark flex items-center gap-2 px-5 py-2.5 text-xs font-extrabold shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer shrink-0 relative overflow-hidden group"
+              className="pill-button-dark flex items-center gap-2 px-5 py-2.5 text-xs font-extrabold shadow-lg transition-all duration-200 cursor-pointer shrink-0 relative overflow-hidden group"
               style={{
                 boxShadow: '0 4px 16px rgba(29,26,57,0.3), 0 0 14px rgba(174,68,90,0.25)'
               }}
@@ -140,10 +171,11 @@ export default function Navbar({ title = 'Parcel Information Extractor', healthI
             <NavLink
               key={item.path}
               to={item.path}
-              className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all duration-200 relative ${isActive ? 'font-extrabold scale-105' : 'font-semibold'
-                }`}
+              className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all duration-200 relative active:scale-90 ${
+                isActive ? 'font-extrabold scale-105' : 'font-semibold'
+              }`}
             >
-              <div className="p-1.5 rounded-lg transition-all"
+              <div className="p-1.5 rounded-lg transition-all duration-200"
                 style={isActive ? {
                   background: 'linear-gradient(135deg, var(--color-rose), var(--color-plum))',
                   color: 'var(--color-blush-light)',
@@ -158,6 +190,11 @@ export default function Navbar({ title = 'Parcel Information Extractor', healthI
                 style={{ color: isActive ? 'var(--color-rose)' : 'var(--color-text-muted)' }}>
                 {item.label}
               </span>
+              {/* Active dot indicator */}
+              {isActive && (
+                <div className="absolute -bottom-0.5 w-1 h-1 rounded-full animate-fade-in"
+                  style={{ background: 'var(--color-rose)' }} />
+              )}
             </NavLink>
           );
         })}

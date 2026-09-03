@@ -413,8 +413,8 @@ export default function Return() {
 
         {/* Toast Notification */}
         {toastMessage && (
-          <div className="fixed bottom-6 right-6 z-50 text-xs font-semibold px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2 animate-fade-in" style={{ background: 'linear-gradient(135deg, var(--color-navy), var(--color-deep-purple))', color: 'var(--color-blush-light)', border: '1px solid rgba(232,188,185,0.1)' }}>
-            <div className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: 'var(--color-amber)', color: 'var(--color-navy)' }}>✓</div>
+          <div className="fixed bottom-6 right-6 z-50 text-xs font-semibold px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 animate-toast-in" style={{ background: 'linear-gradient(135deg, var(--color-navy), var(--color-deep-purple))', color: 'var(--color-blush-light)', border: '1px solid rgba(232,188,185,0.1)', boxShadow: '0 20px 40px rgba(29,26,57,0.3)' }}>
+            <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold animate-check-pop" style={{ background: 'var(--color-amber)', color: 'var(--color-navy)' }}>✓</div>
             <span>{toastMessage}</span>
           </div>
         )}
@@ -486,11 +486,11 @@ export default function Return() {
             <button
               onClick={loadReturnData}
               disabled={loading}
-              className="p-2.5 rounded-xl transition-all disabled:opacity-50 cursor-pointer shrink-0 icon-hover-spin"
+              className="p-2.5 rounded-xl transition-all disabled:opacity-50 cursor-pointer shrink-0 icon-hover-spin active:scale-90"
               style={{ background: 'var(--color-surface-muted)', border: '1px solid var(--color-border-light)', color: 'var(--color-text-secondary)' }}
               title={t('common.refresh')}
             >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-4 h-4 transition-transform ${loading ? 'animate-smooth-spin' : ''}`} />
             </button>
           </div>
         </div>
@@ -571,15 +571,22 @@ export default function Return() {
           /* CUSTOMER RETURNS TABLE */
           <div className="ui-card overflow-hidden rounded-3xl" style={{ boxShadow: 'var(--shadow-lg)', border: '1px solid var(--color-border-light)' }}>
             {loading ? (
-              <div className="py-20 text-center space-y-3">
-                <RefreshCw className="w-6 h-6 animate-spin mx-auto" style={{ color: 'var(--color-rose)' }} />
-                <p className="text-xs font-mono font-medium" style={{ color: 'var(--color-text-muted)' }}>{t('returns.loadingCustomerReturns')}</p>
+              <div className="space-y-2 p-4">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="flex items-center gap-3 p-3 rounded-xl">
+                    <div className="skeleton-loader w-20 h-5 rounded-xl" />
+                    <div className="skeleton-loader w-16 h-4 rounded-full" />
+                    <div className="flex-1"><div className="skeleton-loader h-4 rounded-lg w-2/3" /></div>
+                    {[...Array(4)].map((_, j) => <div key={j} className="skeleton-loader w-14 h-5 rounded-lg" />)}
+                    <div className="skeleton-loader w-16 h-6 rounded-full" />
+                  </div>
+                ))}
               </div>
             ) : filteredCustomerReturns.length === 0 ? (
-              <div className="py-20 text-center space-y-3" style={{ background: 'var(--color-surface-muted)' }}>
-                <Inbox className="w-12 h-12 mx-auto" style={{ color: 'var(--color-border-strong)' }} />
-                <h4 className="font-semibold text-base" style={{ color: 'var(--color-text-primary)' }}>{t('returns.noCustomerReturnsFound')}</h4>
-                <p className="text-xs max-w-sm mx-auto font-medium" style={{ color: 'var(--color-text-muted)' }}>
+              <div className="py-20 text-center space-y-4" style={{ background: 'var(--color-surface-muted)' }}>
+                <Inbox className="w-14 h-14 mx-auto animate-float" style={{ color: 'var(--color-border-strong)' }} />
+                <h4 className="font-bold text-base" style={{ color: 'var(--color-text-primary)' }}>{t('returns.noCustomerReturnsFound')}</h4>
+                <p className="text-xs max-w-sm mx-auto font-medium leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
                   {searchQuery
                     ? t('returns.noCustomerReturnsMatch', { query: searchQuery })
                     : t('returns.noCustomerReturnsHint')}
@@ -716,15 +723,22 @@ export default function Return() {
           /* RTO RETURNS TABLE */
           <div className="ui-card overflow-hidden rounded-3xl" style={{ boxShadow: 'var(--shadow-lg)', border: '1px solid var(--color-border-light)' }}>
             {loading ? (
-              <div className="py-20 text-center space-y-3">
-                <RefreshCw className="w-6 h-6 animate-spin mx-auto" style={{ color: 'var(--color-rose)' }} />
-                <p className="text-xs font-mono font-medium" style={{ color: 'var(--color-text-muted)' }}>{t('returns.loadingRtoReturns')}</p>
+              <div className="space-y-2 p-4">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="flex items-center gap-3 p-3 rounded-xl">
+                    <div className="skeleton-loader w-20 h-5 rounded-xl" />
+                    <div className="skeleton-loader w-16 h-4 rounded-full" />
+                    <div className="flex-1"><div className="skeleton-loader h-4 rounded-lg w-2/3" /></div>
+                    {[...Array(3)].map((_, j) => <div key={j} className="skeleton-loader w-14 h-5 rounded-lg" />)}
+                    <div className="skeleton-loader w-16 h-6 rounded-full" />
+                  </div>
+                ))}
               </div>
             ) : filteredRtoReturns.length === 0 ? (
-              <div className="py-20 text-center space-y-3" style={{ background: 'var(--color-surface-muted)' }}>
-                <Inbox className="w-12 h-12 mx-auto" style={{ color: 'var(--color-border-strong)' }} />
-                <h4 className="font-semibold text-base" style={{ color: 'var(--color-text-primary)' }}>{t('returns.noRtoReturnsFound')}</h4>
-                <p className="text-xs max-w-sm mx-auto font-medium" style={{ color: 'var(--color-text-muted)' }}>
+              <div className="py-20 text-center space-y-4" style={{ background: 'var(--color-surface-muted)' }}>
+                <Inbox className="w-14 h-14 mx-auto animate-float" style={{ color: 'var(--color-border-strong)' }} />
+                <h4 className="font-bold text-base" style={{ color: 'var(--color-text-primary)' }}>{t('returns.noRtoReturnsFound')}</h4>
+                <p className="text-xs max-w-sm mx-auto font-medium leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
                   {searchQuery
                     ? t('returns.noRtoReturnsMatch', { query: searchQuery })
                     : t('returns.noRtoReturnsHint')}

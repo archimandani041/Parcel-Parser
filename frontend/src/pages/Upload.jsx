@@ -128,13 +128,13 @@ export default function Upload() {
 
         {/* Upload Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div onDragOver={(e) => e.preventDefault()} onDrop={handleDrop} onClick={() => fileInputRef.current?.click()}
-            className="ui-card rounded-3xl p-8 text-center cursor-pointer transition-all duration-300 group relative overflow-hidden flex flex-col items-center justify-center min-h-[250px]"
+          <div onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('dropzone-active'); }} onDragLeave={(e) => { e.currentTarget.classList.remove('dropzone-active'); }} onDrop={(e) => { e.currentTarget.classList.remove('dropzone-active'); handleDrop(e); }} onClick={() => fileInputRef.current?.click()}
+            className="ui-card rounded-3xl p-8 text-center cursor-pointer transition-all duration-300 group relative overflow-hidden flex flex-col items-center justify-center min-h-[250px] interactive-hover"
             style={{ border: '2px dashed var(--color-border-strong)' }}>
             <input type="file" ref={fileInputRef} multiple accept="image/jpeg,image/png,image/webp,image/bmp,image/tiff,application/pdf,.jpg,.jpeg,.png,.webp,.bmp,.tiff,.tif,.pdf" onChange={(e) => handleFileSelect(e.target.files)} className="hidden" />
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform"
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:-translate-y-1 transition-all duration-300"
               style={{ background: 'linear-gradient(135deg, var(--color-navy), var(--color-deep-purple))', color: 'var(--color-blush-light)', boxShadow: '0 8px 24px rgba(29,26,57,0.2)' }}>
-              <UploadCloud className="w-8 h-8" />
+              <UploadCloud className="w-8 h-8 group-hover:animate-bounce" />
             </div>
             <h3 className="text-base font-bold mb-1" style={{ color: 'var(--color-navy)' }}>{t('upload.browseOrDrag')}</h3>
             <p className="text-xs mb-4 max-w-xs font-medium" style={{ color: 'var(--color-text-tertiary)' }}>{t('upload.browseSubtitle')}</p>
@@ -144,10 +144,10 @@ export default function Upload() {
             </div>
           </div>
 
-          <div className="ui-card rounded-3xl p-8 text-center transition-all duration-300 relative overflow-hidden flex flex-col items-center justify-center min-h-[250px]"
+          <div className="ui-card rounded-3xl p-8 text-center transition-all duration-300 relative overflow-hidden flex flex-col items-center justify-center min-h-[250px] interactive-hover"
             style={{ background: 'var(--color-surface-warm)', border: '1px solid var(--color-border)' }}>
             <input type="file" ref={mobileCameraInputRef} accept="image/*" capture="environment" onChange={(e) => e.target.files && handleFileSelect(e.target.files)} className="hidden" />
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:-translate-y-1 transition-all duration-300"
               style={{ background: 'linear-gradient(135deg, var(--color-rose), var(--color-plum))', color: 'var(--color-blush-light)', boxShadow: '0 8px 24px rgba(174,68,90,0.2)' }}>
               <Camera className="w-8 h-8" />
             </div>
@@ -155,12 +155,12 @@ export default function Upload() {
             <p className="text-xs mb-4 max-w-xs font-medium" style={{ color: 'var(--color-text-tertiary)' }}>{t('upload.directCameraSubtitle')}</p>
             <div className="flex items-center gap-2">
               <button type="button" onClick={() => startCamera('environment')}
-                className="flex items-center gap-2 px-5 py-2.5 text-xs font-bold rounded-xl shadow-md transition-all hover:scale-105 cursor-pointer"
+                className="flex items-center gap-2 px-5 py-2.5 text-xs font-bold rounded-xl shadow-md transition-all cursor-pointer active:scale-95"
                 style={{ background: 'linear-gradient(135deg, var(--color-navy), var(--color-deep-purple))', color: 'var(--color-blush-light)', boxShadow: '0 4px 12px rgba(29,26,57,0.2)' }}>
                 <Camera className="w-4 h-4" /> {t('upload.openLiveCamera')}
               </button>
               <button type="button" onClick={() => mobileCameraInputRef.current?.click()}
-                className="flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer"
+                className="flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer active:scale-95"
                 style={{ background: 'var(--color-accent-light)', color: 'var(--color-accent)', border: '1px solid var(--color-accent-muted)' }}>
                 <Zap className="w-3.5 h-3.5" /> {t('upload.snapPhoto')}
               </button>

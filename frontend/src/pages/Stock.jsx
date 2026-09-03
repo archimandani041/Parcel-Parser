@@ -65,8 +65,8 @@ export default function Stock() {
               <input id="search-sku" type="text" placeholder={t('stock.searchPlaceholder')} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full rounded-xl pl-9 pr-4 py-2 text-xs transition-all font-medium" style={{ background: S.surface, border: `1px solid ${S.border}`, color: S.text }} />
             </div>
-            <button onClick={loadStockData} disabled={loading} className="p-2 rounded-xl transition-all disabled:opacity-50 shrink-0 cursor-pointer" style={{ background: S.surface, border: `1px solid ${S.border}`, color: S.secondary }}>
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <button onClick={loadStockData} disabled={loading} className="p-2 rounded-xl transition-all disabled:opacity-50 shrink-0 cursor-pointer icon-hover-spin active:scale-90" style={{ background: S.surface, border: `1px solid ${S.border}`, color: S.secondary }}>
+              <RefreshCw className={`w-4 h-4 transition-transform ${loading ? 'animate-smooth-spin' : ''}`} />
             </button>
           </div>
         </div>
@@ -94,10 +94,20 @@ export default function Stock() {
         {/* Table */}
         <div className="ui-card overflow-hidden rounded-3xl" style={{ boxShadow: 'var(--shadow-lg)', border: `1px solid ${S.border}` }}>
           {loading ? (
-            <div className="py-20 text-center space-y-3"><RefreshCw className="w-6 h-6 animate-spin mx-auto" style={{ color: S.accent }} /><p className="text-xs font-mono font-medium" style={{ color: S.muted }}>{t('stock.loadingStock')}</p></div>
+            <div className="space-y-2 p-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex items-center gap-3 p-3 rounded-xl">
+                  <div className="skeleton-loader w-20 h-5 rounded-full" />
+                  <div className="flex-1"><div className="skeleton-loader h-4 rounded-lg w-2/3" /></div>
+                  {[...Array(6)].map((_, j) => <div key={j} className="skeleton-loader w-12 h-5 rounded-lg" />)}
+                  <div className="skeleton-loader w-14 h-6 rounded-lg" />
+                  <div className="skeleton-loader w-7 h-7 rounded-full" />
+                </div>
+              ))}
+            </div>
           ) : filteredProducts.length === 0 ? (
-            <div className="py-20 text-center space-y-3" style={{ background: S.surface }}><Inbox className="w-12 h-12 mx-auto" style={{ color: 'var(--color-border-strong)' }} /><h4 className="font-semibold text-base" style={{ color: S.text }}>{t('stock.noProductsFound')}</h4>
-              <p className="text-xs max-w-sm mx-auto font-medium" style={{ color: S.muted }}>{searchQuery ? t('stock.noProductsMatch', { query: searchQuery }) : t('stock.noProductsHint')}</p></div>
+            <div className="py-20 text-center space-y-4" style={{ background: S.surface }}><Inbox className="w-14 h-14 mx-auto animate-float" style={{ color: 'var(--color-border-strong)' }} /><h4 className="font-bold text-base" style={{ color: S.text }}>{t('stock.noProductsFound')}</h4>
+              <p className="text-xs max-w-sm mx-auto font-medium leading-relaxed" style={{ color: S.muted }}>{searchQuery ? t('stock.noProductsMatch', { query: searchQuery }) : t('stock.noProductsHint')}</p></div>
           ) : (
             <div className="overflow-x-auto" style={{ background: 'var(--color-surface)' }}>
               <table className="w-full text-left border-collapse text-xs min-w-[1250px]" id="stock-table">
@@ -151,7 +161,7 @@ export default function Stock() {
                             {formatCurrency(rawNet)}
                           </span>
                         </td>
-                        <td className="py-3.5 px-3 text-center"><button onClick={() => handleDeleteStockProduct(p.sku_id)} className="p-1.5 rounded-full transition-all cursor-pointer hover:bg-rose-50 icon-hover-shake" style={{ color: S.muted }}><Trash2 className="w-3.5 h-3.5 hover:text-rose-600" /></button></td>
+                        <td className="py-3.5 px-3 text-center"><button onClick={() => handleDeleteStockProduct(p.sku_id)} className="p-1.5 rounded-full transition-all cursor-pointer btn-danger-hover icon-hover-shake active:scale-90" style={{ color: S.muted }}><Trash2 className="w-3.5 h-3.5" /></button></td>
                       </tr>
                     );
                   })}

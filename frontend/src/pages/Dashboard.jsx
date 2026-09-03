@@ -130,9 +130,9 @@ export default function Dashboard() {
           </div>
           <div className="flex items-center gap-3 shrink-0 flex-wrap">
             <button id="download-all-3-excels-btn" onClick={handleDownloadAllThree} disabled={exportingAll}
-              className="flex items-center gap-2 font-semibold text-xs px-5 py-2.5 rounded-xl shadow-md transition-all duration-200 hover:scale-[1.02] disabled:opacity-50 cursor-pointer"
+              className="flex items-center gap-2 font-semibold text-xs px-5 py-2.5 rounded-xl shadow-md transition-all duration-200 disabled:opacity-50 cursor-pointer icon-hover-down active:scale-95"
               style={{ background: 'linear-gradient(135deg, var(--color-navy), var(--color-deep-purple))', color: 'var(--color-blush-light)', boxShadow: '0 4px 12px rgba(29,26,57,0.2)' }}>
-              <Download className={`w-3.5 h-3.5 ${exportingAll ? 'animate-bounce' : ''}`} />
+              <Download className={`w-3.5 h-3.5 transition-transform ${exportingAll ? 'animate-smooth-spin' : ''}`} />
               {exportingAll ? exportProgress : t('dashboard.downloadAll3Excels')}
             </button>
             <Link to="/upload" className="pill-button-dark flex items-center gap-2 px-5 py-2.5 text-xs font-semibold">
@@ -198,10 +198,10 @@ export default function Dashboard() {
           </div>
 
           {!hasGraphData ? (
-            <div className="py-20 text-center text-sm rounded-3xl p-8 space-y-2" style={{ border: '2px dashed var(--color-border)', background: 'var(--color-surface-muted)', color: 'var(--color-text-muted)' }}>
-              <BarChart3 className="w-10 h-10 mx-auto" style={{ color: 'var(--color-border-strong)' }} />
-              <h4 className="font-bold" style={{ color: 'var(--color-text-secondary)' }}>{t('dashboard.noGraphData')}</h4>
-              <p className="text-xs max-w-sm mx-auto" style={{ color: 'var(--color-text-tertiary)' }}>{t('dashboard.noGraphDataHint')}</p>
+            <div className="py-20 text-center text-sm rounded-3xl p-8 space-y-3" style={{ border: '2px dashed var(--color-border)', background: 'var(--color-surface-muted)', color: 'var(--color-text-muted)' }}>
+              <BarChart3 className="w-12 h-12 mx-auto animate-float" style={{ color: 'var(--color-border-strong)' }} />
+              <h4 className="font-bold text-base" style={{ color: 'var(--color-text-secondary)' }}>{t('dashboard.noGraphData')}</h4>
+              <p className="text-xs max-w-sm mx-auto leading-relaxed" style={{ color: 'var(--color-text-tertiary)' }}>{t('dashboard.noGraphDataHint')}</p>
             </div>
           ) : (
             <div className="relative pt-4 pb-2">
@@ -268,9 +268,9 @@ export default function Dashboard() {
                   className="rounded-xl pl-9 pr-4 py-2 text-xs placeholder-opacity-50 transition-all w-full font-medium"
                   style={{ background: 'var(--color-surface-muted)', border: '1px solid var(--color-border-light)', color: 'var(--color-text-primary)' }} />
               </div>
-              <button onClick={() => loadDashboardData(selectedRange)} className="p-2.5 rounded-xl transition-all cursor-pointer shrink-0"
+              <button onClick={() => loadDashboardData(selectedRange)} className="p-2.5 rounded-xl transition-all cursor-pointer shrink-0 icon-hover-spin active:scale-90"
                 style={{ background: 'var(--color-surface-muted)', border: '1px solid var(--color-border-light)', color: 'var(--color-text-secondary)' }}>
-                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`w-4 h-4 transition-transform ${loading ? 'animate-smooth-spin' : ''}`} />
               </button>
               <Link to="/documents" className="flex items-center gap-1.5 text-xs font-extrabold px-4 py-2.5 rounded-xl transition-all shrink-0"
                 style={{ background: 'var(--color-surface-muted)', border: '1px solid var(--color-border-light)', color: 'var(--color-rose)' }}>
@@ -280,16 +280,26 @@ export default function Dashboard() {
           </div>
 
           {loading ? (
-            <div className="py-20 text-center text-sm space-y-3">
-              <RefreshCw className="w-6 h-6 animate-spin mx-auto" style={{ color: 'var(--color-rose)' }} />
-              <p className="font-mono text-xs" style={{ color: 'var(--color-text-tertiary)' }}>{t('dashboard.synchronizing')}</p>
+            <div className="space-y-3 p-2">
+              {/* Skeleton shimmer rows */}
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex items-center gap-4 p-3 rounded-xl" style={{ animationDelay: `${i * 0.08}s` }}>
+                  <div className="skeleton-loader w-9 h-9 rounded-xl shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="skeleton-loader h-3 rounded-full w-3/4" />
+                    <div className="skeleton-loader h-2.5 rounded-full w-1/2" />
+                  </div>
+                  <div className="skeleton-loader h-6 w-16 rounded-full" />
+                  <div className="skeleton-loader h-6 w-12 rounded-lg" />
+                </div>
+              ))}
             </div>
           ) : filteredDocs.length === 0 ? (
-            <div className="py-16 text-center text-sm rounded-3xl p-8 space-y-3" style={{ border: '2px dashed var(--color-border)', background: 'var(--color-surface-muted)' }}>
-              <UploadCloud className="w-10 h-10 mx-auto" style={{ color: 'var(--color-border-strong)' }} />
-              <h4 className="font-bold" style={{ color: 'var(--color-text-primary)' }}>{t('dashboard.noLabelsFound')}</h4>
-              <p className="text-xs max-w-sm mx-auto" style={{ color: 'var(--color-text-tertiary)' }}>{t('dashboard.noLabelsFoundHint')}</p>
-              <Link to="/upload" className="pill-button-dark inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold">{t('dashboard.uploadDocumentNow')}</Link>
+            <div className="py-16 text-center text-sm rounded-3xl p-8 space-y-4" style={{ border: '2px dashed var(--color-border)', background: 'var(--color-surface-muted)' }}>
+              <UploadCloud className="w-12 h-12 mx-auto animate-float" style={{ color: 'var(--color-border-strong)' }} />
+              <h4 className="font-bold text-base" style={{ color: 'var(--color-text-primary)' }}>{t('dashboard.noLabelsFound')}</h4>
+              <p className="text-xs max-w-sm mx-auto leading-relaxed" style={{ color: 'var(--color-text-tertiary)' }}>{t('dashboard.noLabelsFoundHint')}</p>
+              <Link to="/upload" className="pill-button-dark inline-flex items-center gap-2 px-6 py-2.5 text-xs font-bold">{t('dashboard.uploadDocumentNow')}</Link>
             </div>
           ) : (
             <div className="overflow-x-auto rounded-2xl" style={{ border: '1px solid var(--color-border-light)' }}>
@@ -309,7 +319,7 @@ export default function Dashboard() {
                     const badge = getStatusBadgeConfig(doc.status);
                     const ext = doc.file_name?.split('.').pop()?.toUpperCase() || 'FILE';
                     return (
-                      <tr key={doc.id} className="transition-colors group" style={{ '--tw-divide-opacity': 1 }}>
+                      <tr key={doc.id} className="table-row-hover transition-colors group" style={{ '--tw-divide-opacity': 1 }}>
                         <td className="py-3.5 px-4">
                           <div className="flex items-center gap-3">
                             <div className="w-9 h-9 rounded-xl flex items-center justify-center font-extrabold text-[10px] shrink-0 font-mono"

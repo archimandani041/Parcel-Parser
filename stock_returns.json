@@ -1,1 +1,9 @@
-[]
+[
+  {
+    "id": "sr_1788423930363",
+    "order_id": "OD337952599603725100",
+    "return_type": "RTO_RETURN",
+    "delivery_boy_charge": 0,
+    "returned_at": "2026-09-03T08:25:30.363Z"
+  }
+]

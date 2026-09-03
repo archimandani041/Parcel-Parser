@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import Upload from './pages/Upload';
 import DocumentsList from './pages/DocumentsList';
@@ -8,9 +8,19 @@ import Orders from './pages/Orders';
 import Stock from './pages/Stock';
 import Return from './pages/Return';
 
-export default function App() {
+/* Page transition wrapper — fades + slides each route on mount */
+function PageTransition({ children }) {
+  const location = useLocation();
   return (
-    <Router>
+    <div key={location.pathname} className="animate-page-enter">
+      {children}
+    </div>
+  );
+}
+
+function AppRoutes() {
+  return (
+    <PageTransition>
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/upload" element={<Upload />} />
@@ -20,7 +30,14 @@ export default function App() {
         <Route path="/documents" element={<DocumentsList />} />
         <Route path="/document/:id" element={<DocumentDetail />} />
       </Routes>
-    </Router>
+    </PageTransition>
   );
 }
 
+export default function App() {
+  return (
+    <Router>
+      <AppRoutes />
+    </Router>
+  );
+}

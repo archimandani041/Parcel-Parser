@@ -94,8 +94,8 @@ export default function DocumentsList() {
                   </button>
                 </div>
               )}
-              <button onClick={loadDocs} className="p-2.5 rounded-xl transition-all shrink-0 cursor-pointer" style={{ background: S.surface, border: `1px solid ${S.border}`, color: S.secondary }}>
-                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              <button onClick={loadDocs} className="p-2.5 rounded-xl transition-all shrink-0 cursor-pointer icon-hover-spin active:scale-90" style={{ background: S.surface, border: `1px solid ${S.border}`, color: S.secondary }}>
+                <RefreshCw className={`w-4 h-4 transition-transform ${loading ? 'animate-smooth-spin' : ''}`} />
               </button>
             </div>
           </div>
@@ -104,9 +104,28 @@ export default function DocumentsList() {
         {/* Table */}
         <div className="ui-card overflow-hidden rounded-3xl" style={{ boxShadow: 'var(--shadow-lg)', border: `1px solid ${S.border}` }}>
           {loading ? (
-            <div className="py-20 text-center text-xs space-y-3 font-mono"><RefreshCw className="w-6 h-6 animate-spin mx-auto" style={{ color: S.accent }} /> {t('documents.loadingCatalog')}</div>
+            <div className="space-y-2 p-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex items-center gap-4 p-3 rounded-xl">
+                  <div className="skeleton-loader w-5 h-5 rounded" />
+                  <div className="skeleton-loader w-9 h-9 rounded-xl" />
+                  <div className="flex-1 space-y-1.5">
+                    <div className="skeleton-loader h-3.5 rounded-lg w-3/4" />
+                  </div>
+                  <div className="skeleton-loader w-20 h-5 rounded-full" />
+                  <div className="skeleton-loader w-14 h-5 rounded-lg" />
+                  <div className="skeleton-loader w-12 h-5 rounded-lg" />
+                  <div className="skeleton-loader w-20 h-5 rounded-lg" />
+                  <div className="skeleton-loader w-16 h-6 rounded-lg" />
+                </div>
+              ))}
+            </div>
           ) : filteredDocs.length === 0 ? (
-            <div className="py-20 text-center text-xs font-medium" style={{ background: S.surface, color: S.muted }}>{t('documents.noMatchingDocs')}</div>
+            <div className="py-20 text-center text-xs font-medium space-y-4" style={{ background: S.surface, color: S.muted }}>
+              <FileText className="w-14 h-14 mx-auto animate-float" style={{ color: 'var(--color-border-strong)' }} />
+              <h4 className="font-bold text-base" style={{ color: S.text }}>{t('documents.noMatchingDocs')}</h4>
+              <p className="text-xs max-w-sm mx-auto leading-relaxed" style={{ color: S.muted }}>{t('documents.noMatchingDocsHint', { defaultValue: 'Try adjusting your search or filters.' })}</p>
+            </div>
           ) : (
             <div className="overflow-x-auto" style={{ background: 'var(--color-surface)' }}>
               <table className="w-full text-left text-xs border-collapse min-w-[700px]" id="documents-table">
@@ -122,7 +141,7 @@ export default function DocumentsList() {
                     const isSelected = selectedIds.includes(doc.id);
                     const ext = doc.file_name?.split('.').pop()?.toUpperCase() || 'FILE';
                     return (
-                      <tr key={doc.id} className="transition-colors" style={isSelected ? { background: 'var(--color-accent-light)' } : {}}>
+                      <tr key={doc.id} className="transition-colors table-row-hover" style={isSelected ? { background: 'var(--color-accent-light)' } : {}}>
                         <td className="py-3.5 px-4"><input type="checkbox" checked={isSelected} onChange={() => handleToggleSelect(doc.id)} className="rounded cursor-pointer" /></td>
                         <td className="py-3.5 px-4">
                           <div className="flex items-center gap-3">
@@ -141,8 +160,8 @@ export default function DocumentsList() {
                               style={{ background: 'var(--color-surface-muted)', color: S.navy, border: '1px solid var(--color-border-light)' }}>
                               {t('documents.inspect')} <ExternalLink className="w-3.5 h-3.5" />
                             </Link>
-                            <button onClick={() => handleSingleDelete(doc.id, doc.file_name)} disabled={deletingId === doc.id} className="p-1.5 rounded-full transition-all disabled:opacity-50" style={{ color: S.muted }}>
-                              <Trash2 className={`w-4 h-4 ${deletingId === doc.id ? 'animate-spin' : ''}`} />
+                            <button onClick={() => handleSingleDelete(doc.id, doc.file_name)} disabled={deletingId === doc.id} className="p-1.5 rounded-full transition-all disabled:opacity-50 btn-danger-hover active:scale-90" style={{ color: S.muted }}>
+                              <Trash2 className={`w-4 h-4 ${deletingId === doc.id ? 'animate-smooth-spin' : ''}`} />
                             </button>
                           </div>
                         </td>
