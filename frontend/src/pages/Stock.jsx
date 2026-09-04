@@ -320,7 +320,7 @@ export default function Stock() {
                 <ChevronDown className={`w-3 h-3 transition-transform ${showViewDropdown ? 'rotate-180' : ''}`} />
               </button>
               {showViewDropdown && <div className="absolute left-0 top-10 z-50 py-1.5 rounded-xl min-w-[160px] animate-fade-in" style={{ background: 'var(--color-surface)', border: `1px solid ${S.border}`, boxShadow: 'var(--shadow-lg)' }}>
-                {['all','stock','pricing','financials'].map(m => <button key={m} onClick={() => { setViewMode(m); setShowViewDropdown(false); }} className="flex items-center w-full px-3.5 py-2 text-xs font-semibold cursor-pointer transition-colors" style={viewMode === m ? { background: '#F5E8F3', color: '#2B122A' } : { color: S.secondary }}>{t(`stock.${m === 'all' ? 'allColumns' : m === 'stock' ? 'stockOnly' : m === 'pricing' ? 'pricingOnly' : 'financialsOnly'}`)}</button>)}
+                {['all', 'stock', 'pricing', 'financials'].map(m => <button key={m} onClick={() => { setViewMode(m); setShowViewDropdown(false); }} className="flex items-center w-full px-3.5 py-2 text-xs font-semibold cursor-pointer transition-colors" style={viewMode === m ? { background: '#F5E8F3', color: '#2B122A' } : { color: S.secondary }}>{t(`stock.${m === 'all' ? 'allColumns' : m === 'stock' ? 'stockOnly' : m === 'pricing' ? 'pricingOnly' : 'financialsOnly'}`)}</button>)}
               </div>}
             </div>
 
@@ -333,7 +333,7 @@ export default function Stock() {
           </div>
 
           <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: 'var(--color-surface)', border: `1px solid ${S.border}` }}>
-            {['all','stock','pricing','financials'].map(m => (<button key={m} onClick={() => setViewMode(m)} className="px-3.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all" style={viewMode === m ? { background: '#2B122A', color: '#FFFFFF', boxShadow: '0 2px 8px rgba(43,18,42,0.25)' } : { color: S.muted }}>{t(`stock.${m === 'all' ? 'allColumns' : m === 'stock' ? 'stockOnly' : m === 'pricing' ? 'pricingOnly' : 'financialsOnly'}`)}</button>))}
+            {['all', 'stock', 'pricing', 'financials'].map(m => (<button key={m} onClick={() => setViewMode(m)} className="px-3.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all" style={viewMode === m ? { background: '#2B122A', color: '#FFFFFF', boxShadow: '0 2px 8px rgba(43,18,42,0.25)' } : { color: S.muted }}>{t(`stock.${m === 'all' ? 'allColumns' : m === 'stock' ? 'stockOnly' : m === 'pricing' ? 'pricingOnly' : 'financialsOnly'}`)}</button>))}
           </div>
         </div>
 

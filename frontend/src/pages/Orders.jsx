@@ -137,53 +137,53 @@ export default function Orders() {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs min-w-[750px]" id="orders-table">
                 <thead>
-                  <tr className="text-[11px] uppercase tracking-wider font-extrabold" style={{ background: 'var(--color-surface-muted)', borderBottom: '1px solid var(--color-border-light)', color: S.muted }}>
-                    <th className="py-4 px-5">{t('fields.orderId')}</th>
-                    <th className="py-4 px-5">{t('fields.customerName')}</th>
-                    <th className="py-4 px-5">{t('fields.skuId')}</th>
-                    <th className="py-4 px-5">{t('fields.productName')}</th>
-                    <th className="py-4 px-5 text-center">{t('fields.quantity')}</th>
-                    <th className="py-4 px-5 text-center">{t('orders.returnStatus')}</th>
-                    <th className="py-4 px-5 text-center">{t('common.action')}</th>
+                  <tr className="uppercase tracking-wider font-bold text-[10px]" style={{ background: '#2B122A', color: '#FFFFFF', borderBottom: '1px solid rgba(255, 255, 255, 0.15)' }}>
+                    <th className="py-3.5 px-5">{t('fields.orderId')}</th>
+                    <th className="py-3.5 px-5">{t('fields.customerName')}</th>
+                    <th className="py-3.5 px-5">{t('fields.skuId')}</th>
+                    <th className="py-3.5 px-5">{t('fields.productName')}</th>
+                    <th className="py-3.5 px-5 text-center">{t('fields.quantity')}</th>
+                    <th className="py-3.5 px-5 text-center">{t('orders.returnStatus')}</th>
+                    <th className="py-3.5 px-5 text-center">{t('common.action')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y" style={{ borderColor: 'var(--color-border-light)' }}>
                   {records.map((rec) => (
                     <tr key={rec.id} className="table-row-hover transition-colors duration-150">
                       {/* Order ID Badge */}
-                      <td className="py-4 px-5">
-                        <span className="inline-block font-mono text-xs font-bold px-2.5 py-1 rounded-xl select-all"
-                          style={{ color: S.navy, background: 'var(--color-surface-muted)', border: '1px solid var(--color-border-light)' }}>
+                      <td className="py-3.5 px-5">
+                        <span className="inline-block font-mono text-xs font-bold px-2.5 py-0.5 rounded-full select-all"
+                          style={{ color: 'var(--color-rose)', background: 'var(--color-accent-light)', border: '1px solid var(--color-accent-muted)' }}>
                           {rec.order_id || '-'}
                         </span>
                       </td>
 
                       {/* Customer Name */}
-                      <td className="py-4 px-5">
+                      <td className="py-3.5 px-5">
                         <span className="text-xs font-bold" style={{ color: S.text }}>
                           {rec.customer_name ? <AutoTranslate text={rec.customer_name} /> : '-'}
                         </span>
                       </td>
 
                       {/* SKU ID Badge */}
-                      <td className="py-4 px-5">
-                        <span className="inline-block font-mono text-xs font-bold px-2 py-0.5 rounded-lg"
+                      <td className="py-3.5 px-5">
+                        <span className="inline-block font-mono text-xs font-bold px-2.5 py-0.5 rounded-full"
                           style={{ color: 'var(--color-plum)', background: 'rgba(102,37,73,0.06)', border: '1px solid rgba(102,37,73,0.15)' }}>
                           {rec.sku_id || '-'}
                         </span>
                       </td>
 
                       {/* Product Name */}
-                      <td className="py-4 px-5">
+                      <td className="py-3.5 px-5">
                         <span className="text-xs font-medium" style={{ color: S.secondary }}>
                           {rec.product_name ? <AutoTranslate text={rec.product_name} /> : '-'}
                         </span>
                       </td>
 
                       {/* Quantity */}
-                      <td className="py-4 px-5 text-center">
-                        <span className="font-mono text-xs font-extrabold px-2.5 py-1 rounded-lg"
-                          style={{ color: S.navy, background: 'var(--color-surface-muted)' }}>
+                      <td className="py-3.5 px-5 text-center">
+                        <span className="font-mono text-xs font-extrabold px-2.5 py-0.5 rounded-full"
+                          style={{ color: S.navy, background: 'var(--color-surface-muted)', border: '1px solid var(--color-border-light)' }}>
                           {rec.quantity || 1}
                         </span>
                       </td>

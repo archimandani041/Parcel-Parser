@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import Layout from '../components/Layout';
 import AIProcessingScanner from '../components/animations/AIProcessingScanner';
 import AutoTranslate from '../components/AutoTranslate';
+import TiltCard from '../components/animations/TiltCard';
+import AnimatedCounter from '../components/animations/AnimatedCounter';
 import {
   getReturnsOverview,
   updateReturnDeliveryCharge,
@@ -32,7 +34,11 @@ import {
   Layers,
   ArrowRight,
   RefreshCcw,
-  TrendingDown
+  TrendingDown,
+  ArrowUpDown,
+  ChevronLeft,
+  ChevronRight,
+  Pencil
 } from 'lucide-react';
 
 export default function Return() {
@@ -41,6 +47,25 @@ export default function Return() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [toastMessage, setToastMessage] = useState(null);
+
+  // Sorting & Pagination States (Same functionality as Stock page)
+  const [sortField, setSortField] = useState('return_date');
+  const [sortDirection, setSortDirection] = useState('desc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
+
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, activeCategory]);
 
   // ===== UPLOAD RETURN LABEL MODAL STATES =====
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -407,6 +432,49 @@ export default function Return() {
     );
   });
 
+  // Sorting & Pagination Calculations
+  const sortedCustomerReturns = [...filteredCustomerReturns].sort((a, b) => {
+    let valA = a[sortField];
+    let valB = b[sortField];
+    if (valA == null) valA = '';
+    if (valB == null) valB = '';
+    if (typeof valA === 'number' && typeof valB === 'number') {
+      return sortDirection === 'asc' ? valA - valB : valB - valA;
+    }
+    const strA = String(valA).toLowerCase();
+    const strB = String(valB).toLowerCase();
+    if (strA < strB) return sortDirection === 'asc' ? -1 : 1;
+    if (strA > strB) return sortDirection === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  const paginatedCustomerReturns = sortedCustomerReturns.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+  const totalCustomerPages = Math.ceil(sortedCustomerReturns.length / ITEMS_PER_PAGE) || 1;
+
+  const sortedRtoReturns = [...filteredRtoReturns].sort((a, b) => {
+    let valA = a[sortField];
+    let valB = b[sortField];
+    if (valA == null) valA = '';
+    if (valB == null) valB = '';
+    if (typeof valA === 'number' && typeof valB === 'number') {
+      return sortDirection === 'asc' ? valA - valB : valB - valA;
+    }
+    const strA = String(valA).toLowerCase();
+    const strB = String(valB).toLowerCase();
+    if (strA < strB) return sortDirection === 'asc' ? -1 : 1;
+    if (strA > strB) return sortDirection === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  const paginatedRtoReturns = sortedRtoReturns.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+  const totalRtoPages = Math.ceil(sortedRtoReturns.length / ITEMS_PER_PAGE) || 1;
+
   return (
     <Layout title={t('nav.returns')}>
       <div className="space-y-6 w-full pb-12">
@@ -497,72 +565,131 @@ export default function Return() {
 
         {/* DYNAMIC SUMMARY CARDS DEPENDING ON CATEGORY */}
         {activeCategory === 'customer' ? (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {/* Total Customer Returns */}
-            <div className="ui-card p-5 space-y-1.5">
-              <div className="flex items-center justify-between text-xs font-semibold" style={{ color: 'var(--color-text-muted)' }}>
-                <span>{t('returns.customerReturns')}</span>
-                <RotateCcw className="w-4 h-4" style={{ color: 'var(--color-warning)' }} />
-              </div>
-              <p className="text-2xl font-bold font-mono" style={{ color: 'var(--color-warning)' }}>
-                {summary.total_customer_returns || customerReturns.length || 0}
-              </p>
-              <p className="text-[10px] font-medium" style={{ color: 'var(--color-text-muted)' }}>{t('returns.customerReturnParcels')}</p>
-            </div>
-
-            {/* Total Returned Quantity */}
-            <div className="ui-card p-5 space-y-1.5">
-              <div className="flex items-center justify-between text-xs font-semibold" style={{ color: 'var(--color-text-muted)' }}>
-                <span>{t('stock.custReturnedQty')}</span>
-                <Package className="w-4 h-4" style={{ color: 'var(--color-amber)' }} />
-              </div>
-              <p className="text-2xl font-bold font-mono" style={{ color: 'var(--color-navy)' }}>
-                {summary.total_customer_returned_quantity || customerReturns.reduce((acc, r) => acc + (r.quantity || 1), 0)}
-              </p>
-              <p className="text-[10px] font-medium" style={{ color: 'var(--color-text-muted)' }}>{t('returns.unitsAddedBackToStock')}</p>
-            </div>
-
-            {/* Total Customer Return Loss */}
-            <div className="ui-card p-5 space-y-1.5" style={{ borderColor: 'var(--color-danger-border)', background: 'var(--color-danger-light)' }}>
-              <div className="flex items-center justify-between text-xs font-semibold" style={{ color: 'var(--color-text-muted)' }}>
-                <span className="font-bold" style={{ color: 'var(--color-rose)' }}>{t('fields.returnLoss', { defaultValue: 'Total Return Loss' })}</span>
-                <TrendingDown className="w-4 h-4" style={{ color: 'var(--color-rose)' }} />
-              </div>
-              <p className="text-2xl font-bold font-mono" style={{ color: 'var(--color-rose)' }}>
-                {formatCurrency(
-                  summary.total_customer_return_loss != null
-                    ? summary.total_customer_return_loss
-                    : customerReturns.reduce((acc, r) => acc + (Number(r.return_loss) || Number(r.delivery_boy_charge) || 0), 0)
-                )}
-              </p>
-              <p className="text-[10px] font-medium" style={{ color: 'var(--color-rose)' }}>{t('dashboard.customerReturnLosses', { defaultValue: 'Customer return delivery charges' })}</p>
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+            {[
+              {
+                label: t('returns.customerReturns'),
+                value: summary.total_customer_returns || customerReturns.length || 0,
+                icon: RotateCcw,
+                hint: t('returns.customerReturnParcels'),
+                bg: 'var(--color-amber-muted)',
+                border: 'var(--color-warning-border)',
+                iconBg: 'var(--color-amber-muted)',
+                iconColor: 'var(--color-amber)',
+                valueColor: 'var(--color-amber)',
+                labelColor: 'var(--color-amber)'
+              },
+              {
+                label: t('stock.custReturnedQty'),
+                value: summary.total_customer_returned_quantity || customerReturns.reduce((acc, r) => acc + (r.quantity || 1), 0),
+                icon: Package,
+                hint: t('returns.unitsAddedBackToStock'),
+                bg: 'var(--color-accent-light)',
+                border: 'var(--color-accent-muted)',
+                iconBg: 'var(--color-accent-light)',
+                iconColor: 'var(--color-rose)',
+                valueColor: 'var(--color-rose)',
+                labelColor: 'var(--color-rose)'
+              },
+              {
+                label: t('fields.returnLoss', { defaultValue: 'Total Return Loss' }),
+                value: summary.total_customer_return_loss != null
+                  ? summary.total_customer_return_loss
+                  : customerReturns.reduce((acc, r) => acc + (Number(r.return_loss) || Number(r.delivery_boy_charge) || 0), 0),
+                isCurrency: true,
+                icon: TrendingDown,
+                hint: t('dashboard.customerReturnLosses', { defaultValue: 'Customer return delivery charges' }),
+                bg: 'var(--color-danger-light)',
+                border: 'var(--color-danger-border)',
+                iconBg: 'var(--color-danger-light)',
+                iconColor: 'var(--color-rose)',
+                valueColor: 'var(--color-rose)',
+                labelColor: 'var(--color-rose)'
+              }
+            ].map((card, i) => {
+              const Icon = card.icon;
+              const numericVal = typeof card.value === 'number' ? card.value : (parseFloat(String(card.value).replace(/[^0-9.-]+/g, '')) || 0);
+              return (
+                <TiltCard key={i} maxTilt={5} className="w-full">
+                  <div
+                    className={`ui-card px-3.5 py-3 space-y-1.5 h-full flex flex-col justify-between animate-fade-in-up stagger-${i + 1}`}
+                    style={{ background: card.bg, border: `1.5px solid ${card.border}` }}
+                  >
+                    <div className="flex items-center justify-between gap-1.5">
+                      <span className="text-[10px] font-bold uppercase tracking-wider truncate" style={{ color: card.labelColor }} title={card.label}>
+                        {card.label}
+                      </span>
+                      <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 shadow-xs" style={{ background: card.iconBg, border: `1.5px solid ${card.iconColor}` }}>
+                        <Icon className="w-3.5 h-3.5 transition-transform group-hover:scale-110" style={{ color: card.iconColor }} />
+                      </div>
+                    </div>
+                    <p className="text-xl sm:text-2xl font-bold font-mono tracking-tight my-0.5" style={{ color: card.valueColor }}>
+                      <AnimatedCounter value={numericVal} prefix={card.isCurrency ? '₹' : ''} />
+                    </p>
+                    <div className="flex items-center gap-1.5 text-[9.5px] font-bold mt-1 pt-1 border-t" style={{ color: card.labelColor, borderColor: card.border }}>
+                      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: card.iconColor }} />
+                      <span className="truncate">{card.hint}</span>
+                    </div>
+                  </div>
+                </TiltCard>
+              );
+            })}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Total RTO Returns */}
-            <div className="ui-card p-5 space-y-1.5">
-              <div className="flex items-center justify-between text-xs font-semibold" style={{ color: 'var(--color-text-muted)' }}>
-                <span>{t('returns.rtoReturns')}</span>
-                <Truck className="w-4 h-4" style={{ color: 'var(--color-info)' }} />
-              </div>
-              <p className="text-2xl font-bold font-mono" style={{ color: 'var(--color-info)' }}>
-                {summary.total_rto_returns || rtoReturns.length || 0}
-              </p>
-              <p className="text-[10px] font-medium" style={{ color: 'var(--color-text-muted)' }}>{t('returns.rtoReturnParcels')}</p>
-            </div>
-
-            {/* Total RTO Quantity */}
-            <div className="ui-card p-5 space-y-1.5">
-              <div className="flex items-center justify-between text-xs font-semibold" style={{ color: 'var(--color-text-muted)' }}>
-                <span>{t('stock.rtoReturnedQty')}</span>
-                <Package className="w-4 h-4" style={{ color: 'var(--color-info)' }} />
-              </div>
-              <p className="text-2xl font-bold font-mono" style={{ color: 'var(--color-text-primary)' }}>
-                {summary.total_rto_returned_quantity || rtoReturns.reduce((acc, r) => acc + (r.quantity || 1), 0)}
-              </p>
-              <p className="text-[10px] font-medium" style={{ color: 'var(--color-text-muted)' }}>{t('returns.restoredToAvailableStock')}</p>
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            {[
+              {
+                label: t('returns.rtoReturns'),
+                value: summary.total_rto_returns || rtoReturns.length || 0,
+                icon: Truck,
+                hint: t('returns.rtoReturnParcels'),
+                bg: 'var(--color-info-light)',
+                border: 'var(--color-info-border)',
+                iconBg: 'var(--color-info-light)',
+                iconColor: 'var(--color-deep-purple)',
+                valueColor: 'var(--color-deep-purple)',
+                labelColor: 'var(--color-deep-purple)'
+              },
+              {
+                label: t('stock.rtoReturnedQty'),
+                value: summary.total_rto_returned_quantity || rtoReturns.reduce((acc, r) => acc + (r.quantity || 1), 0),
+                icon: Package,
+                hint: t('returns.restoredToAvailableStock'),
+                bg: 'rgba(102, 37, 73, 0.08)',
+                border: 'rgba(102, 37, 73, 0.18)',
+                iconBg: 'rgba(102, 37, 73, 0.08)',
+                iconColor: 'var(--color-plum)',
+                valueColor: 'var(--color-plum)',
+                labelColor: 'var(--color-plum)'
+              }
+            ].map((card, i) => {
+              const Icon = card.icon;
+              const numericVal = typeof card.value === 'number' ? card.value : (parseFloat(String(card.value).replace(/[^0-9.-]+/g, '')) || 0);
+              return (
+                <TiltCard key={i} maxTilt={5} className="w-full">
+                  <div
+                    className={`ui-card px-3.5 py-3 space-y-1.5 h-full flex flex-col justify-between animate-fade-in-up stagger-${i + 1}`}
+                    style={{ background: card.bg, border: `1.5px solid ${card.border}` }}
+                  >
+                    <div className="flex items-center justify-between gap-1.5">
+                      <span className="text-[10px] font-bold uppercase tracking-wider truncate" style={{ color: card.labelColor }} title={card.label}>
+                        {card.label}
+                      </span>
+                      <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 shadow-xs" style={{ background: card.iconBg, border: `1.5px solid ${card.iconColor}` }}>
+                        <Icon className="w-3.5 h-3.5 transition-transform group-hover:scale-110" style={{ color: card.iconColor }} />
+                      </div>
+                    </div>
+                    <p className="text-xl sm:text-2xl font-bold font-mono tracking-tight my-0.5" style={{ color: card.valueColor }}>
+                      <AnimatedCounter value={numericVal} prefix={card.isCurrency ? '₹' : ''} />
+                    </p>
+                    <div className="flex items-center gap-1.5 text-[9.5px] font-bold mt-1 pt-1 border-t" style={{ color: card.labelColor, borderColor: card.border }}>
+                      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: card.iconColor }} />
+                      <span className="truncate">{card.hint}</span>
+                    </div>
+                  </div>
+                </TiltCard>
+              );
+            })}
           </div>
         )}
 
@@ -595,22 +722,40 @@ export default function Return() {
             ) : (
               <div className="overflow-x-auto" style={{ background: 'var(--color-surface)' }}>
                 <table className="w-full text-left border-collapse text-xs min-w-[950px]" id="customer-returns-table">
-                  <thead>
-                    <tr style={{ background: 'var(--color-surface-muted)', borderBottom: '1px solid var(--color-border-light)', color: 'var(--color-text-muted)' }} className="uppercase tracking-wider font-semibold text-[11px]">
-                      <th className="py-4 px-3">{t('fields.orderId')}</th>
-                      <th className="py-4 px-3">{t('fields.skuId')}</th>
-                      <th className="py-4 px-3">{t('fields.productName')}</th>
-                      <th className="py-4 px-2 text-center">{t('fields.quantity')}</th>
-                      <th className="py-4 px-3 text-center">{t('fields.purchasePrice')}</th>
-                      <th className="py-4 px-3 text-center">{t('fields.sellingPrice')}</th>
-                      <th className="py-4 px-3 text-center">{t('fields.deliveryCharge')}</th>
-                      <th className="py-4 px-3 text-right">{t('stock.returnLoss')}</th>
-                      <th className="py-4 px-3 text-center">{t('fields.returnDate')}</th>
-                      <th className="py-4 px-3 text-center">{t('common.action')}</th>
+                  <thead className="select-none">
+                    <tr style={{ background: '#2B122A', color: '#FFFFFF', borderBottom: '1px solid rgba(255, 255, 255, 0.15)' }} className="uppercase tracking-wider font-bold text-[10px]">
+                      <th className="py-3.5 px-3 text-center cursor-pointer" onClick={() => handleSort('order_id')}>
+                        <span className="inline-flex items-center gap-1 justify-center">{t('fields.orderId')}<ArrowUpDown className="w-3 h-3 opacity-80 text-white" /></span>
+                      </th>
+                      <th className="py-3.5 px-3 text-center cursor-pointer" onClick={() => handleSort('sku_id')}>
+                        <span className="inline-flex items-center gap-1 justify-center">{t('fields.skuId')}<ArrowUpDown className="w-3 h-3 opacity-80 text-white" /></span>
+                      </th>
+                      <th className="py-3.5 px-3 text-center cursor-pointer" onClick={() => handleSort('product_name')}>
+                        <span className="inline-flex items-center gap-1 justify-center">{t('fields.productName')}<ArrowUpDown className="w-3 h-3 opacity-80 text-white" /></span>
+                      </th>
+                      <th className="py-3.5 px-2 text-center cursor-pointer" onClick={() => handleSort('quantity')}>
+                        <span className="inline-flex items-center gap-1 justify-center">{t('fields.quantity')}<ArrowUpDown className="w-3 h-3 opacity-80 text-white" /></span>
+                      </th>
+                      <th className="py-3.5 px-3 text-center cursor-pointer" onClick={() => handleSort('purchase_price')}>
+                        <span className="inline-flex items-center gap-1 justify-center">{t('fields.purchasePrice')}<ArrowUpDown className="w-3 h-3 opacity-80 text-white" /></span>
+                      </th>
+                      <th className="py-3.5 px-3 text-center cursor-pointer" onClick={() => handleSort('selling_price')}>
+                        <span className="inline-flex items-center gap-1 justify-center">{t('fields.sellingPrice')}<ArrowUpDown className="w-3 h-3 opacity-80 text-white" /></span>
+                      </th>
+                      <th className="py-3.5 px-3 text-center cursor-pointer" onClick={() => handleSort('delivery_boy_charge')}>
+                        <span className="inline-flex items-center gap-1 justify-center">{t('fields.deliveryCharge')}<ArrowUpDown className="w-3 h-3 opacity-80 text-white" /></span>
+                      </th>
+                      <th className="py-3.5 px-3 text-center cursor-pointer" onClick={() => handleSort('return_loss')}>
+                        <span className="inline-flex items-center gap-1 justify-center">{t('stock.returnLoss')}<ArrowUpDown className="w-3 h-3 opacity-80 text-white" /></span>
+                      </th>
+                      <th className="py-3.5 px-3 text-center cursor-pointer" onClick={() => handleSort('return_date')}>
+                        <span className="inline-flex items-center gap-1 justify-center">{t('fields.returnDate')}<ArrowUpDown className="w-3 h-3 opacity-80 text-white" /></span>
+                      </th>
+                      <th className="py-3.5 px-3 text-center">{t('common.action')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y" style={{ borderColor: 'var(--color-border-light)' }}>
-                    {filteredCustomerReturns.map((r) => {
+                    {paginatedCustomerReturns.map((r) => {
                       const itemState = editChargeState[r.order_id] || {
                         delivery_boy_charge: r.delivery_boy_charge != null ? r.delivery_boy_charge : '',
                         saving: false,
@@ -618,22 +763,25 @@ export default function Return() {
                       };
 
                       return (
-                        <tr key={r.id || r.order_id} className="transition-colors">
+                        <tr key={r.id || r.order_id} className="table-row-hover transition-colors">
                           {/* Order ID */}
-                          <td className="py-3.5 px-3 font-mono text-xs font-bold select-all" style={{ color: 'var(--color-navy)' }}>
-                            {r.order_id}
+                          <td className="py-3.5 px-3 text-center">
+                            <span className="inline-block font-mono text-xs font-bold px-2.5 py-0.5 rounded-full select-all"
+                              style={{ color: 'var(--color-rose)', background: 'var(--color-accent-light)', border: '1px solid var(--color-accent-muted)' }}>
+                              {r.order_id}
+                            </span>
                           </td>
 
                           {/* SKU ID */}
-                          <td className="py-3.5 px-3">
-                            <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-full" style={{ color: 'var(--color-plum)', background: 'rgba(102,37,73,0.06)', border: '1px solid rgba(102,37,73,0.15)' }}>
+                          <td className="py-3.5 px-3 text-center">
+                            <span className="inline-block font-mono text-xs font-bold px-2.5 py-0.5 rounded-full" style={{ color: 'var(--color-plum)', background: 'rgba(102,37,73,0.06)', border: '1px solid rgba(102,37,73,0.15)' }}>
                               {r.sku_id}
                             </span>
                           </td>
 
                           {/* Product Name */}
-                          <td className="py-3.5 px-3">
-                            <span className="text-xs font-semibold line-clamp-2" style={{ color: 'var(--color-text-primary)' }}>
+                          <td className="py-3.5 px-3 text-center">
+                            <span className="text-xs font-semibold line-clamp-2 justify-center" style={{ color: 'var(--color-text-primary)' }}>
                               {r.product_name ? <AutoTranslate text={r.product_name} /> : '-'}
                             </span>
                           </td>
@@ -653,10 +801,16 @@ export default function Return() {
                             {formatCurrency(r.selling_price)}
                           </td>
 
-                          {/* Delivery Charge Input */}
+                          {/* Delivery Charge Pencil Style Pill Input */}
                           <td className="py-3.5 px-3 text-center">
-                            <div className="flex items-center justify-center gap-1.5">
-                              <span className="font-mono font-bold" style={{ color: 'var(--color-text-muted)' }}>₹</span>
+                            <div className="inline-flex items-center justify-between gap-1.5 px-3.5 py-1 rounded-full transition-all group"
+                              style={{
+                                background: 'rgba(255, 245, 245, 0.9)',
+                                border: '1px solid rgba(232, 188, 185, 0.6)',
+                                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)'
+                              }}
+                            >
+                              <span className="font-mono text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>₹</span>
                               <input
                                 type="number"
                                 min="0"
@@ -664,32 +818,32 @@ export default function Return() {
                                 placeholder="0"
                                 value={itemState.delivery_boy_charge}
                                 onChange={(e) => handleChargeChange(r.order_id, e.target.value)}
-                                className="w-16 rounded-lg px-2 py-1 text-xs font-mono text-center outline-none transition-all font-semibold"
-                                style={{ background: 'var(--color-surface-muted)', border: '1px solid var(--color-border-light)', color: 'var(--color-text-primary)' }}
+                                onBlur={() => handleSaveCharge(r.order_id)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleSaveCharge(r.order_id)}
+                                className="w-12 bg-transparent text-center font-mono font-extrabold text-xs outline-none"
+                                style={{ color: 'var(--color-navy)' }}
                               />
                               <button
                                 onClick={() => handleSaveCharge(r.order_id)}
                                 disabled={itemState.saving}
                                 title={t('common.save')}
-                                className={`p-1.5 rounded-lg border transition-all cursor-pointer`}
-                                style={itemState.saved
-                                  ? { background: 'var(--color-success-light)', color: 'var(--color-success)', border: '1px solid var(--color-success-border)' }
-                                  : { background: 'var(--color-accent-light)', color: 'var(--color-rose)', border: '1px solid var(--color-accent-muted)' }}
+                                className="p-0.5 rounded-full transition-transform hover:scale-110 cursor-pointer flex items-center justify-center shrink-0"
+                                style={{ color: itemState.saved ? 'var(--color-success)' : 'var(--color-plum)' }}
                               >
                                 {itemState.saving ? (
                                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                                 ) : itemState.saved ? (
                                   <Check className="w-3.5 h-3.5" />
                                 ) : (
-                                  <Save className="w-3.5 h-3.5" />
+                                  <Pencil className="w-3.5 h-3.5 opacity-70 group-hover:opacity-100 transition-opacity" />
                                 )}
                               </button>
                             </div>
                           </td>
 
                           {/* Return Loss */}
-                          <td className="py-3.5 px-3 text-right">
-                            <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-full" style={{ color: 'var(--color-rose)', background: 'var(--color-danger-light)', border: '1px solid var(--color-danger-border)' }}>
+                          <td className="py-3.5 px-3 text-center">
+                            <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-full inline-block" style={{ color: 'var(--color-rose)', background: 'var(--color-danger-light)', border: '1px solid var(--color-danger-border)' }}>
                               {formatCurrency(r.return_loss)}
                             </span>
                           </td>
@@ -716,6 +870,50 @@ export default function Return() {
                     })}
                   </tbody>
                 </table>
+              </div>
+            )}
+
+            {/* Pagination Controls (Stock Page Parity) */}
+            {!loading && sortedCustomerReturns.length > 0 && (
+              <div className="flex items-center justify-between px-5 py-3" style={{ borderTop: '1px solid var(--color-border-light)' }}>
+                <span className="text-xs font-medium" style={{ color: 'var(--color-text-muted)' }}>
+                  {t('stock.showingItems', {
+                    from: (currentPage - 1) * ITEMS_PER_PAGE + 1,
+                    to: Math.min(currentPage * ITEMS_PER_PAGE, sortedCustomerReturns.length),
+                    total: sortedCustomerReturns.length
+                  })}
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="p-1.5 rounded-lg cursor-pointer disabled:opacity-30 transition-all"
+                    style={{ border: '1px solid var(--color-border-light)', color: 'var(--color-text-secondary)' }}
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                  </button>
+                  {Array.from({ length: totalCustomerPages }, (_, i) => i + 1).map(pg => (
+                    <button
+                      key={pg}
+                      onClick={() => setCurrentPage(pg)}
+                      className="w-7 h-7 rounded-lg text-xs font-bold cursor-pointer transition-all"
+                      style={pg === currentPage
+                        ? { background: 'linear-gradient(135deg, var(--color-navy), var(--color-deep-purple))', color: 'var(--color-blush-light)', boxShadow: '0 2px 8px rgba(29,26,57,0.25)' }
+                        : { color: 'var(--color-text-muted)' }
+                      }
+                    >
+                      {pg}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(totalCustomerPages, p + 1))}
+                    disabled={currentPage === totalCustomerPages}
+                    className="p-1.5 rounded-lg cursor-pointer disabled:opacity-30 transition-all"
+                    style={{ border: '1px solid var(--color-border-light)', color: 'var(--color-text-secondary)' }}
+                  >
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -747,37 +945,56 @@ export default function Return() {
             ) : (
               <div className="overflow-x-auto" style={{ background: 'var(--color-surface)' }}>
                 <table className="w-full text-left border-collapse text-xs min-w-[950px]" id="rto-returns-table">
-                  <thead>
-                    <tr style={{ background: 'var(--color-surface-muted)', borderBottom: '1px solid var(--color-border-light)', color: 'var(--color-text-muted)' }} className="uppercase tracking-wider font-semibold text-[11px]">
-                      <th className="py-4 px-3">{t('fields.orderId')}</th>
-                      <th className="py-4 px-3">{t('fields.skuId')}</th>
-                      <th className="py-4 px-3">{t('fields.productName')}</th>
-                      <th className="py-4 px-2 text-center">{t('fields.quantity')}</th>
-                      <th className="py-4 px-3 text-center">{t('fields.purchasePrice')}</th>
-                      <th className="py-4 px-3 text-center">{t('fields.sellingPrice')}</th>
-                      <th className="py-4 px-3 text-center">{t('orders.returnStatus')}</th>
-                      <th className="py-4 px-3 text-center">{t('fields.returnDate')}</th>
-                      <th className="py-4 px-3 text-center">{t('common.action')}</th>
+                  <thead className="select-none">
+                    <tr style={{ background: '#2B122A', color: '#FFFFFF', borderBottom: '1px solid rgba(255, 255, 255, 0.15)' }} className="uppercase tracking-wider font-bold text-[10px]">
+                      <th className="py-3.5 px-3 text-center cursor-pointer" onClick={() => handleSort('order_id')}>
+                        <span className="inline-flex items-center gap-1 justify-center">{t('fields.orderId')}<ArrowUpDown className="w-3 h-3 opacity-80 text-white" /></span>
+                      </th>
+                      <th className="py-3.5 px-3 text-center cursor-pointer" onClick={() => handleSort('sku_id')}>
+                        <span className="inline-flex items-center gap-1 justify-center">{t('fields.skuId')}<ArrowUpDown className="w-3 h-3 opacity-80 text-white" /></span>
+                      </th>
+                      <th className="py-3.5 px-3 text-center cursor-pointer" onClick={() => handleSort('product_name')}>
+                        <span className="inline-flex items-center gap-1 justify-center">{t('fields.productName')}<ArrowUpDown className="w-3 h-3 opacity-80 text-white" /></span>
+                      </th>
+                      <th className="py-3.5 px-2 text-center cursor-pointer" onClick={() => handleSort('quantity')}>
+                        <span className="inline-flex items-center gap-1 justify-center">{t('fields.quantity')}<ArrowUpDown className="w-3 h-3 opacity-80 text-white" /></span>
+                      </th>
+                      <th className="py-3.5 px-3 text-center cursor-pointer" onClick={() => handleSort('purchase_price')}>
+                        <span className="inline-flex items-center gap-1 justify-center">{t('fields.purchasePrice')}<ArrowUpDown className="w-3 h-3 opacity-80 text-white" /></span>
+                      </th>
+                      <th className="py-3.5 px-3 text-center cursor-pointer" onClick={() => handleSort('selling_price')}>
+                        <span className="inline-flex items-center gap-1 justify-center">{t('fields.sellingPrice')}<ArrowUpDown className="w-3 h-3 opacity-80 text-white" /></span>
+                      </th>
+                      <th className="py-3.5 px-3 text-center cursor-pointer" onClick={() => handleSort('status')}>
+                        <span className="inline-flex items-center gap-1 justify-center">{t('orders.returnStatus')}<ArrowUpDown className="w-3 h-3 opacity-80 text-white" /></span>
+                      </th>
+                      <th className="py-3.5 px-3 text-center cursor-pointer" onClick={() => handleSort('return_date')}>
+                        <span className="inline-flex items-center gap-1 justify-center">{t('fields.returnDate')}<ArrowUpDown className="w-3 h-3 opacity-80 text-white" /></span>
+                      </th>
+                      <th className="py-3.5 px-3 text-center">{t('common.action')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y" style={{ borderColor: 'var(--color-border-light)' }}>
-                    {filteredRtoReturns.map((r) => (
-                      <tr key={r.id || r.order_id} className="transition-colors">
+                    {paginatedRtoReturns.map((r) => (
+                      <tr key={r.id || r.order_id} className="table-row-hover transition-colors">
                         {/* Order ID */}
-                        <td className="py-3.5 px-3 font-mono text-xs font-bold select-all" style={{ color: 'var(--color-navy)' }}>
-                          {r.order_id}
+                        <td className="py-3.5 px-3 text-center">
+                          <span className="inline-block font-mono text-xs font-bold px-2.5 py-0.5 rounded-full select-all"
+                            style={{ color: 'var(--color-rose)', background: 'var(--color-accent-light)', border: '1px solid var(--color-accent-muted)' }}>
+                            {r.order_id}
+                          </span>
                         </td>
 
                         {/* SKU ID */}
-                        <td className="py-3.5 px-3">
-                          <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-full" style={{ color: 'var(--color-plum)', background: 'rgba(102,37,73,0.06)', border: '1px solid rgba(102,37,73,0.15)' }}>
+                        <td className="py-3.5 px-3 text-center">
+                          <span className="inline-block font-mono text-xs font-bold px-2.5 py-0.5 rounded-full" style={{ color: 'var(--color-plum)', background: 'rgba(102,37,73,0.06)', border: '1px solid rgba(102,37,73,0.15)' }}>
                             {r.sku_id}
                           </span>
                         </td>
 
                         {/* Product Name */}
-                        <td className="py-3.5 px-3">
-                          <span className="text-xs font-semibold line-clamp-2" style={{ color: 'var(--color-text-primary)' }}>
+                        <td className="py-3.5 px-3 text-center">
+                          <span className="text-xs font-semibold line-clamp-2 justify-center" style={{ color: 'var(--color-text-primary)' }}>
                             {r.product_name ? <AutoTranslate text={r.product_name} /> : '-'}
                           </span>
                         </td>
@@ -825,6 +1042,50 @@ export default function Return() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
+
+            {/* Pagination Controls (Stock Page Parity) */}
+            {!loading && sortedRtoReturns.length > 0 && (
+              <div className="flex items-center justify-between px-5 py-3" style={{ borderTop: '1px solid var(--color-border-light)' }}>
+                <span className="text-xs font-medium" style={{ color: 'var(--color-text-muted)' }}>
+                  {t('stock.showingItems', {
+                    from: (currentPage - 1) * ITEMS_PER_PAGE + 1,
+                    to: Math.min(currentPage * ITEMS_PER_PAGE, sortedRtoReturns.length),
+                    total: sortedRtoReturns.length
+                  })}
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="p-1.5 rounded-lg cursor-pointer disabled:opacity-30 transition-all"
+                    style={{ border: '1px solid var(--color-border-light)', color: 'var(--color-text-secondary)' }}
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                  </button>
+                  {Array.from({ length: totalRtoPages }, (_, i) => i + 1).map(pg => (
+                    <button
+                      key={pg}
+                      onClick={() => setCurrentPage(pg)}
+                      className="w-7 h-7 rounded-lg text-xs font-bold cursor-pointer transition-all"
+                      style={pg === currentPage
+                        ? { background: 'linear-gradient(135deg, var(--color-navy), var(--color-deep-purple))', color: 'var(--color-blush-light)', boxShadow: '0 2px 8px rgba(29,26,57,0.25)' }
+                        : { color: 'var(--color-text-muted)' }
+                      }
+                    >
+                      {pg}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(totalRtoPages, p + 1))}
+                    disabled={currentPage === totalRtoPages}
+                    className="p-1.5 rounded-lg cursor-pointer disabled:opacity-30 transition-all"
+                    style={{ border: '1px solid var(--color-border-light)', color: 'var(--color-text-secondary)' }}
+                  >
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -985,7 +1246,7 @@ export default function Return() {
               {/* STEP 2B: LIVE CAMERA VIEWFINDER */}
               {uploadStep === 'CAMERA_VIEW' && (
                 <div className="space-y-4">
-                    <div className="relative aspect-video rounded-2xl overflow-hidden flex items-center justify-center" style={{ background: 'var(--color-navy)', border: '1px solid var(--color-navy-light)' }}>
+                  <div className="relative aspect-video rounded-2xl overflow-hidden flex items-center justify-center" style={{ background: 'var(--color-navy)', border: '1px solid var(--color-navy-light)' }}>
                     <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
                     <div className="absolute inset-6 rounded-2xl pointer-events-none flex items-center justify-center" style={{ border: '2px solid rgba(174,68,90,0.5)' }}>
                       <span className="text-[10px] font-mono px-3 py-1 rounded-full" style={{ color: 'var(--color-blush)', background: 'rgba(29,26,57,0.8)', border: '1px solid rgba(174,68,90,0.3)' }}>

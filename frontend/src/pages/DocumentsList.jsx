@@ -129,12 +129,17 @@ export default function DocumentsList() {
           ) : (
             <div className="overflow-x-auto" style={{ background: 'var(--color-surface)' }}>
               <table className="w-full text-left text-xs border-collapse min-w-[700px]" id="documents-table">
-                <thead><tr style={{ background: S.surface, borderBottom: `1px solid ${S.border}`, color: S.muted }} className="uppercase tracking-wider font-extrabold text-[11px]">
-                  <th className="py-4 px-4 w-10"><input type="checkbox" onChange={handleSelectAll} checked={selectedIds.length > 0 && selectedIds.length === filteredDocs.length} className="rounded cursor-pointer" /></th>
-                  <th className="py-4 px-4">{t('documents.documentFile')}</th><th className="py-4 px-4">{t('fields.status')}</th>
-                  <th className="py-4 px-4 text-center">{t('documents.confidenceScore')}</th><th className="py-4 px-4 text-center">{t('documents.processingSpeed')}</th>
-                  <th className="py-4 px-4">{t('documents.createdDate')}</th><th className="py-4 px-4 text-right">{t('documents.actions')}</th>
-                </tr></thead>
+                <thead>
+                  <tr style={{ background: '#2B122A', color: '#FFFFFF', borderBottom: '1px solid rgba(255, 255, 255, 0.15)' }} className="uppercase tracking-wider font-bold text-[10px]">
+                    <th className="py-3.5 px-4 w-10"><input type="checkbox" onChange={handleSelectAll} checked={selectedIds.length > 0 && selectedIds.length === filteredDocs.length} className="rounded cursor-pointer accent-purple-900" /></th>
+                    <th className="py-3.5 px-4">{t('documents.documentFile')}</th>
+                    <th className="py-3.5 px-4">{t('fields.status')}</th>
+                    <th className="py-3.5 px-4 text-center">{t('documents.confidenceScore')}</th>
+                    <th className="py-3.5 px-4 text-center">{t('documents.processingSpeed')}</th>
+                    <th className="py-3.5 px-4">{t('documents.createdDate')}</th>
+                    <th className="py-3.5 px-4 text-right">{t('documents.actions')}</th>
+                  </tr>
+                </thead>
                 <tbody className="divide-y" style={{ borderColor: S.border }}>
                   {filteredDocs.map((doc) => {
                     const badge = getStatusBadgeConfig(doc.status);
