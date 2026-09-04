@@ -277,21 +277,21 @@ export default function Stock() {
             return (
               <TiltCard key={i} maxTilt={5} className="w-full">
                 <div
-                  className={`ui-card p-4 sm:p-5 space-y-2 h-full flex flex-col justify-between animate-fade-in-up stagger-${i + 1}`}
+                  className={`ui-card px-3.5 py-3 space-y-1.5 h-full flex flex-col justify-between animate-fade-in-up stagger-${i + 1}`}
                   style={{ background: card.bg, border: `1.5px solid ${card.border}` }}
                 >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[11px] font-bold uppercase tracking-wider truncate" style={{ color: card.labelColor }} title={card.label}>
+                  <div className="flex items-center justify-between gap-1.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider truncate" style={{ color: card.labelColor }} title={card.label}>
                       {card.label}
                     </span>
-                    <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 shadow-xs" style={{ background: card.iconBg, border: `1.5px solid ${card.iconColor}` }}>
-                      <Icon className="w-4 h-4 transition-transform group-hover:scale-110" style={{ color: card.iconColor }} />
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 shadow-xs" style={{ background: card.iconBg, border: `1.5px solid ${card.iconColor}` }}>
+                      <Icon className="w-3.5 h-3.5 transition-transform group-hover:scale-110" style={{ color: card.iconColor }} />
                     </div>
                   </div>
-                  <p className="text-2xl sm:text-3xl font-bold font-mono tracking-tight" style={{ color: card.valueColor }}>
+                  <p className="text-xl sm:text-2xl font-bold font-mono tracking-tight my-0.5" style={{ color: card.valueColor }}>
                     <AnimatedCounter value={numericVal} prefix={card.isCurrency ? '₹' : ''} />
                   </p>
-                  <div className="flex items-center gap-1.5 text-[10px] font-bold mt-2 pt-2 border-t" style={{ color: card.labelColor, borderColor: card.border }}>
+                  <div className="flex items-center gap-1.5 text-[9.5px] font-bold mt-1 pt-1 border-t" style={{ color: card.labelColor, borderColor: card.border }}>
                     <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: card.iconColor }} />
                     <span className="truncate">{card.hint}</span>
                   </div>
