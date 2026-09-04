@@ -41,7 +41,7 @@ export default function TiltCard({
       onMouseMove={handleMouseMove}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      className={`relative transition-transform duration-200 ease-out ${className}`}
+      className={`relative transition-transform duration-200 ease-out rounded-2xl ${className}`}
       style={{
         perspective: '1000px',
         transformStyle: 'preserve-3d',
@@ -49,8 +49,8 @@ export default function TiltCard({
           ? `perspective(1000px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) translateY(-2px)`
           : 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(0px)',
         boxShadow: isHovered
-          ? '0 12px 32px rgba(29,26,57,0.12), 0 0 20px rgba(174,68,90,0.12)'
-          : style.boxShadow || 'var(--shadow-sm)',
+          ? '0 8px 24px -4px rgba(29, 26, 57, 0.08)'
+          : style.boxShadow || 'none',
         ...style
       }}
     >
@@ -59,9 +59,9 @@ export default function TiltCard({
       {/* Subtle Purple Glare Effect */}
       {glare && isHovered && (
         <div
-          className="absolute inset-0 pointer-events-none rounded-[inherit] transition-opacity duration-300"
+          className="absolute inset-0 pointer-events-none rounded-2xl overflow-hidden transition-opacity duration-300"
           style={{
-            background: `radial-gradient(circle at ${tilt.y * 10 + 50}% ${tilt.x * 10 + 50}%, rgba(174,68,90,0.15), transparent 70%)`
+            background: `radial-gradient(circle at ${tilt.y * 10 + 50}% ${tilt.x * 10 + 50}%, rgba(174,68,90,0.08), transparent 70%)`
           }}
         />
       )}

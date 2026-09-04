@@ -71,7 +71,7 @@
     "confidenceScore": "Confidence Score",
     "processingSpeed": "Processing Speed",
     "documentFile": "Document File",
-    "sellingQ": "selling q."
+    "sellingQ": "Selling Qty"
   },
   "dashboard": {
     "title": "Real-Time Business Intelligence",
@@ -162,7 +162,7 @@
     "searchPlaceholder": "Search by SKU ID or product name...",
     "totalAddedQty": "Total Added Qty",
     "initialStockLogged": "Initial stock logged",
-    "sellingQ": "selling q.",
+    "sellingQ": "Selling Qty",
     "physicalStockInHand": "Physical stock in hand",
     "custReturnedQty": "Cust. Returned Qty",
     "customerReturnUnits": "Customer return units",
@@ -208,7 +208,28 @@
     "deleteProduct": "Delete Product",
     "confirmDeleteStock": "Are you sure you want to delete stock product SKU \"{{sku}}\"? This will permanently remove it and all associated order records.",
     "failedSavePrices": "Failed to save prices: ",
-    "itemsPerPage": "Items per page"
+    "itemsPerPage": "Items per page",
+    "presetAll": "All Items",
+    "presetLowStock": "Low Stock (< 5)",
+    "presetLossMaking": "Loss-Making (< ₹0)",
+    "presetHighProfit": "High Profit (≥ ₹500)",
+    "presetHasReturns": "Has Returns",
+    "stockStatus": "Stock Status",
+    "allStatuses": "All Statuses",
+    "inStock": "In Stock (> 5)",
+    "lowStock": "Low Stock (1-5)",
+    "outOfStock": "Out of Stock (0)",
+    "profitability": "Profitability",
+    "allProfitability": "All Items",
+    "profitableOnly": "Profitable Only",
+    "lossMakingOnly": "Loss-Making Only",
+    "minQty": "Min Qty",
+    "maxQty": "Max Qty",
+    "minProfit": "Min Profit",
+    "maxProfit": "Max Profit",
+    "hasReturnsOnly": "Items with Returns Only",
+    "clearAllFilters": "Clear All Filters",
+    "activeFilters": "Active Filters:"
   },
   "returns": {
     "title": "Return",

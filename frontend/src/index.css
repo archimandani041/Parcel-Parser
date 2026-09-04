@@ -488,7 +488,7 @@
 
 /* ─── Table Overrides ─── */
 table thead tr {
-  background: var(--color-surface-muted) !important;
+  background: var(--color-surface-muted);
 }
 
 table tbody tr:hover {

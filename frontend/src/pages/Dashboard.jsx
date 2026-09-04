@@ -150,10 +150,10 @@ export default function Dashboard() {
             return (
               <TiltCard key={i} maxTilt={5} className="w-full">
                 <div className={`ui-card p-4 sm:p-5 space-y-2 h-full flex flex-col justify-between animate-fade-in-up stagger-${i + 1}`}
-                  style={{ background: card.bg, borderColor: card.border }}>
+                  style={{ background: card.bg, border: `1.5px solid ${card.border}` }}>
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: card.labelColor }}>{card.label}</span>
-                    <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: card.iconBg, border: `1px solid ${card.border}` }}>
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-xs" style={{ background: card.iconBg, border: `1.5px solid ${card.iconColor}` }}>
                       <Icon className="w-4 h-4 transition-transform group-hover:scale-110" style={{ color: card.iconColor }} />
                     </div>
                   </div>
