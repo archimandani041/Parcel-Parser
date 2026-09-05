@@ -79,7 +79,7 @@ export default function AIParsingDemo() {
         style={{ background: 'radial-gradient(circle, rgba(174,68,90,0.08) 0%, transparent 70%)' }} />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto space-y-4 mb-12">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider"
@@ -105,11 +105,10 @@ export default function AIParsingDemo() {
               <button
                 key={s.id}
                 onClick={() => setActiveSampleIndex(idx)}
-                className={`px-3 sm:px-4 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
-                  activeSampleIndex === idx
+                className={`px-3 sm:px-4 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${activeSampleIndex === idx
                     ? 'bg-[#1D1A39] text-white shadow-sm'
                     : 'text-[var(--color-text-secondary)] hover:bg-white/60'
-                }`}
+                  }`}
               >
                 {s.title}
               </button>
@@ -119,7 +118,7 @@ export default function AIParsingDemo() {
 
         {/* Transformation Pipeline Container */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          
+
           {/* ================= LEFT: STYLIZED PHYSICAL LABEL ================= */}
           <div className="lg:col-span-6">
             <div className="relative rounded-3xl p-6 sm:p-8 bg-[#FAF0EF] border border-[var(--color-border-light)] shadow-lg overflow-hidden">
@@ -228,13 +227,12 @@ export default function AIParsingDemo() {
 
             {/* Extracted Field Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              
+
               {/* Field 1: Order ID */}
-              <div className={`p-3.5 rounded-2xl transition-all duration-200 border ${
-                highlightField === 'orderId'
+              <div className={`p-3.5 rounded-2xl transition-all duration-200 border ${highlightField === 'orderId'
                   ? 'bg-rose-50 border-[var(--color-rose)] shadow-md scale-[1.02]'
                   : 'bg-white border-[var(--color-border-light)] shadow-xs'
-              }`}>
+                }`}>
                 <div className="flex items-center justify-between text-[10px] text-[var(--color-text-muted)] font-bold uppercase">
                   <span>order_id</span>
                   <Hash className="w-3 h-3 text-[var(--color-rose)]" />
@@ -245,11 +243,10 @@ export default function AIParsingDemo() {
               </div>
 
               {/* Field 2: SKU ID */}
-              <div className={`p-3.5 rounded-2xl transition-all duration-200 border ${
-                highlightField === 'product'
+              <div className={`p-3.5 rounded-2xl transition-all duration-200 border ${highlightField === 'product'
                   ? 'bg-rose-50 border-[var(--color-rose)] shadow-md scale-[1.02]'
                   : 'bg-white border-[var(--color-border-light)] shadow-xs'
-              }`}>
+                }`}>
                 <div className="flex items-center justify-between text-[10px] text-[var(--color-text-muted)] font-bold uppercase">
                   <span>sku_id</span>
                   <Boxes className="w-3 h-3 text-[var(--color-rose)]" />
@@ -260,11 +257,10 @@ export default function AIParsingDemo() {
               </div>
 
               {/* Field 3: Product Name */}
-              <div className={`p-3.5 rounded-2xl transition-all duration-200 border sm:col-span-2 ${
-                highlightField === 'product'
+              <div className={`p-3.5 rounded-2xl transition-all duration-200 border sm:col-span-2 ${highlightField === 'product'
                   ? 'bg-rose-50 border-[var(--color-rose)] shadow-md scale-[1.02]'
                   : 'bg-white border-[var(--color-border-light)] shadow-xs'
-              }`}>
+                }`}>
                 <div className="flex items-center justify-between text-[10px] text-[var(--color-text-muted)] font-bold uppercase">
                   <span>product_name</span>
                   <FileText className="w-3 h-3 text-[var(--color-rose)]" />
@@ -275,11 +271,10 @@ export default function AIParsingDemo() {
               </div>
 
               {/* Field 4: Customer Name */}
-              <div className={`p-3.5 rounded-2xl transition-all duration-200 border ${
-                highlightField === 'customer'
+              <div className={`p-3.5 rounded-2xl transition-all duration-200 border ${highlightField === 'customer'
                   ? 'bg-rose-50 border-[var(--color-rose)] shadow-md scale-[1.02]'
                   : 'bg-white border-[var(--color-border-light)] shadow-xs'
-              }`}>
+                }`}>
                 <div className="flex items-center justify-between text-[10px] text-[var(--color-text-muted)] font-bold uppercase">
                   <span>customer_name</span>
                   <User className="w-3 h-3 text-[var(--color-rose)]" />

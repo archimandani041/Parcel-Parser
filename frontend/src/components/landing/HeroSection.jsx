@@ -1,248 +1,157 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  Sparkles,
-  Scan,
+  Check,
   ArrowRight,
-  Package,
-  CheckCircle2,
-  Cpu,
-  Layers,
-  TrendingUp,
-  Tag,
-  User,
-  Hash
+  Sparkles
 } from 'lucide-react';
-import Hero3DParcel from './Hero3DParcel';
 
 export default function HeroSection() {
   const { t } = useTranslation();
-  const [mouseOffset, setMouseOffset] = useState({ x: 0, y: 0 });
+  const videoRef = useRef(null);
+
+  // Ensure seamless continuous playback in infinite loop
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.play().catch(() => {});
+    }
+  }, []);
+
+  const handleLearnMore = () => {
+    const el = document.getElementById('how-it-works') || document.getElementById('features') || document.getElementById('demo');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   return (
-    <section id="hero" className="relative w-full pt-6 sm:pt-10 pb-16 lg:pb-24 overflow-hidden">
-      {/* Background Decorative Ambient Radials */}
-      <div className="absolute top-0 right-0 w-[550px] h-[550px] rounded-full pointer-events-none -z-10 opacity-60"
-        style={{ background: 'radial-gradient(circle, rgba(174,68,90,0.08) 0%, transparent 70%)' }} />
-      <div className="absolute top-1/3 left-[-100px] w-[500px] h-[500px] rounded-full pointer-events-none -z-10 opacity-50"
-        style={{ background: 'radial-gradient(circle, rgba(69,25,82,0.06) 0%, transparent 70%)' }} />
+    <section id="hero" className="w-full pt-3 sm:pt-4 pb-6 px-4 sm:px-6 lg:px-8">
+      {/* Outer Framed Showcase Card — Full width max-w-7xl matching navbar, compact height */}
+      <div
+        className="max-w-7xl mx-auto relative rounded-2xl sm:rounded-[32px] overflow-hidden border border-[var(--color-navy)]/15 shadow-xl min-h-[360px] sm:min-h-[390px] lg:min-h-[420px] flex items-center justify-center py-6 sm:py-8"
+        style={{
+          background: 'var(--color-bg)',
+          boxShadow: '0 16px 48px rgba(29, 26, 57, 0.09), 0 0 1px rgba(29, 26, 57, 0.2)'
+        }}
+      >
+        {/* 1. Cinematic Background Video — Infinite Seamless Loop */}
+        <video
+          ref={videoRef}
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
+          onEnded={() => {
+            if (videoRef.current) {
+              videoRef.current.currentTime = 0;
+              videoRef.current.play().catch(() => {});
+            }
+          }}
+          className="absolute inset-0 w-full h-full object-cover select-none pointer-events-none transition-opacity duration-700"
+        >
+          <source src="/hero-video.mp4" type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+        {/* 2. Tuned Ambient Light Overlay: centered spotlight for 100% crisp typography */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: `
+              radial-gradient(ellipse 75% 65% at 50% 50%, rgba(253, 245, 244, 0.9) 0%, rgba(253, 245, 244, 0.62) 50%, transparent 85%),
+              linear-gradient(180deg, rgba(253, 245, 244, 0.8) 0%, rgba(253, 245, 244, 0.35) 35%, rgba(253, 245, 244, 0.1) 65%, rgba(253, 245, 244, 0.35) 100%)
+            `
+          }}
+        />
+
+        {/* Subtle decorative radial glow aligned with theme colors */}
+        <div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[260px] rounded-full pointer-events-none -z-0 opacity-25 blur-3xl"
+          style={{
+            background: 'radial-gradient(ellipse, rgba(243, 159, 90, 0.25) 0%, rgba(174, 68, 90, 0.15) 50%, transparent 75%)'
+          }}
+        />
+
+        {/* 3. Hero Content — True Center Alignment (Vertically & Horizontally) */}
+        <div className="relative z-10 w-full max-w-2xl mx-auto px-4 sm:px-6 text-center flex flex-col items-center justify-center my-auto">
           
-          {/* ================= LEFT COLUMN ================= */}
-          <div className="lg:col-span-6 space-y-6 text-left">
-            {/* Top Pill Badge */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wide shadow-xs transition-transform duration-300 hover:scale-105"
+          {/* Feature Checkmark Row (Clean, subtle, matching Arbor reference) */}
+          <div className="flex flex-wrap items-center justify-center gap-3.5 sm:gap-6 md:gap-7 pb-3 sm:pb-4 animate-fade-in">
+            <div className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold tracking-wide text-[var(--color-navy)]/80">
+              <div className="w-3.5 h-3.5 rounded-full border border-[var(--color-navy)]/50 flex items-center justify-center text-[var(--color-navy)] shrink-0">
+                <Check className="w-2.5 h-2.5 stroke-[2.5]" />
+              </div>
+              <span>{t('landing.featureExtraction', 'AI Label Extraction')}</span>
+            </div>
+
+            <div className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold tracking-wide text-[var(--color-navy)]/80">
+              <div className="w-3.5 h-3.5 rounded-full border border-[var(--color-navy)]/50 flex items-center justify-center text-[var(--color-navy)] shrink-0">
+                <Check className="w-2.5 h-2.5 stroke-[2.5]" />
+              </div>
+              <span>{t('landing.featureStock', 'Smart Stock Sync')}</span>
+            </div>
+
+            <div className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold tracking-wide text-[var(--color-navy)]/80">
+              <div className="w-3.5 h-3.5 rounded-full border border-[var(--color-navy)]/50 flex items-center justify-center text-[var(--color-navy)] shrink-0">
+                <Check className="w-2.5 h-2.5 stroke-[2.5]" />
+              </div>
+              <span>{t('landing.featureReconciliation', 'Team Collaboration')}</span>
+            </div>
+          </div>
+
+          {/* Main Headline: Centered, Beautiful Proportional Editorial Serif */}
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[50px] font-serif text-[var(--color-navy)] tracking-tight leading-[1.1] max-w-xl mx-auto text-center">
+            {t('landing.heroSimplify', 'Simplify Your Business')}{' '}
+            <br />
+            <span className="font-serif-italic italic text-[var(--color-navy)]">
+              {t('landing.heroLogistics', 'Logistics')}
+            </span>
+          </h1>
+
+          {/* Supporting Subtitle: Balanced & Centered */}
+          <p className="mt-3 text-xs sm:text-sm md:text-base text-[var(--color-text-secondary)] font-medium max-w-lg mx-auto leading-relaxed text-center">
+            {t(
+              'landing.heroSubtitle',
+              'Track shipments, manage inventory, and gain clarity—all in one powerful AI platform.'
+            )}
+          </p>
+
+          {/* Action Call-to-Action Pill Buttons */}
+          <div className="flex flex-row items-center justify-center gap-3 mt-5">
+            {/* Light / Frosted Glass Pill Button */}
+            <button
+              onClick={handleLearnMore}
+              className="px-5 py-2.5 sm:px-6 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold text-[var(--color-navy)] transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer shadow-xs hover:shadow-md border border-white/80 bg-white/85 hover:bg-white backdrop-blur-md"
+            >
+              {t('landing.learnMore', 'Learn more')}
+            </button>
+
+            {/* Dark Brand Pill Button */}
+            <NavLink
+              to="/upload"
+              className="pill-button-dark px-5 py-2.5 sm:px-7 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold text-white shadow-md transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer flex items-center justify-center gap-1.5 group"
               style={{
-                background: 'rgba(255, 255, 255, 0.85)',
-                border: '1px solid var(--color-border-light)',
-                color: 'var(--color-navy)',
-                backdropFilter: 'blur(12px)'
-              }}>
-              <span className="flex h-2 w-2 rounded-full animate-ping" style={{ background: 'var(--color-rose)' }} />
-              <span className="flex items-center gap-1.5" style={{ color: 'var(--color-rose)' }}>
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                <span>{t('landing.heroBadge', 'AI-Powered Parcel Intelligence')}</span>
-              </span>
-            </div>
-
-            {/* Main Headline */}
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight font-serif text-[var(--color-navy)] leading-[1.12]">
-              Turn Parcel Labels <br />
-              <span className="font-normal italic" style={{ color: 'var(--color-rose)' }}>
-                Into Actionable Data.
-              </span>
-            </h1>
-
-            {/* Supporting Subtitle */}
-            <p className="text-sm sm:text-base lg:text-lg font-medium leading-relaxed max-w-xl text-[var(--color-text-secondary)]">
-              {t(
-                'landing.heroSubtitle',
-                'Extract orders, SKUs, customers, quantities, shipping details and more from any parcel label using AI.'
-              )}
-            </p>
-
-            {/* Action CTAs */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 pt-2">
-              <NavLink
-                to="/upload"
-                className="group relative inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-2xl text-xs sm:text-sm font-extrabold text-white shadow-xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] overflow-hidden cursor-pointer"
-                style={{
-                  background: 'linear-gradient(135deg, var(--color-navy) 0%, var(--color-deep-purple) 100%)',
-                  boxShadow: '0 8px 24px rgba(29, 26, 57, 0.28), 0 0 16px rgba(174, 68, 90, 0.25)'
-                }}
-              >
-                {/* Animated shimmer beam on hover */}
-                <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 pointer-events-none" />
-                <Scan className="w-4 h-4 text-blush-light group-hover:rotate-90 transition-transform duration-300" />
-                <span>{t('landing.heroPrimaryCta', 'Parse Your First Label')}</span>
-              </NavLink>
-
-              <NavLink
-                to="/dashboard"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl text-xs sm:text-sm font-extrabold transition-all duration-200 hover:bg-white/80 active:scale-[0.98] cursor-pointer shadow-xs"
-                style={{
-                  background: 'rgba(255, 255, 255, 0.7)',
-                  border: '1px solid var(--color-border-light)',
-                  color: 'var(--color-navy)',
-                  backdropFilter: 'blur(8px)'
-                }}
-              >
-                <span>{t('landing.heroSecondaryCta', 'Explore Dashboard')}</span>
-                <ArrowRight className="w-4 h-4 text-[var(--color-rose)] transition-transform group-hover:translate-x-1" />
-              </NavLink>
-            </div>
-
-            {/* Value Highlights Pills */}
-            <div className="pt-4 grid grid-cols-1 sm:grid-cols-3 gap-3 border-t border-[var(--color-border-light)] text-[11px] font-bold text-[var(--color-text-secondary)]">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>Zero Manual Typing</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>Gemini Vision AI</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>Stock & RTO Sync</span>
-              </div>
-            </div>
+                background: 'linear-gradient(135deg, var(--color-navy) 0%, var(--color-deep-purple) 100%)',
+                boxShadow: '0 4px 16px rgba(29, 26, 57, 0.22), 0 0 10px rgba(174, 68, 90, 0.12)'
+              }}
+            >
+              <span>{t('landing.tryItFree', 'Try It Free Today')}</span>
+              <ArrowRight className="w-3 h-3 text-blush-light group-hover:translate-x-0.5 transition-transform duration-200" />
+            </NavLink>
           </div>
-
-          {/* ================= RIGHT COLUMN: 3D PARCEL & FLOATING CARDS ================= */}
-          <div className="lg:col-span-6 relative flex items-center justify-center">
-            {/* Ambient Background Aura */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none -z-10">
-              <div className="w-[360px] sm:w-[460px] h-[360px] sm:h-[460px] rounded-full blur-3xl opacity-35"
-                style={{ background: 'radial-gradient(circle, var(--color-rose) 0%, transparent 70%)' }} />
-            </div>
-
-            {/* 3D Parcel Canvas Wrapper */}
-            <div className="w-full max-w-[500px] h-[440px] sm:h-[480px] relative">
-              <Hero3DParcel onMouseCoords={setMouseOffset} />
-
-              {/* --- Floating Extracted Card 1: Order ID (Top Left) --- */}
-              <div
-                className="absolute -top-3 -left-2 sm:-left-6 p-2.5 sm:p-3 rounded-2xl shadow-lg transition-transform duration-300 pointer-events-none select-none animate-float"
-                style={{
-                  background: 'rgba(255, 255, 255, 0.94)',
-                  border: '1px solid var(--color-border-light)',
-                  backdropFilter: 'blur(16px)',
-                  transform: `translate3d(${mouseOffset.x * -18}px, ${mouseOffset.y * -18}px, 0)`,
-                  boxShadow: '0 10px 30px rgba(29, 26, 57, 0.12)'
-                }}
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-xl flex items-center justify-center text-white text-[10px] font-bold shadow-xs"
-                    style={{ background: 'linear-gradient(135deg, var(--color-navy), var(--color-deep-purple))' }}>
-                    <Hash className="w-3.5 h-3.5 text-blush-light" />
-                  </div>
-                  <div>
-                    <span className="block text-[9px] uppercase tracking-wider font-extrabold text-[var(--color-text-muted)]">Order ID</span>
-                    <span className="font-mono text-xs font-bold text-[var(--color-navy)]">#OD3379524675</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* --- Floating Extracted Card 2: SKU & Product (Top Right) --- */}
-              <div
-                className="absolute -top-2 -right-2 sm:-right-6 p-2.5 sm:p-3 rounded-2xl shadow-lg transition-transform duration-300 pointer-events-none select-none animate-float"
-                style={{
-                  animationDelay: '1.2s',
-                  background: 'rgba(255, 255, 255, 0.94)',
-                  border: '1px solid var(--color-border-light)',
-                  backdropFilter: 'blur(16px)',
-                  transform: `translate3d(${mouseOffset.x * 22}px, ${mouseOffset.y * 22}px, 0)`,
-                  boxShadow: '0 10px 30px rgba(29, 26, 57, 0.12)'
-                }}
-              >
-                <div className="flex items-center gap-2.5">
-                  <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-full"
-                    style={{ color: 'var(--color-rose)', background: 'var(--color-accent-light)', border: '1px solid var(--color-accent-muted)' }}>
-                    D01
-                  </span>
-                  <div>
-                    <span className="block text-[9px] uppercase tracking-wider font-extrabold text-[var(--color-text-muted)]">Verified SKU</span>
-                    <span className="text-xs font-bold text-[var(--color-navy)]">White Sadi</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* --- Floating Extracted Card 3: Customer (Middle Right) --- */}
-              <div
-                className="absolute top-1/2 -translate-y-1/2 -right-4 sm:-right-8 p-2.5 sm:p-3 rounded-2xl shadow-lg transition-transform duration-300 pointer-events-none select-none animate-float"
-                style={{
-                  animationDelay: '0.6s',
-                  background: 'rgba(255, 255, 255, 0.94)',
-                  border: '1px solid var(--color-border-light)',
-                  backdropFilter: 'blur(16px)',
-                  transform: `translate3d(${mouseOffset.x * 16}px, ${mouseOffset.y * 16}px, 0)`,
-                  boxShadow: '0 10px 30px rgba(29, 26, 57, 0.12)'
-                }}
-              >
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-lg flex items-center justify-center text-xs" style={{ background: 'var(--color-accent-light)' }}>
-                    <User className="w-3.5 h-3.5 text-[var(--color-rose)]" />
-                  </div>
-                  <div>
-                    <span className="block text-[9px] uppercase tracking-wider font-extrabold text-[var(--color-text-muted)]">Customer</span>
-                    <span className="text-xs font-bold text-[var(--color-navy)]">Dr Jayakumar Sharma</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* --- Floating Extracted Card 4: Quantity & Live Stock (Bottom Left) --- */}
-              <div
-                className="absolute -bottom-3 -left-2 sm:-left-6 p-2.5 sm:p-3 rounded-2xl shadow-lg transition-transform duration-300 pointer-events-none select-none animate-float"
-                style={{
-                  animationDelay: '1.8s',
-                  background: 'rgba(255, 255, 255, 0.94)',
-                  border: '1px solid var(--color-border-light)',
-                  backdropFilter: 'blur(16px)',
-                  transform: `translate3d(${mouseOffset.x * -20}px, ${mouseOffset.y * -20}px, 0)`,
-                  boxShadow: '0 10px 30px rgba(29, 26, 57, 0.12)'
-                }}
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-xl flex items-center justify-center text-xs font-bold"
-                    style={{ background: 'var(--color-success-light)', color: 'var(--color-success)', border: '1px solid var(--color-success-border)' }}>
-                    1×
-                  </div>
-                  <div>
-                    <span className="block text-[9px] uppercase tracking-wider font-extrabold text-[var(--color-text-muted)]">Qty / Inventory</span>
-                    <span className="text-xs font-bold text-emerald-700">Stock Deducted: 1 Unit</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* --- Floating Extracted Card 5: Return / Realized Profit (Bottom Right) --- */}
-              <div
-                className="absolute -bottom-4 -right-2 sm:-right-4 p-2.5 sm:p-3 rounded-2xl shadow-lg transition-transform duration-300 pointer-events-none select-none animate-float"
-                style={{
-                  animationDelay: '2.4s',
-                  background: 'rgba(255, 255, 255, 0.94)',
-                  border: '1px solid var(--color-border-light)',
-                  backdropFilter: 'blur(16px)',
-                  transform: `translate3d(${mouseOffset.x * 14}px, ${mouseOffset.y * 14}px, 0)`,
-                  boxShadow: '0 10px 30px rgba(29, 26, 57, 0.12)'
-                }}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full"
-                    style={{ color: 'var(--color-rose)', background: 'var(--color-danger-light)', border: '1px solid var(--color-danger-border)' }}>
-                    Customer Return
-                  </span>
-                  <span className="text-xs font-mono font-bold text-[var(--color-navy)]">Net: +₹400</span>
-                </div>
-              </div>
-
-            </div>
-          </div>
-
         </div>
+
+        {/* 4. Subtle Live Status Badge */}
+        <div className="absolute bottom-3 left-4 sm:bottom-4 sm:left-6 pointer-events-none z-20">
+          <div className="pointer-events-auto hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold text-[var(--color-navy)] bg-white/65 backdrop-blur-md border border-[var(--color-border-light)]/60 shadow-xs">
+            <span className="w-1.5 h-1.5 rounded-full animate-ping" style={{ background: 'var(--color-rose)' }} />
+            <Sparkles className="w-2.5 h-2.5 text-[var(--color-rose)]" />
+            <span>Gemini Vision AI Engine Active</span>
+          </div>
+        </div>
+
       </div>
     </section>
   );
