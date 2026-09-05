@@ -473,5 +473,27 @@
     "includeRawDesc": "मूल AI पेलोड जोड़ता है",
     "preparing": "फ़ाइल तैयार हो रही है...",
     "exported": "निर्यात पूरा हुआ!"
+  },
+  "landing": {
+    "heroBadge": "AI-संचालित पार्सल इंटेलिजेंस",
+    "heroTitle": "पार्सल लेबलों को",
+    "heroTitleHighlight": "सटीक डेटा में बदलें।",
+    "heroSubtitle": "AI का उपयोग करके किसी भी पार्सल लेबल से ऑर्डर, SKU, ग्राहक, मात्रा और शिपिंग विवरण तुरंत निकालें।",
+    "heroPrimaryCta": "अपना पहला लेबल स्कैन करें",
+    "heroSecondaryCta": "डैशबोर्ड देखें",
+    "finalCtaTitle": "अपने पार्सल संचालन को",
+    "finalCtaHighlight": "सरल बनाने के लिए तैयार हैं?",
+    "finalCtaSubtitle": "लेबल अपलोड करें और ParcelAI को इसे ऑर्डर, स्टॉक और रिटर्न के लिए संरचित डेटा में बदलने दें।",
+    "uploadLabelNow": "अभी लेबल अपलोड करें",
+    "viewDashboard": "डैशबोर्ड देखें"
+  },
+  "landingNav": {
+    "howItWorks": "यह कैसे काम करता है",
+    "demo": "एआई डेमो",
+    "features": "विशेषताएं",
+    "preview": "लाइव पूर्वावलोकन",
+    "value": "पार्सलएआई क्यों",
+    "openDashboard": "डैशबोर्ड खोलें",
+    "launchApp": "ऐप शुरू करें"
   }
 }

@@ -21,7 +21,7 @@ export default function Navbar({ title = 'Parcel Information Extractor', healthI
   const [pillStyle, setPillStyle] = useState({});
 
   const navItems = [
-    { path: '/', label: t('nav.dashboard'), icon: LayoutDashboard },
+    { path: '/dashboard', label: t('nav.dashboard'), icon: LayoutDashboard },
     { path: '/upload', label: t('nav.uploadLabel'), icon: UploadCloud, badge: 'AI' },
     { path: '/orders', label: t('nav.orders'), icon: Package },
     { path: '/stock', label: t('nav.stock'), icon: Boxes },

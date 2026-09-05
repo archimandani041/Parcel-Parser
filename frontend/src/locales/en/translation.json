@@ -471,5 +471,27 @@
     "includeRawDesc": "Appends original raw AI payloads to output document",
     "preparing": "Preparing File...",
     "exported": "Exported!"
+  },
+  "landing": {
+    "heroBadge": "AI-Powered Parcel Intelligence",
+    "heroTitle": "Turn Parcel Labels",
+    "heroTitleHighlight": "Into Actionable Data.",
+    "heroSubtitle": "Extract orders, SKUs, customers, quantities, shipping details and more from any parcel label using AI.",
+    "heroPrimaryCta": "Parse Your First Label",
+    "heroSecondaryCta": "Explore Dashboard",
+    "finalCtaTitle": "Ready to Simplify Your",
+    "finalCtaHighlight": "Parcel Operations?",
+    "finalCtaSubtitle": "Upload a label and let ParcelAI turn it into structured, actionable data for orders, stock, and returns.",
+    "uploadLabelNow": "Upload Label Now",
+    "viewDashboard": "Explore Dashboard"
+  },
+  "landingNav": {
+    "howItWorks": "How It Works",
+    "demo": "AI Demo",
+    "features": "Features",
+    "preview": "Live Preview",
+    "value": "Why ParcelAI",
+    "openDashboard": "Open Dashboard",
+    "launchApp": "Launch App"
   }
 }

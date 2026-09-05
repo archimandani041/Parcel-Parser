@@ -474,5 +474,27 @@
     "includeRawDesc": "મૂળ AI પેલોડ ઉમેરે છે",
     "preparing": "ફાઇલ તૈયાર થઈ રહી છે...",
     "exported": "એક્સપોર્ટ થયું!"
+  },
+  "landing": {
+    "heroBadge": "AI-સંચાલિત પાર્સલ ઇન્ટેલિજન્સ",
+    "heroTitle": "પાર્સલ લેબલ્સને",
+    "heroTitleHighlight": "સચોટ ડેટામાં ફેરવો.",
+    "heroSubtitle": "AI નો ઉપયોગ કરીને કોઈપણ પાર્સલ લેબલમાંથી ઓર્ડર, SKU, ગ્રાહક, જથ્થો અને શિપિંગ વિગતો તરત મેળવો.",
+    "heroPrimaryCta": "તમારું પ્રથમ લેબલ સ્કેન કરો",
+    "heroSecondaryCta": "ડેશબોર્ડ જુઓ",
+    "finalCtaTitle": "તમારી પાર્સલ કામગીરીને",
+    "finalCtaHighlight": "સરળ બનાવવા તૈયાર છો?",
+    "finalCtaSubtitle": "લેબલ અપલોડ કરો અને ParcelAI ને તેને ઓર્ડર, સ્ટોક અને રિટર્ન માટે સંગઠિત ડેટામાં રૂપાંતરિત કરવા દો.",
+    "uploadLabelNow": "હમણાં લેબલ અપલોડ કરો",
+    "viewDashboard": "ડેશબોર્ડ જુઓ"
+  },
+  "landingNav": {
+    "howItWorks": "કેવી રીતે કામ કરે છે",
+    "demo": "એઆઈ ડેમો",
+    "features": "સુવિધાઓ",
+    "preview": "લાઈવ પ્રીવ્યૂ",
+    "value": "શા માટે પાર્સલએઆઈ",
+    "openDashboard": "ડેશબોર્ડ ખોલો",
+    "launchApp": "એપ શરૂ કરો"
   }
 }

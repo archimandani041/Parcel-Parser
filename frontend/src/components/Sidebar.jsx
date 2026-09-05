@@ -19,7 +19,7 @@ export default function Sidebar({ healthInfo }) {
   const { t } = useTranslation();
 
   const navItems = [
-    { path: '/', label: t('nav.dashboard'), icon: LayoutDashboard, badge: null },
+    { path: '/dashboard', label: t('nav.dashboard'), icon: LayoutDashboard, badge: null },
     { path: '/upload', label: t('nav.uploadLabel'), icon: UploadCloud, badge: 'AI' },
     { path: '/orders', label: t('nav.orders'), icon: Package, badge: null },
     { path: '/stock', label: t('nav.stock'), icon: Boxes, badge: null },

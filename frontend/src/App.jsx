@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
+import LandingPage from './pages/LandingPage';
 import Upload from './pages/Upload';
 import DocumentsList from './pages/DocumentsList';
 import DocumentDetail from './pages/DocumentDetail';
@@ -22,7 +23,8 @@ function AppRoutes() {
   return (
     <PageTransition>
       <Routes>
-        <Route path="/" element={<Dashboard />} />
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/upload" element={<Upload />} />
         <Route path="/orders" element={<Orders />} />
         <Route path="/stock" element={<Stock />} />
