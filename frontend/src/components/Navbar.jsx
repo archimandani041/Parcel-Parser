@@ -31,30 +31,41 @@ export default function Navbar({ title = 'Parcel Information Extractor', healthI
 
   /* ─── Sliding Pill Indicator Logic ─── */
   useEffect(() => {
-    const activeRef = navItemRefs.current[location.pathname];
-    const container = navContainerRef.current;
-    if (activeRef && container) {
-      const containerRect = container.getBoundingClientRect();
-      const itemRect = activeRef.getBoundingClientRect();
-      setPillStyle({
-        left: `${itemRect.left - containerRect.left}px`,
-        width: `${itemRect.width}px`,
-        opacity: 1,
-      });
-    }
+    const updatePill = () => {
+      const activeRef = navItemRefs.current[location.pathname];
+      const container = navContainerRef.current;
+      if (activeRef && container) {
+        const containerRect = container.getBoundingClientRect();
+        const itemRect = activeRef.getBoundingClientRect();
+        setPillStyle({
+          left: `${itemRect.left - containerRect.left}px`,
+          width: `${itemRect.width}px`,
+          opacity: 1,
+        });
+      }
+    };
+
+    updatePill();
+    window.addEventListener('resize', updatePill);
+    return () => window.removeEventListener('resize', updatePill);
   }, [location.pathname]);
 
   return (
     <>
       {/* ===== TOP NAVIGATION HEADER ===== */}
-      <header className="sticky top-4 z-40 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="floating-navbar rounded-2xl px-5 py-3 sm:px-6 sm:py-3.5 flex items-center justify-between gap-4 transition-all duration-300 shadow-lg"
-          style={{
-            background: 'rgba(253, 245, 244, 0.96)',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid var(--color-border-light)',
-            boxShadow: '0 8px 32px rgba(29, 26, 57, 0.08)'
-          }}>
+      <header className="sticky top-0 z-40 w-full py-3 transition-all duration-300"
+        style={{
+          background: 'rgba(253, 245, 244, 0.95)',
+          backdropFilter: 'blur(16px)',
+        }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="floating-navbar rounded-2xl px-5 py-3 sm:px-6 sm:py-3.5 flex items-center justify-between gap-4 transition-all duration-300 shadow-lg"
+            style={{
+              background: 'rgba(253, 245, 244, 0.96)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid var(--color-border-light)',
+              boxShadow: '0 8px 32px rgba(29, 26, 57, 0.08)'
+            }}>
 
           {/* Left: Brand Logo */}
           <NavLink to="/" className="flex items-center gap-2.5 group shrink-0 transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]">
@@ -152,9 +163,9 @@ export default function Navbar({ title = 'Parcel Information Extractor', healthI
               <span>{t('nav.parseLabel')}</span>
             </NavLink>
           </div>
-
         </div>
-      </header>
+      </div>
+    </header>
 
       {/* ===== FIXED MOBILE Navigation Bar ===== */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 px-3 py-2 flex items-center justify-around"

@@ -170,7 +170,8 @@ export const orderRecordService = {
     try {
       let query = supabase.from('order_records').select('*').order('created_at', { ascending: false });
       if (search && search.trim()) {
-        query = query.ilike('order_id', `%${search.trim()}%`);
+        const s = search.trim();
+        query = query.or(`order_id.ilike.%${s}%,customer_name.ilike.%${s}%,sku_id.ilike.%${s}%,product_name.ilike.%${s}%,return_type.ilike.%${s}%`);
       }
       const { data, error } = await query;
       if (error) {

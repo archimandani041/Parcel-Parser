@@ -13,17 +13,19 @@ export default function Layout({ children, title }) {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col font-sans relative overflow-x-hidden" style={{ background: 'var(--color-bg)' }}>
+    <div className="min-h-screen flex flex-col font-sans relative" style={{ background: 'var(--color-bg)' }}>
       {/* Background Floating Ambient Particles */}
       <Ambient3DElements />
 
-      {/* Warm Ambient Glow Orbs — palette-derived */}
-      <div className="fixed top-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full pointer-events-none -z-10"
-        style={{ background: 'radial-gradient(circle, rgba(174,68,90,0.05) 0%, transparent 70%)' }} />
-      <div className="fixed bottom-[-10%] left-[-5%] w-[500px] h-[500px] rounded-full pointer-events-none -z-10"
-        style={{ background: 'radial-gradient(circle, rgba(232,188,185,0.4) 0%, transparent 70%)' }} />
-      <div className="fixed top-[40%] left-[30%] w-[400px] h-[400px] rounded-full pointer-events-none -z-10"
-        style={{ background: 'radial-gradient(circle, rgba(69,25,82,0.04) 0%, transparent 70%)' }} />
+      {/* Warm Ambient Glow Orbs — palette-derived, contained safely without causing scrollbars */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
+        <div className="absolute top-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full"
+          style={{ background: 'radial-gradient(circle, rgba(174,68,90,0.05) 0%, transparent 70%)' }} />
+        <div className="absolute bottom-[-10%] left-[-5%] w-[500px] h-[500px] rounded-full"
+          style={{ background: 'radial-gradient(circle, rgba(232,188,185,0.4) 0%, transparent 70%)' }} />
+        <div className="absolute top-[40%] left-[30%] w-[400px] h-[400px] rounded-full"
+          style={{ background: 'radial-gradient(circle, rgba(69,25,82,0.04) 0%, transparent 70%)' }} />
+      </div>
 
       {/* Top Floating Navbar Header */}
       <Navbar title={title} healthInfo={healthInfo} />
