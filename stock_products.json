@@ -7,5 +7,14 @@
     "selling_price": 800,
     "updated_at": "2026-09-05T06:44:58.162Z",
     "product_name": "Product"
+  },
+  {
+    "id": "sp_1790857184483",
+    "created_at": "2026-10-01T12:19:44.483Z",
+    "sku_id": "MOBILE-HOLDER",
+    "purchase_price": null,
+    "selling_price": null,
+    "updated_at": "2026-10-01T12:20:23.494Z",
+    "product_name": "mobile holder"
   }
 ]

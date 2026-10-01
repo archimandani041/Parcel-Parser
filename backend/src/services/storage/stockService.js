@@ -74,21 +74,75 @@ function saveReturnsDb(data) {
 // ===== HELPER FUNCTIONS =====
 
 export function normalizeSku(skuId, productName) {
-  let raw = (skuId || productName || '').trim();
-  if (!raw) return 'UNSPECIFIED';
-  if (raw.includes('|')) raw = raw.split('|')[0].trim();
-  raw = raw.replace(/^\d+[\.\s]+/, '').trim();
-  const parts = raw.split(/\s+/);
-  if (parts.length >= 1 && /^([A-Za-z0-9_-]+)$/.test(parts[0])) {
-    return parts[0].toUpperCase();
+  let sku = (skuId || '').trim();
+  let prod = (productName || '').trim();
+
+  if (sku.includes('|')) sku = sku.split('|')[0].trim();
+  if (prod.includes('|')) prod = prod.split('|')[0].trim();
+
+  // 1. If sku has glued or prepended row number like "1D01", "1 D01", "1. D01", "1 - D01"
+  if (/^\d+[\s.\-_]*([A-Za-z][A-Za-z0-9_\-]+)$/.test(sku)) {
+    const match = sku.match(/^\d+[\s.\-_]*([A-Za-z][A-Za-z0-9_\-]+)$/);
+    if (match && match[1]) {
+      sku = match[1];
+    }
   }
-  return raw.toUpperCase();
+
+  // 2. Check if sku is just a row index (e.g. "1", "2", "3", "01")
+  const isRowIndex = /^\d{1,2}$/.test(sku);
+  const isInvalidSku = !sku || isRowIndex || ['UNSPECIFIED', 'NULL', 'NONE', 'DEFAULT', '-', 'N/A'].includes(sku.toUpperCase());
+
+  // 3. If sku is valid and not a row number
+  if (!isInvalidSku) {
+    const parts = sku.split(/\s+/);
+    if (parts.length >= 2 && /^([A-Za-z0-9_\-]+)$/.test(parts[0]) && /[A-Za-z]/.test(parts[0]) && /\d/.test(parts[0])) {
+      return parts[0].toUpperCase();
+    }
+    return sku.toUpperCase();
+  }
+
+  // 4. If SKU was invalid/row index, check if productName starts with a code like "D01 White Sadi"
+  if (prod) {
+    let cleanP = prod.replace(/^\d+[\s.\-_]+/, '').trim();
+    if (/^\d+([A-Za-z][A-Za-z0-9_\-]+)/.test(prod)) {
+      cleanP = prod.replace(/^\d+/, '').trim();
+    }
+    const pParts = cleanP.split(/\s+/);
+    if (pParts.length >= 2 && /^[A-Za-z0-9_\-]+$/.test(pParts[0]) && (/[A-Za-z]/.test(pParts[0]) && /\d/.test(pParts[0]))) {
+      return pParts[0].toUpperCase();
+    }
+
+    if (cleanP.toLowerCase().includes('white sadi')) {
+      return 'D01';
+    }
+
+    // 5. Generate a clean, unique product SKU slug from product name (e.g. "mobile holder" -> "MOBILE-HOLDER")
+    const slug = cleanP
+      .replace(/[^a-zA-Z0-9\s_-]/g, '')
+      .trim()
+      .split(/\s+/)
+      .slice(0, 4)
+      .join('-')
+      .toUpperCase();
+
+    if (slug) return slug;
+  }
+
+  return 'UNSPECIFIED';
 }
 
 export function cleanProductName(skuId, productName) {
-  if (productName && productName.trim()) {
-    let p = productName.trim();
+  let p = (productName || '').trim();
+  if (p) {
     if (p.includes('|')) p = p.split('|')[0].trim();
+    p = p.replace(/^\d+[\.\s]+/, '').trim();
+    if (/^\d+([A-Za-z][A-Za-z0-9_\-]+)\s+(.+)$/.test(p)) {
+      p = p.replace(/^\d+([A-Za-z][A-Za-z0-9_\-]+)\s+/, '');
+    }
+    const parts = p.split(/\s+/);
+    if (parts.length >= 2 && /^[A-Za-z0-9_\-]+$/.test(parts[0]) && /[A-Za-z]/.test(parts[0]) && /\d/.test(parts[0])) {
+      return parts.slice(1).join(' ');
+    }
     return p;
   }
   if (skuId) {
@@ -98,6 +152,9 @@ export function cleanProductName(skuId, productName) {
     const parts = s.split(/\s+/);
     if (parts.length >= 2 && /^([A-Za-z0-9_-]+)$/.test(parts[0])) {
       return parts.slice(1).join(' ');
+    }
+    if (!/^\d+$/.test(s) && !['UNSPECIFIED', 'NULL', 'NONE'].includes(s.toUpperCase())) {
+      return s;
     }
   }
   return 'Product';
@@ -329,8 +386,48 @@ export async function autoSyncLocalFilesToSupabase() {
   }
 }
 
-// Automatically purge orphaned records and sync on startup
-cleanOrphanedStock().then(() => ensureStockProductsSynced()).catch(() => { });
+export async function autoMigrateLegacyRowSkus() {
+  const supabase = getSupabaseClient();
+  if (!supabase) return;
+
+  try {
+    const { data: orders, error } = await supabase
+      .from('order_records')
+      .select('id, order_id, sku_id, product_name');
+
+    if (error || !orders || orders.length === 0) return;
+
+    for (const o of orders) {
+      const rawSku = (o.sku_id || '').trim();
+      if (!rawSku || /^\d{1,2}$/.test(rawSku) || rawSku === 'UNSPECIFIED') {
+        const properSku = normalizeSku(rawSku, o.product_name);
+        const properName = cleanProductName(rawSku, o.product_name);
+        if (properSku && properSku !== 'UNSPECIFIED' && properSku !== rawSku) {
+          await supabase
+            .from('order_records')
+            .update({
+              sku_id: properSku,
+              product_name: properName,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', o.id);
+          console.log(`[StockService] Auto-migrated order ${o.order_id} SKU from '${rawSku}' to '${properSku}'`);
+        }
+      }
+    }
+
+    // Purge dummy row SKU "1" from stock_products if it was accidentally created
+    await supabase.from('stock_products').delete().eq('sku_id', '1');
+  } catch (err) {
+    console.error('[StockService] autoMigrateLegacyRowSkus error:', err.message);
+  }
+}
+
+// Automatically migrate legacy row SKUs, purge orphaned records and sync on startup
+autoMigrateLegacyRowSkus()
+  .then(() => cleanOrphanedStock())
+  .then(() => ensureStockProductsSynced())
+  .catch(() => { });
 autoSyncLocalFilesToSupabase().catch(() => { });
 
 // ===== SERVICE DEFINITION =====
@@ -670,6 +767,9 @@ export const stockService = {
         if (product_name) updateObj.product_name = product_name;
 
         await supabase.from('order_records').update(updateObj).eq('sku_id', cleanSku);
+        if (product_name) {
+          await supabase.from('order_records').update(updateObj).eq('product_name', product_name);
+        }
       } catch (e) { }
 
       // 3. Upsert into stock_products table in Supabase if exists

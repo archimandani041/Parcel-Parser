@@ -206,20 +206,64 @@ export function sanitizeExtractedJson(json, documentText = '') {
         let rawSku = cleanString(item.sku_id) || '';
         let rawProd = cleanString(item.product_name) || '';
 
-        // Split combined SKU like "D01 White Sadi | Floral Print"
-        if (rawSku && (rawSku.includes(' ') || rawSku.includes('|'))) {
+        // Clean pipe from rawProd
+        if (rawProd && rawProd.includes('|')) {
+          rawProd = rawProd.split('|')[0].trim();
+        }
+
+        // Clean pipe from rawSku
+        if (rawSku && rawSku.includes('|')) {
           const pipeParts = rawSku.split('|').map(p => p.trim()).filter(Boolean);
-          const mainPart = pipeParts[0] || '';
-          const words = mainPart.split(/\s+/);
+          rawSku = pipeParts[0] || '';
+        }
+
+        // 1. Detect glued row number + SKU code like "1D01" or "1 D01"
+        if (/^\d+[\s.\-_]*([A-Za-z][A-Za-z0-9_\-]+)$/.test(rawSku)) {
+          const match = rawSku.match(/^\d+[\s.\-_]*([A-Za-z][A-Za-z0-9_\-]+)$/);
+          if (match && match[1]) rawSku = match[1];
+        }
+
+        // 2. Reject pure row indices (e.g. "1", "2", "3") - table row numbers are NOT SKUs!
+        if (/^\d{1,2}$/.test(rawSku.trim())) {
+          rawSku = '';
+        }
+
+        // 3. Inspect rawProd if it has glued row number or SKU prefix
+        if (rawProd) {
+          // If rawProd is like "1D01 White Sadi" or "1 D01 White Sadi"
+          const gluedMatch = rawProd.match(/^\d+[\s.\-_]*([A-Za-z][A-Za-z0-9_\-]+)\s+(.+)$/);
+          if (gluedMatch) {
+            if (!rawSku) rawSku = gluedMatch[1];
+            rawProd = gluedMatch[2];
+          } else {
+            // Strip leading table row numbers like "1 mobile holder" or "1. ajrakh wine"
+            rawProd = rawProd.replace(/^\d+[\.\s]+/, '').trim();
+            const words = rawProd.split(/\s+/);
+            if (words.length >= 2 && /^[A-Za-z0-9_\-]+$/.test(words[0]) && /[A-Za-z]/.test(words[0]) && /\d/.test(words[0])) {
+              if (!rawSku) rawSku = words[0];
+              rawProd = words.slice(1).join(' ');
+            }
+          }
+        }
+
+        // 4. Split combined rawSku like "D01 White Sadi"
+        if (rawSku && rawSku.includes(' ')) {
+          const words = rawSku.split(/\s+/);
           if (words.length >= 2 && /^[A-Za-z0-9_\-]+$/.test(words[0])) {
             rawSku = words[0];
             if (!rawProd) rawProd = words.slice(1).join(' ');
           }
         }
 
-        // Split product_name if it has a pipe
-        if (rawProd && rawProd.includes('|')) {
-          rawProd = rawProd.split('|')[0].trim();
+        // 5. If no SKU code but product name exists, derive a unique product SKU slug so items never merge
+        if (!rawSku && rawProd) {
+          rawSku = rawProd
+            .replace(/[^a-zA-Z0-9\s_-]/g, '')
+            .trim()
+            .split(/\s+/)
+            .slice(0, 4)
+            .join('-')
+            .toUpperCase();
         }
 
         const purchase = verifyPriceInDocument(cleanNumber(item.purchase_price));

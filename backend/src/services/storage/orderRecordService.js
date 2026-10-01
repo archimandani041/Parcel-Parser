@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
-import { cleanOrphanedStock } from './stockService.js';
+import { cleanOrphanedStock, normalizeSku, cleanProductName } from './stockService.js';
 
 // Load .env from backend folder or root folder
 dotenv.config({ path: path.resolve(process.cwd(), 'backend/.env') });
@@ -83,27 +83,13 @@ export const orderRecordService = {
         orderId = `ORD_${documentId ? documentId.slice(0, 8) : Date.now()}_P${index + 1}`;
       }
 
-      // Aggregate SKUs and Product Names
+      // Aggregate SKUs and Product Names using robust normalizers
       const skuList = items.map(i => {
-        let s = i.sku_id ? String(i.sku_id).trim() : '';
-        if (s.includes('|')) s = s.split('|')[0].trim();
-        s = s.replace(/^\d+[\.\s]+/, '').trim();
-        const words = s.split(/\s+/);
-        if (words.length >= 2 && /^([A-Za-z0-9_-]+)$/.test(words[0])) return words[0];
-        return s;
-      }).filter(Boolean);
+        return normalizeSku(i.sku_id, i.product_name);
+      }).filter(s => s && s !== 'UNSPECIFIED');
 
       const productNameList = items.map(i => {
-        let p = i.product_name ? String(i.product_name).trim() : '';
-        if ((!p || p === i.sku_id) && i.sku_id) {
-          let s = String(i.sku_id).trim();
-          if (s.includes('|')) s = s.split('|')[0].trim();
-          s = s.replace(/^\d+[\.\s]+/, '').trim();
-          const words = s.split(/\s+/);
-          if (words.length >= 2 && /^([A-Za-z0-9_-]+)$/.test(words[0])) p = words.slice(1).join(' ');
-        }
-        if (p.includes('|')) p = p.split('|')[0].trim();
-        return p;
+        return cleanProductName(i.sku_id, i.product_name);
       }).filter(Boolean);
 
       const skuIdStr = skuList.length > 0 ? skuList.join(' | ') : null;

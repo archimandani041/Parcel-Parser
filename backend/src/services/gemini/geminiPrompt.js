@@ -34,11 +34,20 @@ RULE 2 — DOCUMENT VALIDATION:
   { "is_valid_document": false, "rejection_reason": "Description of why this is not a valid order document", "labels": [] }
 
 RULE 3 — SKU vs PRODUCT NAME:
-  The SKU ID is a short code (e.g. SKU-123, ITEM-A).
-  If you see text like "D01 White Sadi | Outzy Printed...":
+  The SKU ID is a short code (e.g. D01, SKU-123, DPS24SIDU0838).
+  - CRITICAL: TABLE ROW NUMBERS (1, 2, 3...) ARE NOT SKUs!
+    On shipping labels (such as E-Kart, Flipkart, Amazon, Delhivery, Meesho), table rows start with a row number (e.g. 1, 2, 3) or row number prefixed to text (e.g. "1D01 White Sadi", "1 mobile holder | ...", "1 ajrakh wine | ...", "1 ajrakh white | ...").
+    NEVER extract a row number (like "1", "2", "3") as the sku_id. Single digit/small row numbers are NOT SKUs!
+  - If you see text like "1D01 White Sadi | Outzy Printed...":
+    The "1" is the row number.
     sku_id = "D01"
     product_name = "White Sadi"
-  Extract ONLY the short code as sku_id, and the clean title as product_name.
+  - If you see text like "1 mobile holder | Guider..." or "1 ajrakh wine | ...":
+    The "1" is the row number.
+    Extract the clean product title as product_name (e.g. "mobile holder", "ajrakh wine").
+    If NO separate alphanumeric code like "D01" is printed, do NOT extract "1" as sku_id. Set sku_id = null (or the clean product name). NEVER use row numbers as sku_id.
+  - MULTIPLE PRODUCTS IN PDF:
+    If a PDF contains multiple different products across pages or within an order (e.g. mobile cover, ajrakh wine, saree), extract EACH product with its distinct product_name. NEVER merge different products or give them the same generic row number.
 
 RULE 4 — CRITICAL PRICE RULE:
   Standard e-commerce shipping labels (like E-Kart, Flipkart, Amazon, Delhivery, Meesho shipping labels) feature an item table with columns: [SKU ID | Description | QTY].
