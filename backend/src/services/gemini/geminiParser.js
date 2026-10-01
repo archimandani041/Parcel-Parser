@@ -484,28 +484,96 @@ export async function parseDocumentWithGemini(fileBuffer, mimeType, fileName = '
         };
       }
 
-      // On quota exhaustion → return error immediately (no fake fallback)
-      if (
+      // Handle 503 / overloaded / high demand — retry with backoff before moving to next model
+      const isOverloaded =
+        err.status === 503 ||
+        err.message?.includes('503') ||
+        err.message?.includes('overloaded') ||
+        err.message?.includes('high demand') ||
+        err.message?.includes('UNAVAILABLE') ||
+        err.message?.includes('temporarily');
+
+      const isRateLimited =
         err.status === 429 ||
         err.message?.includes('429') ||
-        err.message?.includes('RESOURCE_EXHAUSTED')
-      ) {
-        console.warn('[Gemini Parser] Quota limit (429) — returning error.');
-        return {
-          raw_response: { model: modelName, text: '', error: 'API quota exhausted' },
-          structured_json: {
-            is_valid_document: false,
-            rejection_reason: 'Gemini API quota exhausted (429). Please wait a moment or try another API key.',
-            labels: []
-          },
-          processing_time: Date.now() - startTime,
-          model_used: modelName,
-          file_type: isPdf ? 'application/pdf' : (mimeType || 'image/jpeg'),
-          is_pdf: isPdf,
-          pdf_pages: pdfPageCount
-        };
+        err.message?.includes('RESOURCE_EXHAUSTED');
+
+      if (isOverloaded || isRateLimited) {
+        // Retry same model up to 2 times with increasing delay
+        let retrySuccess = false;
+        for (let retry = 1; retry <= 2; retry++) {
+          const delayMs = (isRateLimited ? 3000 : 2000) * retry;
+          console.log(`[Gemini Parser] ${isRateLimited ? '429 Rate Limited' : '503 Overloaded'} — retrying '${modelName}' in ${delayMs}ms (attempt ${retry}/2)...`);
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+
+          try {
+            const retryResponse = await withTimeout(
+              ai.models.generateContent({
+                model: modelName,
+                contents: [{ role: 'user', parts }],
+                config: {
+                  systemInstruction: PARCEL_PARSER_SYSTEM_INSTRUCTION,
+                  responseMimeType: 'application/json',
+                  temperature: 0.0,
+                  maxOutputTokens: 4096
+                }
+              }),
+              75000,
+              `Gemini API retry timed out for model '${modelName}'`
+            );
+
+            // If retry succeeded, process the response
+            const retryText = retryResponse.text || '';
+            let cleanedRetryText = retryText.trim();
+            if (cleanedRetryText.startsWith('```json')) {
+              cleanedRetryText = cleanedRetryText.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
+            } else if (cleanedRetryText.startsWith('```')) {
+              cleanedRetryText = cleanedRetryText.replace(/^```\s*/, '').replace(/```\s*$/, '').trim();
+            }
+
+            let retryJson = {};
+            try { retryJson = JSON.parse(cleanedRetryText); } catch (_) {
+              const m = cleanedRetryText.match(/\{[\s\S]*\}/);
+              if (m) try { retryJson = JSON.parse(m[0]); } catch (_2) { /* fall through */ }
+            }
+
+            console.log(`[Gemini Parser] ✓ Retry ${retry} succeeded for '${modelName}'`);
+
+            if (retryJson.is_valid_document === false) {
+              return {
+                raw_response: { model: modelName, text: retryText, finish_reason: retryResponse.candidates?.[0]?.finishReason || null },
+                structured_json: { is_valid_document: false, rejection_reason: retryJson.rejection_reason || 'Not a valid document.', labels: [] },
+                processing_time: Date.now() - startTime, model_used: modelName,
+                file_type: isPdf ? 'application/pdf' : (mimeType || 'image/jpeg'), is_pdf: isPdf, pdf_pages: pdfPageCount
+              };
+            }
+
+            if (!Array.isArray(retryJson.labels) || retryJson.labels.length === 0) {
+              if (retryJson.order_id || retryJson.customer_name || retryJson.items) {
+                retryJson.labels = [{ order_id: retryJson.order_id, customer_name: retryJson.customer_name, items: retryJson.items || [] }];
+              }
+            }
+
+            const sanitizedRetry = sanitizeExtractedJson(retryJson, pdfText);
+            sanitizedRetry.is_valid_document = true;
+
+            return {
+              raw_response: { model: modelName, text: retryText, finish_reason: retryResponse.candidates?.[0]?.finishReason || null },
+              structured_json: sanitizedRetry,
+              processing_time: Date.now() - startTime, model_used: modelName,
+              file_type: isPdf ? 'application/pdf' : (mimeType || 'image/jpeg'), is_pdf: isPdf, pdf_pages: pdfPageCount
+            };
+          } catch (retryErr) {
+            console.warn(`[Gemini Parser] Retry ${retry} failed for '${modelName}': ${retryErr.message}`);
+            lastError = retryErr;
+          }
+        }
+        // All retries failed — continue to next model in cascade
+        console.warn(`[Gemini Parser] All retries exhausted for '${modelName}'. Trying next fallback model...`);
+        continue;
       }
-      // Continue to next model in cascade
+
+      // For other errors, continue to next model in cascade
     }
   }
 
