@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   UploadCloud,
@@ -6,12 +6,13 @@ import {
   FileCheck2,
   Boxes,
   RotateCcw,
-  Sparkles,
-  ArrowDown
+  Sparkles
 } from 'lucide-react';
 
 export default function HowItWorks() {
   const { t } = useTranslation();
+  const sectionRef = useRef(null);
+  const [visibleSteps, setVisibleSteps] = useState([]);
 
   const steps = [
     {
@@ -51,78 +52,127 @@ export default function HowItWorks() {
     }
   ];
 
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          steps.forEach((_, index) => {
+            setTimeout(() => {
+              setVisibleSteps(prev => [...prev, index]);
+            }, index * 150);
+          });
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.15 }
+    );
+
+    if (sectionRef.current) observer.observe(sectionRef.current);
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <section id="how-it-works" className="py-16 sm:py-24 relative overflow-hidden scroll-mt-20">
+    <section id="how-it-works" className="py-20 sm:py-28 relative overflow-hidden scroll-mt-20" ref={sectionRef}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto space-y-4 mb-16">
+        <div className={`text-center max-w-3xl mx-auto space-y-4 mb-16 sm:mb-20 transition-all duration-700 ${
+          visibleSteps.length > 0 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+        }`}>
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider"
             style={{ background: 'var(--color-accent-light)', color: 'var(--color-rose)', border: '1px solid var(--color-accent-muted)' }}>
             <Sparkles className="w-3.5 h-3.5" />
             <span>Workflow Automation</span>
           </div>
 
-          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight font-serif text-[var(--color-navy)]">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight font-serif text-[var(--color-navy)]">
             How ParcelAI Works in <br />
             <span className="font-normal italic" style={{ color: 'var(--color-rose)' }}>
               Five Effortless Steps
             </span>
           </h2>
 
-          <p className="text-xs sm:text-sm font-medium leading-relaxed text-[var(--color-text-secondary)]">
+          <p className="text-sm sm:text-base font-medium leading-relaxed text-[var(--color-text-secondary)] max-w-lg mx-auto">
             From physical sticker to full financial reconciliation in less than five seconds.
           </p>
         </div>
 
-        {/* Connected Timeline Grid */}
+        {/* Timeline Grid */}
         <div className="relative">
-          {/* Connecting Line across Desktop */}
-          <div className="hidden lg:block absolute top-1/2 left-8 right-8 h-0.5 -translate-y-12 pointer-events-none -z-10"
-            style={{
-              background: 'linear-gradient(90deg, var(--color-border-light) 0%, var(--color-rose) 50%, var(--color-border-light) 100%)'
-            }} />
+          {/* Desktop Connecting Line with Shimmer */}
+          <div className="hidden lg:block absolute top-1/2 left-8 right-8 -translate-y-12 pointer-events-none -z-10">
+            <div className="h-1 rounded-full timeline-shimmer opacity-60" />
+          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+          {/* Mobile Vertical Connecting Line */}
+          <div className="lg:hidden absolute top-0 bottom-0 left-[23px] w-0.5 pointer-events-none -z-10"
+            style={{
+              background: 'linear-gradient(180deg, var(--color-border-light) 0%, var(--color-rose) 30%, var(--color-rose) 70%, var(--color-border-light) 100%)'
+            }}
+          />
+
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-5 lg:gap-6">
             {steps.map((step, index) => {
               const Icon = step.icon;
+              const isVisible = visibleSteps.includes(index);
               return (
                 <div
                   key={step.num}
-                  className="group relative flex flex-col justify-between p-6 rounded-3xl transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl bg-white border border-[var(--color-border-light)] shadow-xs"
+                  className={`relative transition-all duration-700 ${
+                    isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+                  }`}
                 >
-                  <div>
-                    {/* Step Number & Icon Header */}
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="w-12 h-12 rounded-2xl flex items-center justify-center transition-transform duration-300 group-hover:rotate-6 shadow-md"
-                        style={{
-                          background: index === 1
-                            ? 'linear-gradient(135deg, var(--color-rose), var(--color-plum))'
-                            : 'linear-gradient(135deg, var(--color-navy), var(--color-deep-purple))',
-                          color: 'var(--color-blush-light)'
-                        }}>
-                        <Icon className="w-6 h-6" />
+                  {/* Mobile Step Connector Dot */}
+                  <div className="lg:hidden absolute left-0 top-8 w-[11px] h-[11px] rounded-full border-2 border-white z-10 -translate-x-[1px]"
+                    style={{ background: isVisible ? 'var(--color-rose)' : 'var(--color-border-light)' }}
+                  />
+
+                  {/* Step Card */}
+                  <div
+                    className="group relative flex flex-col justify-between p-7 ml-10 lg:ml-0 rounded-3xl transition-all duration-300 hover:-translate-y-2 hover:shadow-xl bg-white border border-[var(--color-border-light)] shadow-sm"
+                    style={{
+                      borderLeft: '3px solid transparent',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderLeftColor = index === 1 ? 'var(--color-rose)' : 'var(--color-navy)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderLeftColor = 'transparent';
+                    }}
+                  >
+                    <div>
+                      {/* Step Number & Icon Header */}
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="w-12 h-12 rounded-2xl flex items-center justify-center transition-transform duration-300 group-hover:rotate-6 group-hover:scale-105 shadow-md"
+                          style={{
+                            background: index === 1
+                              ? 'linear-gradient(135deg, var(--color-rose), var(--color-plum))'
+                              : 'linear-gradient(135deg, var(--color-navy), var(--color-deep-purple))',
+                            color: 'var(--color-blush-light)'
+                          }}>
+                          <Icon className="w-6 h-6" />
+                        </div>
+                        <span className="font-mono text-2xl font-black text-[var(--color-border-strong)] group-hover:text-[var(--color-rose)] transition-colors duration-300">
+                          {step.num}
+                        </span>
                       </div>
-                      <span className="font-mono text-2xl font-black text-[var(--color-border-strong)] group-hover:text-[var(--color-rose)] transition-colors">
-                        {step.num}
-                      </span>
+
+                      {/* Step Content */}
+                      <h3 className="text-sm font-extrabold tracking-tight text-[var(--color-navy)] mb-2 font-serif">
+                        {step.title}
+                      </h3>
+                      <p className="text-xs font-medium text-[var(--color-text-secondary)] leading-relaxed">
+                        {step.desc}
+                      </p>
                     </div>
 
-                    {/* Step Content */}
-                    <h3 className="text-sm font-extrabold tracking-tight text-[var(--color-navy)] mb-2 font-serif">
-                      {step.title}
-                    </h3>
-                    <p className="text-xs font-medium text-[var(--color-text-secondary)] leading-relaxed">
-                      {step.desc}
-                    </p>
-                  </div>
-
-                  {/* Step Bottom Badge */}
-                  <div className="pt-4 mt-4 border-t border-[var(--color-border-light)]">
-                    <span className="inline-block text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md"
-                      style={{ background: 'var(--color-surface-muted)', color: 'var(--color-navy)' }}>
-                      {step.badge}
-                    </span>
+                    {/* Step Bottom Badge */}
+                    <div className="pt-4 mt-4 border-t border-[var(--color-border-light)]">
+                      <span className="inline-block text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-md"
+                        style={{ background: 'var(--color-surface-muted)', color: 'var(--color-navy)' }}>
+                        {step.badge}
+                      </span>
+                    </div>
                   </div>
                 </div>
               );

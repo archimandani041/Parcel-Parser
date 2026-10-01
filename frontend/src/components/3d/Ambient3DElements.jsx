@@ -9,17 +9,18 @@ export default function Ambient3DElements({ className = '' }) {
     const ctx = canvas.getContext('2d');
 
     let animationFrameId;
-    let width = (canvas.width = canvas.parentElement?.clientWidth || window.innerWidth);
-    let height = (canvas.height = canvas.parentElement?.clientHeight || window.innerHeight);
+    let width = (canvas.width = window.innerWidth);
+    let height = (canvas.height = window.innerHeight);
 
-    const particles = Array.from({ length: 30 }).map(() => ({
+    // Subtle ambient dust particles
+    const particles = Array.from({ length: 35 }).map(() => ({
       x: Math.random() * width,
       y: Math.random() * height,
-      size: Math.random() * 3 + 1,
-      speedX: (Math.random() - 0.5) * 0.4,
-      speedY: (Math.random() - 0.5) * 0.4,
-      opacity: Math.random() * 0.35 + 0.1,
-      pulse: Math.random() * 0.05
+      size: Math.random() * 2.5 + 0.8,
+      speedX: (Math.random() - 0.5) * 0.3,
+      speedY: (Math.random() - 0.5) * 0.3,
+      opacity: Math.random() * 0.25 + 0.08,
+      pulse: Math.random() * 0.04
     }));
 
     const render = () => {
@@ -35,7 +36,7 @@ export default function Ambient3DElements({ className = '' }) {
         if (p.y > height) p.y = 0;
 
         p.opacity += Math.sin(Date.now() * 0.002) * p.pulse;
-        const currentOpacity = Math.max(0.05, Math.min(0.4, p.opacity));
+        const currentOpacity = Math.max(0.04, Math.min(0.3, p.opacity));
 
         ctx.fillStyle = `rgba(174, 68, 90, ${currentOpacity})`;
         ctx.beginPath();
@@ -49,9 +50,8 @@ export default function Ambient3DElements({ className = '' }) {
     render();
 
     const handleResize = () => {
-      if (!canvas.parentElement) return;
-      width = canvas.width = canvas.parentElement.clientWidth;
-      height = canvas.height = canvas.parentElement.clientHeight;
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
     };
 
     window.addEventListener('resize', handleResize);
@@ -65,7 +65,7 @@ export default function Ambient3DElements({ className = '' }) {
   return (
     <canvas
       ref={canvasRef}
-      className={`pointer-events-none absolute inset-0 -z-10 ${className}`}
+      className={`fixed inset-0 pointer-events-none -z-10 ${className}`}
     />
   );
 }

@@ -395,6 +395,127 @@ html {
   animation-delay: 0.42s;
 }
 
+/* ─── Landing Page Scroll Reveal ─── */
+.landing-reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.7s var(--ease-spring), transform 0.7s var(--ease-spring);
+}
+
+.landing-reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Scale-in variant for dashboard preview */
+.landing-scale-reveal {
+  opacity: 0;
+  transform: scale(0.92) translateY(20px);
+  transition: opacity 0.8s var(--ease-spring), transform 0.8s var(--ease-spring);
+}
+
+.landing-scale-reveal.is-visible {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+/* ─── Gradient Text Utility ─── */
+.gradient-text-rose {
+  background: linear-gradient(135deg, var(--color-rose) 0%, var(--color-plum) 50%, var(--color-deep-purple) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Timeline Shimmer Animation ─── */
+@keyframes timelineShimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.timeline-shimmer {
+  background: linear-gradient(90deg,
+    var(--color-border-light) 0%,
+    var(--color-rose) 25%,
+    var(--color-amber) 50%,
+    var(--color-rose) 75%,
+    var(--color-border-light) 100%
+  );
+  background-size: 200% 100%;
+  animation: timelineShimmer 4s linear infinite;
+}
+
+/* ─── Floating Particle Animation ─── */
+@keyframes floatParticle {
+  0%, 100% {
+    transform: translateY(0) translateX(0);
+    opacity: 0.4;
+  }
+  25% {
+    transform: translateY(-15px) translateX(5px);
+    opacity: 0.7;
+  }
+  50% {
+    transform: translateY(-25px) translateX(-3px);
+    opacity: 0.5;
+  }
+  75% {
+    transform: translateY(-10px) translateX(8px);
+    opacity: 0.6;
+  }
+}
+
+.animate-float-particle {
+  animation: floatParticle 6s ease-in-out infinite;
+}
+
+/* ─── CTA Glow Pulse ─── */
+@keyframes ctaGlow {
+  0%, 100% {
+    box-shadow: 0 25px 60px -15px rgba(29, 26, 57, 0.4), 0 0 30px rgba(174, 68, 90, 0.2);
+  }
+  50% {
+    box-shadow: 0 25px 60px -15px rgba(29, 26, 57, 0.5), 0 0 50px rgba(174, 68, 90, 0.35);
+  }
+}
+
+.animate-cta-glow {
+  animation: ctaGlow 3s ease-in-out infinite;
+}
+
+/* ─── Stat Counter Number Style ─── */
+.stat-number {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* ─── Annotation Badge Float ─── */
+@keyframes annotationFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.animate-annotation-float {
+  animation: annotationFloat 3s ease-in-out infinite;
+}
+
+/* ─── Infinite Marquee Animation ─── */
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 30s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+
 /* Modal Pop In/Out */
 @keyframes modalPopIn {
   0% {
