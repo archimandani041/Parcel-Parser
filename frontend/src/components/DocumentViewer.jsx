@@ -115,27 +115,52 @@ export default function DocumentViewer({ fileUrl, fileName, fileType, activePage
               href={pdfUrlWithPage}
               target="_blank"
               rel="noreferrer"
-              title="Open Original File"
-              className="p-1.5 rounded-md transition-colors ml-1"
-              style={{ color: 'var(--color-rose)' }}
+              title="Open Original File in New Tab"
+              className="px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors ml-1"
+              style={{ background: 'rgba(174,68,90,0.2)', color: 'var(--color-blush)', border: '1px solid rgba(174,68,90,0.4)' }}
             >
-              <ExternalLink className="w-4 h-4" />
+              <ExternalLink className="w-3.5 h-3.5" />
+              <span>Open File</span>
             </a>
           )}
         </div>
       </div>
 
       {/* Main Preview Container */}
-      <div className="flex-1 flex items-center justify-center p-6 overflow-auto relative min-h-[450px]" style={{ background: 'var(--color-deep-purple)' }}>
+      <div className="flex-1 flex items-center justify-center p-4 overflow-auto relative min-h-[450px]" style={{ background: 'var(--color-deep-purple)' }}>
         {isPdf ? (
-          <iframe
-            key={pdfUrlWithPage}
-            src={pdfUrlWithPage}
-            title={`PDF Document Viewer - Page ${activePage}`}
-            onError={() => setLoadError(true)}
-            className="w-full h-full min-h-[500px] rounded-lg"
-            style={{ border: '1px solid var(--color-navy-light)' }}
-          />
+          <div className="w-full h-full min-h-[520px] flex flex-col items-center justify-center">
+            <object
+              key={pdfUrlWithPage}
+              data={pdfUrlWithPage}
+              type="application/pdf"
+              className="w-full h-full min-h-[520px] rounded-lg"
+              style={{ border: '1px solid var(--color-navy-light)' }}
+            >
+              <iframe
+                src={pdfUrlWithPage}
+                title={`PDF Document Viewer - Page ${activePage}`}
+                className="w-full h-full min-h-[520px] rounded-lg"
+                style={{ border: '1px solid var(--color-navy-light)' }}
+              >
+                <div className="flex flex-col items-center justify-center p-8 text-center space-y-4 rounded-xl" style={{ background: 'var(--color-navy)', border: '1px solid var(--color-navy-light)' }}>
+                  <FileText className="w-12 h-12" style={{ color: 'var(--color-rose)' }} />
+                  <p className="text-sm font-semibold" style={{ color: 'var(--color-blush)' }}>
+                    Your browser does not support inline PDF viewing.
+                  </p>
+                  <a
+                    href={resolvedUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-4 py-2 rounded-xl text-xs font-bold inline-flex items-center gap-2 shadow-md"
+                    style={{ background: 'var(--color-rose)', color: 'white' }}
+                  >
+                    <ExternalLink className="w-4 h-4" /> View or Download PDF
+                  </a>
+                </div>
+              </iframe>
+            </object>
+          </div>
         ) : (
           <div className="transition-transform duration-200 ease-out flex items-center justify-center">
             <img
@@ -151,15 +176,10 @@ export default function DocumentViewer({ fileUrl, fileName, fileType, activePage
               style={{
                 transform: `scale(${zoom}) rotate(${rotation}deg)`,
                 maxHeight: '650px',
-                objectFit: 'contain'
-              }}
-              className="rounded-lg shadow-2xl transition-all duration-300"
-              style={{
-                transform: `scale(${zoom}) rotate(${rotation}deg)`,
-                maxHeight: '650px',
                 objectFit: 'contain',
                 border: '1px solid rgba(232,188,185,0.15)'
               }}
+              className="rounded-lg shadow-2xl transition-all duration-300"
             />
           </div>
         )}

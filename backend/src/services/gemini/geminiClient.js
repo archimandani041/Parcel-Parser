@@ -5,19 +5,21 @@ dotenv.config();
 
 /**
  * Centralized Gemini API Client Config.
- * Primary model: gemini-3.6-flash
- * Fallbacks: gemini-flash-latest, gemini-3.5-flash
+ * Primary model: gemini-3.5-flash-lite (fastest, lowest latency ~1.5-3.5s)
+ * Fallbacks: gemini-flash-lite-latest, gemini-3.1-flash-lite, gemini-3.6-flash, gemini-3.5-flash
  */
 
 export const getGeminiModelName = () => {
-  let model = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
+  let model = process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
   model = model.replace(/^models\//, '').trim();
-  return model || 'gemini-3.6-flash';
+  return model || 'gemini-3.5-flash-lite';
 };
 
 export const FALLBACK_MODELS = [
+  'gemini-3.5-flash-lite',
+  'gemini-flash-lite-latest',
+  'gemini-3.1-flash-lite',
   'gemini-3.6-flash',
-  'gemini-3.8-flash',
   'gemini-3.5-flash',
 ];
 

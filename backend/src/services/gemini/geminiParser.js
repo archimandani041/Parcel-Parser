@@ -14,10 +14,14 @@ import {
  * Returns { text, pageCount } or { text: '', pageCount: null } on failure.
  * ─────────────────────────────────────────────────────────────────────────────
  */
+let cachedPdfParse = null;
 async function extractPdfText(pdfBuffer) {
   try {
-    const pdfParseModule = await import('pdf-parse');
-    const pdfParse = pdfParseModule.default || pdfParseModule;
+    if (!cachedPdfParse) {
+      const pdfParseModule = await import('pdf-parse');
+      cachedPdfParse = pdfParseModule.default || pdfParseModule;
+    }
+    const pdfParse = cachedPdfParse;
 
     const pageTexts = [];
     const render_page = (pageData) => {
@@ -383,10 +387,6 @@ export async function parseDocumentWithGemini(fileBuffer, mimeType, fileName = '
     ? PDF_PARSER_USER_PROMPT(pdfText, pdfPageCount)
     : PARCEL_PARSER_USER_PROMPT;
 
-  // Model cascade — try primary then fallbacks
-  const modelsToTry = Array.from(new Set([primaryModel, ...FALLBACK_MODELS]));
-  let lastError = null;
-
   // Pre-compute base64 data ONCE (avoid re-encoding on each model attempt)
   const base64Data = fileBuffer.toString('base64');
   const parts = [
@@ -394,85 +394,106 @@ export async function parseDocumentWithGemini(fileBuffer, mimeType, fileName = '
     { text: userPrompt }
   ];
 
-  for (const modelName of modelsToTry) {
-    // Build the generateContent config (reused for retries)
-    const genConfig = {
-      model: modelName,
-      contents: [{ role: 'user', parts }],
-      config: {
-        systemInstruction: PARCEL_PARSER_SYSTEM_INSTRUCTION,
-        responseMimeType: 'application/json',
-        temperature: 0.0,
-        maxOutputTokens: 4096
-      }
-    };
+  // ── 2-TIER ULTRA-FAST MODEL EXECUTION ──
+  // Tier 1: Race the top ultra-fast lite models (gemini-3.5-flash-lite, gemini-flash-lite-latest)
+  // These return in 1.5s - 3.5s without 503 high-demand errors.
+  // Tier 2: Fallback to other available models if Tier 1 has issues.
+  const tier1Models = Array.from(new Set([primaryModel, 'gemini-3.5-flash-lite', 'gemini-flash-lite-latest']));
+  const tier2Models = ['gemini-3.1-flash-lite', 'gemini-3.6-flash', 'gemini-3.5-flash'].filter(m => !tier1Models.includes(m));
 
-    try {
-      console.log(`[Gemini Parser] → Model: '${modelName}' | File: ${fileName} | PDF: ${isPdf} | Pages: ${pdfPageCount || 1}`);
+  const executeBatch = async (modelList, timeoutMs = 25000) => {
+    const promises = modelList.map(async (modelName) => {
+      try {
+        const response = await withTimeout(
+          ai.models.generateContent({
+            model: modelName,
+            contents: [{ role: 'user', parts }],
+            config: {
+              systemInstruction: PARCEL_PARSER_SYSTEM_INSTRUCTION,
+              responseMimeType: 'application/json',
+              temperature: 0.0,
+              maxOutputTokens: 4096
+            }
+          }),
+          timeoutMs,
+          `Gemini API timed out after ${Math.round(timeoutMs / 1000)}s for '${modelName}'`
+        );
 
-      // Execute Gemini call with 30-second timeout (optimized for speed)
-      const response = await withTimeout(
-        ai.models.generateContent(genConfig),
-        30000,
-        `Gemini API timed out after 30s for '${modelName}'`
-      );
+        const result = processGeminiResponse(response, modelName, startTime, isPdf, mimeType, pdfPageCount, pdfText);
+        if (result) return result;
+        throw new Error(`Model '${modelName}' returned unparseable response`);
+      } catch (err) {
+        console.warn(`[Gemini Parser] Model '${modelName}' failed: ${err.message}`);
 
-      const result = processGeminiResponse(response, modelName, startTime, isPdf, mimeType, pdfPageCount, pdfText);
-      if (result) return result;
-
-    } catch (err) {
-      console.warn(`[Gemini Parser] Model '${modelName}' failed: ${err.message}`);
-      lastError = err;
-
-      // 401 Auth errors — stop immediately
-      if (err.status === 401 || err.message?.includes('401') || err.message?.includes('UNAUTHENTICATED') ||
-          err.message?.includes('API_KEY_INVALID') || err.message?.includes('invalid authentication credentials')) {
-        return {
-          raw_response: { model: modelName, text: '', error: 'Gemini API authentication failed (401)' },
-          structured_json: { is_valid_document: false,
-            rejection_reason: 'Gemini API authentication failed (401). Please check GEMINI_API_KEY in backend/.env. Obtain a free key from Google AI Studio (https://aistudio.google.com/app/apikey).',
-            labels: [] },
-          processing_time: Date.now() - startTime, model_used: modelName,
-          file_type: isPdf ? 'application/pdf' : (mimeType || 'image/jpeg'), is_pdf: isPdf, pdf_pages: pdfPageCount
-        };
-      }
-
-      // 503/429 — single quick retry then next model
-      const isRetryable = err.status === 503 || err.status === 429 ||
-        err.message?.includes('503') || err.message?.includes('429') ||
-        err.message?.includes('overloaded') || err.message?.includes('high demand') ||
-        err.message?.includes('UNAVAILABLE') || err.message?.includes('RESOURCE_EXHAUSTED');
-
-      if (isRetryable) {
-        console.log(`[Gemini Parser] Quick retry '${modelName}' in 1.5s...`);
-        await new Promise(r => setTimeout(r, 1500));
-        try {
-          const retryResp = await withTimeout(ai.models.generateContent(genConfig), 30000, `Retry timed out for '${modelName}'`);
-          const result = processGeminiResponse(retryResp, modelName, startTime, isPdf, mimeType, pdfPageCount, pdfText);
-          if (result) return result;
-        } catch (retryErr) {
-          console.warn(`[Gemini Parser] Retry failed for '${modelName}': ${retryErr.message}`);
-          lastError = retryErr;
+        // 401 Auth error — propagate immediately
+        if (err.status === 401 || err.message?.includes('401') || err.message?.includes('UNAUTHENTICATED') ||
+            err.message?.includes('API_KEY_INVALID') || err.message?.includes('invalid authentication credentials')) {
+          const authErr = new Error('AUTH_401');
+          authErr.modelName = modelName;
+          throw authErr;
         }
+
+        throw err;
       }
-      // Continue to next model
+    });
+
+    return await Promise.any(promises);
+  };
+
+  let finalResult = null;
+  let allErrors = [];
+
+  try {
+    console.log(`[Gemini Parser] Tier 1: Racing fast lite models (${tier1Models.join(', ')})`);
+    finalResult = await executeBatch(tier1Models, 25000);
+  } catch (tier1Err) {
+    const errors = tier1Err.errors || [tier1Err];
+    allErrors.push(...errors);
+
+    const authError = errors.find(e => e.message === 'AUTH_401');
+    if (authError) {
+      return {
+        raw_response: { model: authError.modelName || 'unknown', text: '', error: 'Gemini API authentication failed (401)' },
+        structured_json: {
+          is_valid_document: false,
+          rejection_reason: 'Gemini API authentication failed (401). Please check GEMINI_API_KEY in backend/.env. Obtain a free key from Google AI Studio (https://aistudio.google.com/app/apikey).',
+          labels: []
+        },
+        processing_time: Date.now() - startTime,
+        model_used: authError.modelName || 'unknown',
+        file_type: isPdf ? 'application/pdf' : (mimeType || 'image/jpeg'),
+        is_pdf: isPdf,
+        pdf_pages: pdfPageCount
+      };
+    }
+
+    if (tier2Models.length > 0) {
+      try {
+        console.log(`[Gemini Parser] Tier 1 failed. Tier 2: Trying backup models (${tier2Models.join(', ')})`);
+        finalResult = await executeBatch(tier2Models, 25000);
+      } catch (tier2Err) {
+        allErrors.push(...(tier2Err.errors || [tier2Err]));
+      }
     }
   }
 
-  // Format clean human-readable error message from lastError
+  if (finalResult) {
+    return finalResult;
+  }
+
+  // All models failed — extract cleanest error message
   let cleanErrMsg = 'All AI models failed to process this document.';
-  if (lastError?.message) {
+  const lastErr = allErrors[allErrors.length - 1];
+  if (lastErr?.message) {
     try {
-      const parsedErr = JSON.parse(lastError.message);
-      if (parsedErr.error?.message) {
-        cleanErrMsg = parsedErr.error.message;
-      }
+      const parsed = JSON.parse(lastErr.message);
+      if (parsed.error?.message) cleanErrMsg = parsed.error.message;
     } catch (_) {
-      cleanErrMsg = lastError.message;
+      cleanErrMsg = lastErr.message;
     }
   }
 
-  console.error('[Gemini Parser] All models failed.', cleanErrMsg);
+  console.error(`[Gemini Parser] All models failed.`, cleanErrMsg);
   return {
     raw_response: { model: 'none', text: '', error: cleanErrMsg },
     structured_json: {
