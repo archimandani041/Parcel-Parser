@@ -13,6 +13,7 @@ import documentRoutes from './routes/documentRoutes.js';
 import exportRoutes from './routes/exportRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
 import stockRoutes from './routes/stockRoutes.js';
+import fileRoutes from './routes/fileRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { dbService } from './services/storage/supabaseService.js';
 import { getGeminiModelName } from './services/gemini/geminiClient.js';
@@ -67,6 +68,12 @@ app.use('/api/documents', documentRoutes);
 app.use('/api/export', exportRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/stock', stockRoutes);
+app.use('/api/files', fileRoutes);
+
+// Proxy /uploads/:filename → /api/files/:filename for Vercel compatibility
+app.use('/uploads/:filename', (req, res) => {
+  res.redirect(`/api/files/${encodeURIComponent(req.params.filename)}`);
+});
 
 app.use(errorHandler);
 

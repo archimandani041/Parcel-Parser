@@ -18,17 +18,28 @@ export default function DocumentViewer({ fileUrl, fileName, fileType, activePage
   const handleRotate = () => setRotation(prev => (prev + 90) % 360);
 
   const getFullFileUrl = (url) => {
+    // Backend API base URL for resolving relative file paths
+    const backendBase = import.meta.env.VITE_API_BASE_URL
+      ? import.meta.env.VITE_API_BASE_URL.replace(/\/api\/?$/, '')
+      : '';
+
     if (useLocalFallback && fileName) {
-      return `/uploads/${encodeURIComponent(fileName)}`;
+      return `${backendBase}/api/files/${encodeURIComponent(fileName)}`;
     }
     if (!url) {
-      return fileName ? `/uploads/${encodeURIComponent(fileName)}` : '';
+      return fileName ? `${backendBase}/api/files/${encodeURIComponent(fileName)}` : '';
     }
+    // Absolute URLs (Supabase public URLs, blobs) → use as-is
     if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('blob:')) {
       return url;
     }
+    // Relative /uploads/ paths → route through backend API file endpoint
+    if (url.includes('/uploads/')) {
+      const filename = url.split('/uploads/').pop();
+      return `${backendBase}/api/files/${filename}`;
+    }
     const cleanPath = url.startsWith('/') ? url : `/${url}`;
-    return cleanPath;
+    return `${backendBase}${cleanPath}`;
   };
 
   const resolvedUrl = getFullFileUrl(fileUrl);

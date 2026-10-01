@@ -44,15 +44,20 @@ export const dbService = {
 
   async uploadLabelFile(fileBuffer, originalFileName, mimeType) {
     // Always save local copy in uploads/ directory for guaranteed static serving
-    try {
-      const uploadsDir = path.join(process.cwd(), 'uploads');
-      if (!fs.existsSync(uploadsDir)) {
-        fs.mkdirSync(uploadsDir, { recursive: true });
+    const uploadDirs = [path.join(process.cwd(), 'uploads')];
+    // On Vercel/serverless, also write to /tmp/uploads for cross-invocation availability
+    if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
+      uploadDirs.push(path.join('/tmp', 'uploads'));
+    }
+    for (const uploadsDir of uploadDirs) {
+      try {
+        if (!fs.existsSync(uploadsDir)) {
+          fs.mkdirSync(uploadsDir, { recursive: true });
+        }
+        fs.writeFileSync(path.join(uploadsDir, originalFileName), fileBuffer);
+      } catch (fsErr) {
+        console.warn(`[Supabase Storage] Local copy write error (${uploadsDir}):`, fsErr.message);
       }
-      const localPath = path.join(uploadsDir, originalFileName);
-      fs.writeFileSync(localPath, fileBuffer);
-    } catch (fsErr) {
-      console.warn('[Supabase Storage] Local copy write error:', fsErr.message);
     }
 
     if (!isSupabaseConfigured) {
@@ -72,7 +77,7 @@ export const dbService = {
         });
 
       if (error) {
-        console.warn(`[Supabase Storage] Storage upload warning (${error.message}). Falling back to local serving.`);
+        console.warn(`[Supabase Storage] Storage upload FAILED (${error.message}). Using local fallback URL.`);
         return `/uploads/${encodeURIComponent(originalFileName)}`;
       }
 
@@ -80,7 +85,9 @@ export const dbService = {
         .from('parcel-labels')
         .getPublicUrl(storagePath);
 
-      return publicUrlData?.publicUrl || `/uploads/${encodeURIComponent(originalFileName)}`;
+      const publicUrl = publicUrlData?.publicUrl;
+      console.log(`[Supabase Storage] ✓ Upload OK → ${publicUrl || 'no public URL'}`);
+      return publicUrl || `/uploads/${encodeURIComponent(originalFileName)}`;
     } catch (err) {
       console.warn(`[Supabase Storage] Exception (${err.message}). Falling back to local serving.`);
       return `/uploads/${encodeURIComponent(originalFileName)}`;
